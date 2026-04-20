@@ -1,15 +1,14 @@
 # SistemaSubastasDA1
-Aplicación móvil del sistema de subastas.
+Aplicación móvil del sistema de subastas
 
-#Figma 
-  • Maquetado de la app, con su correspondientes wireframes (al menos debe tener cinco
-    de ellos en alta definición para ver la elección de colores) y la paleta de colores.
-  • El plano de despliegue de estos wireframes (Figma).
-  • Definición del icono de la app y la pantalla de splash (pantalla introductoria que se
-    muestra durante un breve período de tiempo).
+#Explicacion
+https://pastebin.com/pgiyPcNn
 
-LINK --> https://www.figma.com/design/sSGcSmOo9u9k3rSXhj6HtO/Des_apps1_Subastas?m=auto&t=0MzEp0q036gkvFO4-6
+#Figma
+Figma Documento --> https://www.figma.com/design/sSGcSmOo9u9k3rSXhj6HtO/Des_apps1_Subastas?m=auto&t=0MzEp0q036gkvFO4-6
 
+Figma Prototipo --> https://www.figma.com/proto/sSGcSmOo9u9k3rSXhj6HtO/Des_apps1_Subastas?node-id=0-1&t=4KEdzCAtDDymbh1g-1
+git
 #Swagger
   Descripción de los endpoints del API Rest diseñado con sus correspondientes
   parámetros, retornos, códigos de retorno (200, 404, etc.)
