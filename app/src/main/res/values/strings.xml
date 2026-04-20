@@ -2,6 +2,6 @@
     <string name="app_name">BidUp</string>
     <string name="tagline">Descubrí. Ofrecé. Ganá.</string>
     <string name="login">Iniciar sesión</string>
-    <string name="signup">Creá tu cuenta</string>
+    <string name="signup">Registrarse</string>
     <string name="guest_login">Ingresar como invitado</string>
 </resources>
