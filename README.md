@@ -1,12 +1,12 @@
 # BidUp - Sistema de Subastas Móvil
  
-**Desarrollo de Aplicaciones I - 1C Lunes 2026** 
-**Grupo 5:** 
-Nicolas Hernández 
-Ivo Guido Biscardi 
-Nicolás Zhang 
-Puleio Santiago 
-Tobías Hernández 
+**Desarrollo de Aplicaciones I - 1C Lunes 2026**  
+**Grupo 5:**  
+Nicolas Hernández  
+Ivo Guido Biscardi  
+Nicolás Zhang  
+Puleio Santiago  
+Tobías Hernández  
  
 ---
  
