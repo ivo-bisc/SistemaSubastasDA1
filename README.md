@@ -1,5 +1,5 @@
 # BidUp - Sistema de Subastas Móvil
- 
+
 **Desarrollo de Aplicaciones I - 1C Lunes 2026**  
 **Grupo 5:**  
 Nicolas Hernández  
@@ -7,12 +7,39 @@ Ivo Guido Biscardi
 Nicolás Zhang  
 Puleio Santiago  
 Tobías Hernández  
- 
+
 ---
- 
+
+## App — React Native (Expo)
+
+Cliente móvil multiplataforma con **React Native + Expo**, **TypeScript**, **React Navigation** y **Zustand**.
+
+```bash
+npm install
+npm run web
+```
+
+En redes corporativas, si Expo falla al validar dependencias:
+
+```powershell
+$env:EXPO_OFFLINE="1"
+npx expo start --web --offline
+```
+
+Luego abrir **http://localhost:8081**. En la pantalla de acceso, usar **Ingresar como invitado** para ver las pestañas principales.
+
+| Carpeta / archivo | Descripción |
+|---|---|
+| `src/screens/` | Pantallas por módulo |
+| `src/navigation/` | Navegación (auth, tabs, modales) |
+| `src/services/` | Cliente API (stubs) |
+| `subastas-api.yaml` | Contrato OpenAPI del backend |
+
+---
+
 ## Descripción del Proyecto
- 
-La empresa opera subastas presenciales con un sistema local que no expone interfaz móvil. Los postores no pueden participar de forma remota, gestionar sus medios de pago ni solicitar la consignación de bienes desde un dispositivo. BidUp resuelve esto mediante una aplicación Android que consume y actualiza ese sistema a través de una API REST propia, integrando el flujo completo de subasta —desde el registro del postor hasta la resolución de la compra.
+
+La empresa opera subastas presenciales con un sistema local que no expone interfaz móvil. Los postores no pueden participar de forma remota, gestionar sus medios de pago ni solicitar la consignación de bienes desde un dispositivo. BidUp resuelve esto mediante una aplicación móvil que consume y actualiza ese sistema a través de una API REST propia, integrando el flujo completo de subasta —desde el registro del postor hasta la resolución de la compra.
  
 El modelo de negocio implementado es **subasta dinámica ascendente**: precio base, ofertas visibles y competitivas, ganador por oferta máxima. Las reglas de puja tienen límites calculados sobre la última oferta y el valor base del bien (mínimo +1%, máximo +20%), con excepciones para categorías *oro* y *platino*.
  
