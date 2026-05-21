@@ -1,0 +1,187 @@
+package com.subastas.service;
+
+import com.subastas.exception.BusinessException;
+import com.subastas.exception.ErrorCodes;
+import com.subastas.exception.ResourceNotFoundException;
+import com.subastas.model.dto.request.PujaRequest;
+import com.subastas.model.dto.response.PujaResponse;
+import com.subastas.model.dto.websocket.BidConfirmedMessage;
+import com.subastas.model.dto.websocket.BidRejectedMessage;
+import com.subastas.model.dto.websocket.BidUpdatedMessage;
+import com.subastas.model.entity.*;
+import com.subastas.model.enums.EstadoMulta;
+import com.subastas.model.enums.EstadoPuja;
+import com.subastas.repository.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PujaService {
+
+    private final PujaRepository pujaRepository;
+    private final SubastaRepository subastaRepository;
+    private final ItemRepository itemRepository;
+    private final MedioPagoRepository medioPagoRepository;
+    private final ParticipacionRepository participacionRepository;
+    private final MultaRepository multaRepository;
+    private final WebSocketService webSocketService;
+    private final UsuarioService usuarioService;
+
+    private final Map<Long, ReentrantLock> locksPorSubasta = new ConcurrentHashMap<>();
+
+    @Transactional
+    public PujaResponse realizarPuja(Long subastaId, String email, PujaRequest request) {
+        Usuario usuario = usuarioService.obtenerPorEmail(email);
+        Subasta subasta = subastaRepository.findById(subastaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subasta", subastaId));
+
+        participacionRepository
+                .findByUsuarioAndSubasta(usuario, subasta)
+                .filter(Participacion::isConectado)
+                .orElseThrow(() -> new BusinessException(ErrorCodes.USUARIO_NO_CONECTADO,
+                        "No estás conectado a esta subasta", HttpStatus.FORBIDDEN));
+
+        long multasPendientes = multaRepository.countByUsuarioAndEstado(usuario, EstadoMulta.PENDIENTE);
+        if (multasPendientes > 0) {
+            throw new BusinessException(ErrorCodes.MULTA_PENDIENTE,
+                    "Tenés multas pendientes. Debés pagarlas antes de pujar", HttpStatus.FORBIDDEN);
+        }
+
+        ReentrantLock lock = locksPorSubasta.computeIfAbsent(subastaId, id -> new ReentrantLock());
+
+        if (!lock.tryLock()) {
+            webSocketService.sendBidRejected(email, BidRejectedMessage.builder()
+                    .motivo(ErrorCodes.PUJA_EN_PROCESO)
+                    .mensaje("Hay una puja en proceso. Por favor esperá la confirmación.")
+                    .build());
+            throw new BusinessException(ErrorCodes.PUJA_EN_PROCESO,
+                    "Hay una puja en proceso", HttpStatus.CONFLICT);
+        }
+
+        try {
+            return procesarPuja(subastaId, subasta, usuario, request);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private PujaResponse procesarPuja(Long subastaId, Subasta subasta, Usuario usuario, PujaRequest request) {
+        Item item = itemRepository.findByIdWithLock(request.getItemId())
+                .orElseThrow(() -> new ResourceNotFoundException("Item", request.getItemId()));
+
+        MedioPago medioPago = medioPagoRepository.findByIdAndUsuario(request.getMedioPagoId(), usuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Medio de pago", request.getMedioPagoId()));
+
+        BigDecimal precioBase = item.getPrecioBase();
+        BigDecimal mejorOferta = item.getMejorOferta() != null ? item.getMejorOferta() : precioBase;
+
+        if (!subasta.getCategoria().sinLimitesPuja()) {
+            BigDecimal pujaMinima = mejorOferta.add(precioBase.multiply(new BigDecimal("0.01")));
+            BigDecimal pujaMaxima = mejorOferta.add(precioBase.multiply(new BigDecimal("0.20")));
+
+            if (request.getMonto().compareTo(pujaMinima) < 0 || request.getMonto().compareTo(pujaMaxima) > 0) {
+                String mensaje = String.format("El monto debe estar entre %s y %s", pujaMinima, pujaMaxima);
+                webSocketService.sendBidRejected(usuario.getEmail(), BidRejectedMessage.builder()
+                        .motivo(ErrorCodes.MONTO_FUERA_DE_RANGO)
+                        .mensaje(mensaje)
+                        .build());
+                throw new BusinessException(ErrorCodes.MONTO_FUERA_DE_RANGO, mensaje);
+            }
+        }
+
+        Puja puja = Puja.builder()
+                .monto(request.getMonto())
+                .timestamp(LocalDateTime.now())
+                .estado(EstadoPuja.CONFIRMADA)
+                .usuario(usuario)
+                .item(item)
+                .subasta(subasta)
+                .medioPago(medioPago)
+                .build();
+
+        puja = pujaRepository.save(puja);
+
+        item.setMejorOferta(request.getMonto());
+        item.setMejorPostor(usuario);
+        itemRepository.save(item);
+
+        BigDecimal nuevaMejorOferta = request.getMonto();
+        BigDecimal pujaMinimaBroadcast = null;
+        BigDecimal pujaMaximaBroadcast = null;
+
+        if (!subasta.getCategoria().sinLimitesPuja()) {
+            pujaMinimaBroadcast = nuevaMejorOferta.add(precioBase.multiply(new BigDecimal("0.01")));
+            pujaMaximaBroadcast = nuevaMejorOferta.add(precioBase.multiply(new BigDecimal("0.20")));
+        }
+
+        String alias = SubastaService.generarAlias(usuario);
+
+        webSocketService.broadcastBidUpdated(subastaId, BidUpdatedMessage.builder()
+                .itemId(item.getId())
+                .nuevaMejorOferta(nuevaMejorOferta)
+                .mejorPostorAlias(alias)
+                .pujaMinima(pujaMinimaBroadcast)
+                .pujaMaxima(pujaMaximaBroadcast)
+                .build());
+
+        webSocketService.sendBidConfirmed(usuario.getEmail(), BidConfirmedMessage.builder()
+                .pujaId(puja.getId())
+                .monto(puja.getMonto())
+                .build());
+
+        return PujaResponse.builder()
+                .pujaId(puja.getId())
+                .monto(puja.getMonto())
+                .estado(puja.getEstado())
+                .timestamp(puja.getTimestamp())
+                .nuevaMejorOferta(nuevaMejorOferta)
+                .postorAlias(alias)
+                .build();
+    }
+
+    public List<PujaResponse> obtenerHistorial(Long subastaId, Long itemId, Boolean soloPropias, String email) {
+        Subasta subasta = subastaRepository.findById(subastaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subasta", subastaId));
+
+        List<Puja> pujas;
+        if (Boolean.TRUE.equals(soloPropias)) {
+            Usuario usuario = usuarioService.obtenerPorEmail(email);
+            if (itemId != null) {
+                Item item = itemRepository.findById(itemId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Item", itemId));
+                pujas = pujaRepository.findBySubastaAndItemAndUsuarioOrderByTimestampDesc(subasta, item, usuario);
+            } else {
+                pujas = pujaRepository.findBySubastaAndUsuarioOrderByTimestampDesc(subasta, usuario);
+            }
+        } else if (itemId != null) {
+            Item item = itemRepository.findById(itemId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Item", itemId));
+            pujas = pujaRepository.findBySubastaAndItemOrderByTimestampDesc(subasta, item);
+        } else {
+            pujas = pujaRepository.findBySubastaOrderByTimestampDesc(subasta);
+        }
+
+        return pujas.stream()
+                .map(p -> PujaResponse.builder()
+                        .pujaId(p.getId())
+                        .monto(p.getMonto())
+                        .postorAlias(SubastaService.generarAlias(p.getUsuario()))
+                        .timestamp(p.getTimestamp())
+                        .estado(p.getEstado())
+                        .build())
+                .collect(Collectors.toList());
+    }
+}

@@ -1,0 +1,27 @@
+package com.subastas.model.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "imagenes_item")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
+public class ImagenItem {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String url;
+
+    private int orden;
+
+    private String descripcion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id", nullable = false)
+    private Item item;
+}

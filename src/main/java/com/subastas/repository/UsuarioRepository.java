@@ -1,0 +1,20 @@
+package com.subastas.repository;
+
+import com.subastas.model.entity.Usuario;
+import com.subastas.model.enums.EstadoUsuario;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+
+    Optional<Usuario> findByEmail(String email);
+
+    boolean existsByEmail(String email);
+
+    Optional<Usuario> findByTokenEmail(String tokenEmail);
+
+    long countByEstado(EstadoUsuario estado);
+}

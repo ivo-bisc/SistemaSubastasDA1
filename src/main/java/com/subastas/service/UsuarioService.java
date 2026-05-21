@@ -1,0 +1,122 @@
+package com.subastas.service;
+
+import com.subastas.exception.BusinessException;
+import com.subastas.exception.ErrorCodes;
+import com.subastas.exception.ResourceNotFoundException;
+import com.subastas.model.dto.request.MedioPagoRequest;
+import com.subastas.model.dto.response.MedioPagoResponse;
+import com.subastas.model.dto.response.UsuarioResponse;
+import com.subastas.model.entity.MedioPago;
+import com.subastas.model.entity.Usuario;
+import com.subastas.repository.MedioPagoRepository;
+import com.subastas.repository.ParticipacionRepository;
+import com.subastas.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class UsuarioService {
+
+    private final UsuarioRepository usuarioRepository;
+    private final MedioPagoRepository medioPagoRepository;
+    private final ParticipacionRepository participacionRepository;
+
+    public Usuario obtenerPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
+
+    public UsuarioResponse obtenerPerfil(String email) {
+        Usuario usuario = obtenerPorEmail(email);
+        return mapToResponse(usuario);
+    }
+
+    public List<MedioPagoResponse> listarMediosPago(String email) {
+        Usuario usuario = obtenerPorEmail(email);
+        return medioPagoRepository.findByUsuario(usuario).stream()
+                .map(this::mapMedioPagoToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public MedioPagoResponse agregarMedioPago(String email, MedioPagoRequest request) {
+        Usuario usuario = obtenerPorEmail(email);
+
+        MedioPago medioPago = MedioPago.builder()
+                .tipo(request.getTipo())
+                .alias(request.getAlias())
+                .moneda(request.getMoneda())
+                .verificado(false)
+                .montoLimite(request.getMontoCheque())
+                .numeroCuenta(request.getNumeroCuenta())
+                .banco(request.getBanco())
+                .tipoCuenta(request.getTipoCuenta())
+                .cbu(request.getCbu())
+                .numeroTarjeta(request.getNumeroTarjeta())
+                .titular(request.getTitular())
+                .vencimiento(request.getVencimiento())
+                .tipoTarjeta(request.getTipoTarjeta())
+                .usuario(usuario)
+                .build();
+
+        medioPago = medioPagoRepository.save(medioPago);
+
+        // Mock: la verificación de medios de pago siempre es exitosa
+        medioPago.setVerificado(true);
+        medioPagoRepository.save(medioPago);
+
+        MedioPagoResponse response = mapMedioPagoToResponse(medioPago);
+        response.setMensaje("Medio de pago agregado y verificado exitosamente");
+        return response;
+    }
+
+    @Transactional
+    public void eliminarMedioPago(String email, Long medioPagoId) {
+        Usuario usuario = obtenerPorEmail(email);
+
+        MedioPago medioPago = medioPagoRepository.findByIdAndUsuario(medioPagoId, usuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Medio de pago", medioPagoId));
+
+        // Verificar que no esté en uso en una subasta activa
+        boolean enUso = participacionRepository.existsByUsuarioAndConectadoTrue(usuario);
+        if (enUso) {
+            throw new BusinessException(ErrorCodes.MEDIO_PAGO_EN_USO,
+                    "No podés eliminar un medio de pago mientras estás conectado a una subasta",
+                    HttpStatus.CONFLICT);
+        }
+
+        medioPagoRepository.delete(medioPago);
+    }
+
+    private UsuarioResponse mapToResponse(Usuario u) {
+        return UsuarioResponse.builder()
+                .id(u.getId())
+                .nombre(u.getNombre())
+                .apellido(u.getApellido())
+                .email(u.getEmail())
+                .categoria(u.getCategoria())
+                .estado(u.getEstado())
+                .domicilioLegal(u.getDomicilioLegal())
+                .paisOrigen(u.getPaisOrigen())
+                .fechaRegistro(u.getFechaRegistro())
+                .multasPendientes(u.getMultasPendientes())
+                .build();
+    }
+
+    private MedioPagoResponse mapMedioPagoToResponse(MedioPago mp) {
+        return MedioPagoResponse.builder()
+                .id(mp.getId())
+                .tipo(mp.getTipo())
+                .alias(mp.getAlias())
+                .moneda(mp.getMoneda())
+                .verificado(mp.isVerificado())
+                .montoLimite(mp.getMontoLimite())
+                .build();
+    }
+}
