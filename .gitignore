@@ -43,3 +43,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude AI (local memory, no subir)
+.claude/
+
+# Maven build output
+target/

@@ -41,6 +41,8 @@ public class SecurityConfig {
                 // H2 console y WebSocket (dev)
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
+                // Swagger UI
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // Todo lo demás requiere JWT
                 .anyRequest().authenticated()
             )
