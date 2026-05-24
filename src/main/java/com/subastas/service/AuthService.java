@@ -23,6 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.subastas.util.FileUtil;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -58,12 +62,15 @@ public class AuthService {
         }
 
         if (usuarioRepository.existsByNumeroDni(request.getNumeroDni())) {
-            throw new BusinessException(ErrorCodes.EMAIL_DUPLICADO,
+            throw new BusinessException(ErrorCodes.DNI_DUPLICADO,
                     "El DNI ya está registrado", HttpStatus.CONFLICT);
         }
 
         // Token UUID de un solo uso con vigencia de 24 h para la activación por email
         String token = UUID.randomUUID().toString();
+
+        String rutaFrente = guardarArchivoDni(fotoDniFrente);
+        String rutaDorso  = guardarArchivoDni(fotoDniDorso);
 
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
@@ -72,8 +79,8 @@ public class AuthService {
                 .numeroDni(request.getNumeroDni())
                 .domicilioLegal(request.getDomicilioLegal())
                 .paisOrigen(request.getPaisOrigen())
-                .fotoDniFrente(fotoDniFrente != null ? "uploads/dni/" + FileUtil.uuidFilename(fotoDniFrente) : null)
-                .fotoDniDorso(fotoDniDorso != null ? "uploads/dni/" + FileUtil.uuidFilename(fotoDniDorso) : null)
+                .fotoDniFrente(rutaFrente)
+                .fotoDniDorso(rutaDorso)
                 .estado(EstadoUsuario.PENDIENTE_VERIFICACION)
                 .categoria(Categoria.COMUN)
                 .tokenEmail(token)
@@ -127,7 +134,25 @@ public class AuthService {
                 .build();
     }
 
+    private String guardarArchivoDni(MultipartFile archivo) {
+        if (archivo == null || archivo.isEmpty()) return null;
+        try {
+            String nombreArchivo = "uploads/dni/" + FileUtil.uuidFilename(archivo);
+            Path destino = Paths.get(nombreArchivo);
+            Files.createDirectories(destino.getParent());
+            archivo.transferTo(destino.toFile());
+            return nombreArchivo;
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar archivo de DNI", e);
+        }
+    }
+
     public LoginResponse login(LoginRequest request) {
+        // Autenticar primero para evitar revelar el estado de la cuenta con contraseña incorrecta
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCodes.CREDENCIALES_INVALIDAS,
                         "Email o contraseña incorrectos", HttpStatus.UNAUTHORIZED));
@@ -138,19 +163,15 @@ public class AuthService {
         }
 
         if (usuario.getEstado() == EstadoUsuario.PENDIENTE_VERIFICACION) {
-            throw new BusinessException(ErrorCodes.TOKEN_INVALIDO,
+            throw new BusinessException(ErrorCodes.REGISTRO_INCOMPLETO,
                     "Debés completar el registro primero", HttpStatus.FORBIDDEN);
         }
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
 
         String jwt = jwtUtil.generateToken(request.getEmail());
 
         return LoginResponse.builder()
                 .tokenAcceso(jwt)
-                .tokenRefresh(jwtUtil.generateToken(request.getEmail()))
+                .tokenRefresh(jwtUtil.generateRefreshToken(request.getEmail()))
                 .usuario(LoginResponse.UsuarioInfo.builder()
                         .id(usuario.getId())
                         .nombre(usuario.getNombre())

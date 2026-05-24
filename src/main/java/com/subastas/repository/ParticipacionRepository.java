@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ParticipacionRepository extends JpaRepository<Participacion, Long> {
@@ -19,4 +20,6 @@ public interface ParticipacionRepository extends JpaRepository<Participacion, Lo
     List<Participacion> findByUsuarioOrderByFechaConexionDesc(Usuario usuario);
 
     boolean existsByUsuarioAndConectadoTrue(Usuario usuario);
+
+    List<Participacion> findBySubastaAndConectadoTrue(Subasta subasta);
 }

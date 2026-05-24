@@ -7,7 +7,9 @@ import com.subastas.model.dto.request.ConectarSubastaRequest;
 import com.subastas.model.dto.response.ConectarSubastaResponse;
 import com.subastas.model.dto.response.EstadoPujaResponse;
 import com.subastas.model.dto.response.SubastaResponse;
+import com.subastas.model.dto.websocket.AuctionClosedMessage;
 import com.subastas.model.entity.*;
+import com.subastas.model.enums.EstadoPago;
 import com.subastas.util.PujaRangeUtil;
 import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoItem;
@@ -15,6 +17,7 @@ import com.subastas.model.enums.EstadoSubasta;
 import com.subastas.model.enums.Moneda;
 import com.subastas.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
  * Lógica de negocio de subastas: listado con control de acceso por categoría,
  * conexión/desconexión de postores y cálculo del estado de puja del ítem activo.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubastaService {
@@ -38,6 +42,9 @@ public class SubastaService {
     private final ItemRepository itemRepository;
     private final MedioPagoRepository medioPagoRepository;
     private final ParticipacionRepository participacionRepository;
+    private final CompraRepository compraRepository;
+    private final EmailService emailService;
+    private final WebSocketService webSocketService;
     private final UsuarioService usuarioService;
 
     /**
@@ -192,6 +199,69 @@ public class SubastaService {
                 .moneda(subasta.getMoneda())
                 .estadoItem(item.getEstado())
                 .build();
+    }
+
+    @Transactional
+    public void cerrarSubasta(Subasta subasta) {
+        log.info("Cerrando subasta id={} titulo='{}'", subasta.getId(), subasta.getTitulo());
+        subasta.setEstado(EstadoSubasta.CERRADA);
+        subastaRepository.save(subasta);
+
+        List<Item> items = itemRepository.findBySubasta(subasta);
+        for (Item item : items) {
+            if (item.getEstado() != EstadoItem.EN_SUBASTA) continue;
+
+            if (item.getMejorPostor() != null) {
+                Compra compra = Compra.builder()
+                        .item(item)
+                        .usuario(item.getMejorPostor())
+                        .montoOfertado(item.getMejorOferta())
+                        .comisiones(java.math.BigDecimal.ZERO)
+                        .costoEnvio(java.math.BigDecimal.ZERO)
+                        .total(item.getMejorOferta())
+                        .moneda(subasta.getMoneda())
+                        .estadoPago(EstadoPago.PENDIENTE)
+                        .build();
+                compraRepository.save(compra);
+
+                item.setEstado(EstadoItem.VENDIDO);
+                itemRepository.save(item);
+
+                String desglose = String.format("Monto final: %s %s", item.getMejorOferta(), subasta.getMoneda());
+                emailService.enviarNotificacionGanador(
+                        item.getMejorPostor().getEmail(),
+                        item.getMejorPostor().getNombre(),
+                        item.getDescripcion(),
+                        desglose
+                );
+
+                webSocketService.broadcastAuctionClosed(subasta.getId(),
+                        AuctionClosedMessage.builder()
+                                .itemId(item.getId())
+                                .ganadorAlias(generarAlias(item.getMejorPostor()))
+                                .montoFinal(item.getMejorOferta())
+                                .build());
+            } else {
+                item.setEstado(EstadoItem.DISPONIBLE);
+                itemRepository.save(item);
+
+                webSocketService.broadcastAuctionClosed(subasta.getId(),
+                        AuctionClosedMessage.builder()
+                                .itemId(item.getId())
+                                .ganadorAlias(null)
+                                .montoFinal(null)
+                                .build());
+            }
+        }
+
+        // Desconectar a todos los participantes conectados
+        List<Participacion> conectados = participacionRepository.findBySubastaAndConectadoTrue(subasta);
+        LocalDateTime ahora = LocalDateTime.now();
+        for (Participacion p : conectados) {
+            p.setConectado(false);
+            p.setFechaDesconexion(ahora);
+        }
+        participacionRepository.saveAll(conectados);
     }
 
     private SubastaResponse mapToResponse(Subasta s) {

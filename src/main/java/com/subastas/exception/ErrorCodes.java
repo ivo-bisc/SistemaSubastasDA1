@@ -13,6 +13,7 @@ public final class ErrorCodes {
     public static final String PUJA_EN_PROCESO            = "PUJA_EN_PROCESO";
     public static final String MULTA_PENDIENTE            = "MULTA_PENDIENTE";
     public static final String EMAIL_DUPLICADO            = "EMAIL_DUPLICADO";
+    public static final String DNI_DUPLICADO              = "DNI_DUPLICADO";
     public static final String TOKEN_INVALIDO             = "TOKEN_INVALIDO";
     public static final String USUARIO_BLOQUEADO          = "USUARIO_BLOQUEADO";
     public static final String RECURSO_NO_ENCONTRADO      = "RECURSO_NO_ENCONTRADO";
@@ -23,4 +24,5 @@ public final class ErrorCodes {
     public static final String FOTOS_INSUFICIENTES        = "FOTOS_INSUFICIENTES";
     public static final String PERTENENCIA_NO_DECLARADA   = "PERTENENCIA_NO_DECLARADA";
     public static final String CREDENCIALES_INVALIDAS     = "CREDENCIALES_INVALIDAS";
+    public static final String REGISTRO_INCOMPLETO        = "REGISTRO_INCOMPLETO";
 }

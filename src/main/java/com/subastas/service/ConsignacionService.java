@@ -16,7 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.subastas.util.FileUtil;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,7 +79,7 @@ public class ConsignacionService {
         Consignacion consignacion = Consignacion.builder()
                 .descripcion(descripcion)
                 .datosAdicionales(datosAdicionales)
-                .aceptaPertenencia(true)
+                .aceptaPertenencia(aceptaPertenencia)
                 .estado(EstadoConsignacion.PENDIENTE_REVISION)
                 .precioSugerido(precioSugerido)
                 .cuentaDestino(cuentaDestino)
@@ -88,8 +92,17 @@ public class ConsignacionService {
         List<FotoConsignacion> fotosEntidad = new ArrayList<>();
         for (int i = 0; i < fotos.size(); i++) {
             MultipartFile foto = fotos.get(i);
+            String nombreArchivo = FileUtil.uuidFilename(foto);
+            String urlRelativa = "uploads/consignaciones/" + consignacion.getId() + "/" + nombreArchivo;
+            try {
+                Path destino = Paths.get(urlRelativa);
+                Files.createDirectories(destino.getParent());
+                foto.transferTo(destino.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException("Error al guardar foto de consignación", e);
+            }
             FotoConsignacion fotoConsignacion = FotoConsignacion.builder()
-                    .url("uploads/consignaciones/" + consignacion.getId() + "/" + FileUtil.uuidFilename(foto))
+                    .url(urlRelativa)
                     .orden(i + 1)
                     .consignacion(consignacion)
                     .build();

@@ -11,8 +11,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Repository
 public interface SubastaRepository extends JpaRepository<Subasta, Long> {
+
+    List<Subasta> findByEstadoAndFechaFinLessThanEqual(EstadoSubasta estado, LocalDateTime ahora);
 
     // Fetch join en rematador (ManyToOne) evita N+1 al mapear la lista paginada
     @Query("SELECT s FROM Subasta s LEFT JOIN FETCH s.rematador WHERE " +
