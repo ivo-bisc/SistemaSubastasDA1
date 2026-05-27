@@ -199,7 +199,7 @@ CREATE TABLE pujas (
 CREATE TABLE compras (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
     item_id         BIGINT          NOT NULL,
-    usuario_id      BIGINT          NOT NULL,
+    usuario_id      BIGINT,                     -- nullable: empresa compra al precio base cuando nadie puja
     monto_ofertado  DECIMAL(15,2)   NOT NULL,
     comisiones      DECIMAL(15,2),
     costo_envio     DECIMAL(15,2),
@@ -299,9 +299,10 @@ CREATE INDEX idx_participaciones_conectado
 CREATE INDEX idx_participaciones_subasta_conectado
     ON participaciones (subasta_id, conectado);
 
--- historial de pujas ordenado descendentemente
-CREATE INDEX idx_pujas_timestamp
-    ON pujas (timestamp);
+-- historial de pujas: las queries filtran por subasta_id y ordenan por timestamp
+-- (índice solo en timestamp no ayuda a MySQL cuando hay WHERE subasta_id = ?)
+CREATE INDEX idx_pujas_subasta_timestamp
+    ON pujas (subasta_id, timestamp);
 
 -- scheduler: findByEstadoAndFechaFinLessThanEqual()
 CREATE INDEX idx_subastas_estado_fecha_fin
@@ -326,3 +327,13 @@ CREATE INDEX idx_participaciones_medio_pago_conectado
 -- obtenerMensajes: findByCompraOrderByTimestampAsc()
 CREATE INDEX idx_mensajes_chat_compra
     ON mensajes_chat (compra_id, timestamp);
+
+-- registro paso 2: findByTokenEmail() — full table scan sin esto
+CREATE INDEX idx_usuarios_token_email
+    ON usuarios (token_email);
+
+-- validación de cheque certificado: WHERE usuario_id = ? AND medio_pago_id = ? AND estado_pago = ?
+-- InnoDB cubre usuario_id y medio_pago_id por FK, pero estado_pago no está indexado solo
+-- Para escala de TP el impacto es nulo, pero en prod conviene este compuesto
+CREATE INDEX idx_compras_cheque_validacion
+    ON compras (usuario_id, medio_pago_id, estado_pago);
