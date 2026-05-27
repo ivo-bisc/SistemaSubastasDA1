@@ -1,8 +1,6 @@
 package com.subastas.controller;
 
 import com.subastas.model.dto.response.ConsignacionResponse;
-import com.subastas.model.dto.response.PolizaResponse;
-import com.subastas.model.dto.response.UbicacionResponse;
 import com.subastas.model.entity.Usuario;
 import com.subastas.service.ConsignacionService;
 import com.subastas.service.UsuarioService;
@@ -21,8 +19,7 @@ import java.util.List;
 
 /**
  * Endpoints de consignación: permite a un usuario solicitar que un bien propio
- * sea incluido en subasta, aceptar o rechazar las condiciones propuestas por la
- * empresa, y consultar la ubicación en depósito y la póliza de seguro.
+ * sea incluido en subasta, y aceptar o rechazar las condiciones propuestas por la empresa.
  */
 @Validated
 @RestController
@@ -70,21 +67,5 @@ public class ConsignacionController {
             @PathVariable Long id) {
         Usuario usuario = usuarioService.obtenerPorEmail(userDetails.getUsername());
         return ResponseEntity.ok(consignacionService.rechazarCondiciones(id, usuario));
-    }
-
-    @GetMapping("/{id}/ubicacion")
-    public ResponseEntity<UbicacionResponse> obtenerUbicacion(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id) {
-        Usuario usuario = usuarioService.obtenerPorEmail(userDetails.getUsername());
-        return ResponseEntity.ok(consignacionService.obtenerUbicacion(id, usuario));
-    }
-
-    @GetMapping("/{id}/poliza")
-    public ResponseEntity<PolizaResponse> obtenerPoliza(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id) {
-        Usuario usuario = usuarioService.obtenerPorEmail(userDetails.getUsername());
-        return ResponseEntity.ok(consignacionService.obtenerPoliza(id, usuario));
     }
 }

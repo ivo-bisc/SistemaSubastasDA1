@@ -1,6 +1,5 @@
 package com.subastas.service;
 
-import com.subastas.event.PujaConfirmadaEvent;
 import com.subastas.exception.BusinessException;
 import com.subastas.exception.ErrorCodes;
 import com.subastas.exception.ResourceNotFoundException;
@@ -10,23 +9,20 @@ import com.subastas.model.dto.websocket.BidConfirmedMessage;
 import com.subastas.model.dto.websocket.BidUpdatedMessage;
 import com.subastas.model.entity.*;
 import com.subastas.model.enums.EstadoPuja;
+import com.subastas.model.enums.EstadoSubasta;
 import com.subastas.repository.*;
 import com.subastas.util.AliasUtil;
 import com.subastas.util.PujaRangeUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
@@ -47,19 +43,21 @@ public class PujaService {
     private final MedioPagoRepository medioPagoRepository;
     private final ParticipacionRepository participacionRepository;
     private final UsuarioService usuarioService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final WebSocketService webSocketService;
 
     // Un lock por subasta para serializar pujas concurrentes sobre el mismo ítem.
-    // expireAfterAccess evita acumulación de locks de subastas ya cerradas.
-    private final Cache<Long, ReentrantLock> locksPorSubasta = Caffeine.newBuilder()
-            .expireAfterAccess(1, TimeUnit.HOURS)
-            .build();
+    private final ConcurrentHashMap<Long, ReentrantLock> locksPorSubasta = new ConcurrentHashMap<>();
 
     @Transactional
     public PujaResponse realizarPuja(Long subastaId, String email, PujaRequest request) {
         Usuario usuario = usuarioService.obtenerPorEmail(email);
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta", subastaId));
+
+        if (subasta.getEstado() != EstadoSubasta.ABIERTA) {
+            throw new BusinessException(ErrorCodes.SUBASTA_NO_ABIERTA,
+                    "La subasta no está abierta", HttpStatus.BAD_REQUEST);
+        }
 
         participacionRepository
                 .findByUsuarioAndSubasta(usuario, subasta)
@@ -74,7 +72,7 @@ public class PujaService {
 
         // tryLock sin espera: si el lock está tomado, rechazamos la puja inmediatamente
         // en lugar de encolar, porque el cliente debe esperar la confirmación de la puja en curso
-        ReentrantLock lock = locksPorSubasta.get(subastaId, id -> new ReentrantLock());
+        ReentrantLock lock = locksPorSubasta.computeIfAbsent(subastaId, id -> new ReentrantLock());
 
         if (!lock.tryLock()) {
             throw new BusinessException(ErrorCodes.PUJA_EN_PROCESO,
@@ -137,20 +135,18 @@ public class PujaService {
 
         String alias = AliasUtil.generarAlias(usuario);
 
-        // Los mensajes WebSocket se envían solo después del commit para evitar
-        // que los clientes vean una puja que luego hace rollback en la BD
-        eventPublisher.publishEvent(new PujaConfirmadaEvent(this, subastaId, usuario.getEmail(),
-                BidUpdatedMessage.builder()
-                        .itemId(item.getId())
-                        .nuevaMejorOferta(nuevaMejorOferta)
-                        .mejorPostorAlias(alias)
-                        .pujaMinima(pujaMinimaBroadcast)
-                        .pujaMaxima(pujaMaximaBroadcast)
-                        .build(),
-                BidConfirmedMessage.builder()
-                        .pujaId(puja.getId())
-                        .monto(puja.getMonto())
-                        .build()));
+        // Notificar a todos los conectados del nuevo estado, y confirmar al postor
+        webSocketService.broadcastBidUpdated(subastaId, BidUpdatedMessage.builder()
+                .itemId(item.getId())
+                .nuevaMejorOferta(nuevaMejorOferta)
+                .mejorPostorAlias(alias)
+                .pujaMinima(pujaMinimaBroadcast)
+                .pujaMaxima(pujaMaximaBroadcast)
+                .build());
+        webSocketService.sendBidConfirmed(usuario.getEmail(), BidConfirmedMessage.builder()
+                .pujaId(puja.getId())
+                .monto(puja.getMonto())
+                .build());
 
         return PujaResponse.builder()
                 .pujaId(puja.getId())
@@ -163,7 +159,7 @@ public class PujaService {
     }
 
     public void liberarLock(Long subastaId) {
-        locksPorSubasta.invalidate(subastaId);
+        locksPorSubasta.remove(subastaId);
     }
 
     public List<PujaResponse> obtenerHistorial(Long subastaId, Long itemId, Boolean soloPropias, String email,

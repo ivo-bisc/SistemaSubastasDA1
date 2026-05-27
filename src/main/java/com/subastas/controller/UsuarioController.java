@@ -2,7 +2,10 @@ package com.subastas.controller;
 
 import com.subastas.model.dto.request.MedioPagoRequest;
 import com.subastas.model.dto.request.PagarMultaRequest;
-import com.subastas.model.dto.response.*;
+import com.subastas.model.dto.response.CompraResponse;
+import com.subastas.model.dto.response.MedioPagoResponse;
+import com.subastas.model.dto.response.MultaResponse;
+import com.subastas.model.dto.response.UsuarioResponse;
 import com.subastas.service.CompraService;
 import com.subastas.service.MultaService;
 import com.subastas.service.UsuarioService;
@@ -79,15 +82,4 @@ public class UsuarioController {
         return ResponseEntity.ok(compraService.obtenerCompra(compraId, userDetails.getUsername()));
     }
 
-    @GetMapping("/participaciones")
-    public ResponseEntity<List<ParticipacionResponse>> listarParticipaciones(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(usuarioService.listarParticipaciones(userDetails.getUsername()));
-    }
-
-    @GetMapping("/metricas")
-    public ResponseEntity<MetricasResponse> obtenerMetricas(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(usuarioService.obtenerMetricas(userDetails.getUsername()));
-    }
 }

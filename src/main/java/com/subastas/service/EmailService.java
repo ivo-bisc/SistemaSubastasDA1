@@ -1,6 +1,5 @@
 package com.subastas.service;
 
-import com.subastas.event.SubastaCerradaItemEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,8 +7,6 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Service
@@ -39,12 +36,6 @@ public class EmailService {
     }
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onSubastaCerradaItem(SubastaCerradaItemEvent event) {
-        enviarNotificacionGanador(event.getEmailGanador(), event.getNombreGanador(),
-                event.getDescripcionItem(), event.getDesglose());
-    }
-
     public void enviarNotificacionGanador(String emailDestino, String nombre, String descripcionItem,
                                           String desglose) {
         try {

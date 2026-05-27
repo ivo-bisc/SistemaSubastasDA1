@@ -5,12 +5,9 @@ import com.subastas.exception.ErrorCodes;
 import com.subastas.exception.ResourceNotFoundException;
 import com.subastas.model.dto.request.MedioPagoRequest;
 import com.subastas.model.dto.response.MedioPagoResponse;
-import com.subastas.model.dto.response.MetricasResponse;
-import com.subastas.model.dto.response.ParticipacionResponse;
 import com.subastas.model.dto.response.UsuarioResponse;
 import com.subastas.model.entity.MedioPago;
 import com.subastas.model.entity.Usuario;
-import com.subastas.repository.CompraRepository;
 import com.subastas.repository.MedioPagoRepository;
 import com.subastas.repository.ParticipacionRepository;
 import com.subastas.repository.UsuarioRepository;
@@ -33,7 +30,6 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final MedioPagoRepository medioPagoRepository;
     private final ParticipacionRepository participacionRepository;
-    private final CompraRepository compraRepository;
 
     public Usuario obtenerPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
@@ -97,30 +93,6 @@ public class UsuarioService {
         }
 
         medioPagoRepository.delete(medioPago);
-    }
-
-    public List<ParticipacionResponse> listarParticipaciones(String email) {
-        Usuario usuario = obtenerPorEmail(email);
-        return participacionRepository.findByUsuarioOrderByFechaConexionDesc(usuario).stream()
-                .map(p -> ParticipacionResponse.builder()
-                        .subastaId(p.getSubasta().getId())
-                        .subastaTitulo(p.getSubasta().getTitulo())
-                        .fechaConexion(p.getFechaConexion())
-                        .fechaDesconexion(p.getFechaDesconexion())
-                        .conectado(p.isConectado())
-                        .build())
-                .collect(Collectors.toList());
-    }
-
-    public MetricasResponse obtenerMetricas(String email) {
-        Usuario usuario = obtenerPorEmail(email);
-
-        return MetricasResponse.builder()
-                .totalSubastasAsistidas((int) participacionRepository.countByUsuario(usuario))
-                .totalGanadas((int) compraRepository.countByUsuario(usuario))
-                .totalPagado(compraRepository.sumTotalByUsuario(usuario))
-                .multasPendientes(usuario.getMultasPendientes())
-                .build();
     }
 
     private UsuarioResponse mapToResponse(Usuario u) {

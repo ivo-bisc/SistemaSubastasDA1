@@ -4,7 +4,10 @@ import com.subastas.BaseIntegrationTest;
 import com.subastas.model.dto.request.ConectarSubastaRequest;
 import com.subastas.model.dto.request.MedioPagoRequest;
 import com.subastas.model.dto.request.PagarMultaRequest;
-import com.subastas.model.dto.response.*;
+import com.subastas.model.dto.response.CompraResponse;
+import com.subastas.model.dto.response.MedioPagoResponse;
+import com.subastas.model.dto.response.MultaResponse;
+import com.subastas.model.dto.response.UsuarioResponse;
 import com.subastas.model.entity.Multa;
 import com.subastas.model.entity.Usuario;
 import com.subastas.model.enums.EstadoMulta;
@@ -150,24 +153,4 @@ class UsuarioControllerTest extends BaseIntegrationTest {
         assertThat(actualizado.getMultasPendientes()).isZero();
     }
 
-    // ---- Métricas ----
-
-    @Test
-    void obtener_metricas() {
-        ResponseEntity<MetricasResponse> res = getWithAuth(
-                "/api/v1/usuarios/metricas", jwtJuan, MetricasResponse.class);
-
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(res.getBody().getMultasPendientes()).isGreaterThanOrEqualTo(0);
-    }
-
-    // ---- Participaciones ----
-
-    @Test
-    void listar_participaciones() {
-        ResponseEntity<ParticipacionResponse[]> res = getWithAuth(
-                "/api/v1/usuarios/participaciones", jwtJuan, ParticipacionResponse[].class);
-
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-    }
 }

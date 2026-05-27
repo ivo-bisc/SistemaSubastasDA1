@@ -17,16 +17,16 @@ import com.subastas.model.enums.EstadoItem;
 import com.subastas.model.enums.EstadoSubasta;
 import com.subastas.model.enums.Moneda;
 import com.subastas.repository.*;
-import com.subastas.event.SubastaCerradaItemEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +41,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SubastaService {
 
+    private static final BigDecimal PORCENTAJE_COMISION = new BigDecimal("10");
+    private static final BigDecimal COSTO_ENVIO = new BigDecimal("1500");
+
     private final SubastaRepository subastaRepository;
     private final ItemRepository itemRepository;
     private final MedioPagoRepository medioPagoRepository;
@@ -48,8 +51,7 @@ public class SubastaService {
     private final CompraRepository compraRepository;
     private final WebSocketService webSocketService;
     private final PujaService pujaService;
-    private final ComisionService comisionService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final EmailService emailService;
     private final UsuarioService usuarioService;
 
     /**
@@ -232,9 +234,11 @@ public class SubastaService {
                         .map(Participacion::getMedioPago)
                         .orElse(null);
 
-                java.math.BigDecimal comisiones = comisionService.calcularComision(item.getMejorOferta());
-                java.math.BigDecimal costoEnvio = comisionService.calcularCostoEnvio();
-                java.math.BigDecimal total = item.getMejorOferta().add(comisiones).add(costoEnvio);
+                BigDecimal comisiones = item.getMejorOferta()
+                        .multiply(PORCENTAJE_COMISION)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                BigDecimal costoEnvio = COSTO_ENVIO;
+                BigDecimal total = item.getMejorOferta().add(comisiones).add(costoEnvio);
 
                 Compra compra = Compra.builder()
                         .item(item)
@@ -259,11 +263,11 @@ public class SubastaService {
                         comisiones, subasta.getMoneda(),
                         costoEnvio, subasta.getMoneda(),
                         total, subasta.getMoneda());
-                eventPublisher.publishEvent(new SubastaCerradaItemEvent(this,
+                emailService.enviarNotificacionGanador(
                         item.getMejorPostor().getEmail(),
                         item.getMejorPostor().getNombre(),
                         item.getDescripcion(),
-                        desglose));
+                        desglose);
 
                 webSocketService.broadcastAuctionClosed(subasta.getId(),
                         AuctionClosedMessage.builder()

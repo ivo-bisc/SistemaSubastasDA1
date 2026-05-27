@@ -4,8 +4,6 @@ import com.subastas.exception.BusinessException;
 import com.subastas.exception.ErrorCodes;
 import com.subastas.exception.ResourceNotFoundException;
 import com.subastas.model.dto.response.ConsignacionResponse;
-import com.subastas.model.dto.response.PolizaResponse;
-import com.subastas.model.dto.response.UbicacionResponse;
 import com.subastas.model.entity.*;
 import com.subastas.model.enums.EstadoConsignacion;
 import com.subastas.repository.ConsignacionRepository;
@@ -18,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.subastas.util.FileUtil;
-import org.apache.tika.Tika;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -39,7 +36,6 @@ import java.util.stream.Collectors;
 public class ConsignacionService {
 
     private static final BigDecimal GASTOS_RETIRO = new BigDecimal("5000.00");
-    private static final Tika TIKA = new Tika();
 
     private final ConsignacionRepository consignacionRepository;
     private final MedioPagoRepository medioPagoRepository;
@@ -68,17 +64,10 @@ public class ConsignacionService {
         }
 
         for (MultipartFile foto : fotos) {
-            try {
-                String tipoDetectado = TIKA.detect(foto.getBytes());
-                if (!tipoDetectado.startsWith("image/")) {
-                    throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
-                            "Solo se permiten imágenes (JPEG, PNG, GIF, WebP)");
-                }
-            } catch (BusinessException e) {
-                throw e;
-            } catch (IOException e) {
+            String contentType = foto.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
                 throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
-                        "No se pudo leer el archivo");
+                        "Solo se permiten imágenes (JPEG, PNG, GIF, WebP)");
             }
             if (foto.getSize() > 5_242_880L) {
                 throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
@@ -156,48 +145,6 @@ public class ConsignacionService {
         response.setMensaje("Condiciones rechazadas. El bien será devuelto con cargo de retiro.");
         response.setGastosEstimados(GASTOS_RETIRO);
         return response;
-    }
-
-    public UbicacionResponse obtenerUbicacion(Long consignacionId, Usuario usuario) {
-        Consignacion consignacion = consignacionRepository.findByIdAndUsuario(consignacionId, usuario)
-                .orElseThrow(() -> new BusinessException(ErrorCodes.ACCESO_DENEGADO,
-                        "No autorizado", HttpStatus.FORBIDDEN));
-
-        Deposito deposito = consignacion.getDeposito();
-        if (deposito == null) {
-            throw new ResourceNotFoundException("El bien aún no fue asignado a un depósito");
-        }
-
-        return UbicacionResponse.builder()
-                .depositoNombre(deposito.getNombre())
-                .depositoDireccion(deposito.getDireccion())
-                .lat(deposito.getLatitud())
-                .lng(deposito.getLongitud())
-                .fechaIngreso(deposito.getFechaIngreso())
-                .estadoFisico(deposito.getEstadoFisico())
-                .build();
-    }
-
-    public PolizaResponse obtenerPoliza(Long consignacionId, Usuario usuario) {
-        Consignacion consignacion = consignacionRepository.findByIdAndUsuario(consignacionId, usuario)
-                .orElseThrow(() -> new BusinessException(ErrorCodes.ACCESO_DENEGADO,
-                        "No autorizado", HttpStatus.FORBIDDEN));
-
-        Poliza poliza = consignacion.getPoliza();
-        if (poliza == null) {
-            throw new ResourceNotFoundException("No hay póliza asociada a esta consignación");
-        }
-
-        return PolizaResponse.builder()
-                .polizaId(poliza.getId())
-                .aseguradoraNombre(poliza.getAseguradoraNombre())
-                .aseguradoraContacto(poliza.getAseguradoraContacto())
-                .valorAsegurado(poliza.getValorAsegurado())
-                .prima(poliza.getPrima())
-                .vigenciaDesde(poliza.getVigenciaDesde())
-                .vigenciaHasta(poliza.getVigenciaHasta())
-                .bienesCubiertos(poliza.getBienesCubiertos())
-                .build();
     }
 
     private Consignacion obtenerConsignacionParaDecision(Long consignacionId, Usuario usuario) {

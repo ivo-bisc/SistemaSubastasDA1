@@ -9,7 +9,6 @@ import lombok.Data;
 @Builder
 public class LoginResponse {
     private String tokenAcceso;
-    private String tokenRefresh;
     private UsuarioInfo usuario;
 
     @Data

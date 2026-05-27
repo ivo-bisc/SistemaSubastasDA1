@@ -90,26 +90,6 @@ class ConsignacionControllerTest extends BaseIntegrationTest {
 
     @Test
     @Order(5)
-    void obtener_ubicacion_consignacion() {
-        ResponseEntity<Map<String, Object>> res = getWithAuth(
-                "/api/v1/consignaciones/1/ubicacion", jwtJuan, MAP_TYPE);
-
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(res.getBody()).containsKey("depositoNombre");
-    }
-
-    @Test
-    @Order(6)
-    void obtener_poliza_consignacion() {
-        ResponseEntity<Map<String, Object>> res = getWithAuth(
-                "/api/v1/consignaciones/1/poliza", jwtJuan, MAP_TYPE);
-
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(res.getBody()).containsKey("aseguradoraNombre");
-    }
-
-    @Test
-    @Order(7)
     void consignaciones_sin_jwt_es_rechazado() {
         ResponseEntity<Map<String, Object>> res = getNoAuth("/api/v1/consignaciones", MAP_TYPE);
         assertThat(res.getStatusCode()).isIn(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN);

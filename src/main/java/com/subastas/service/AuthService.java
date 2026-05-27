@@ -1,6 +1,5 @@
 package com.subastas.service;
 
-import com.subastas.event.RegistroCompletadoEvent;
 import com.subastas.exception.BusinessException;
 import com.subastas.exception.ErrorCodes;
 import com.subastas.model.dto.request.LoginRequest;
@@ -16,7 +15,6 @@ import com.subastas.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,7 +22,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.subastas.util.FileUtil;
-import org.apache.tika.Tika;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -55,7 +51,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
-    private final ApplicationEventPublisher eventPublisher;
+    private final MockVerificacionService mockVerificacionService;
     private final EmailService emailService;
 
     @Value("${app.uploads.base-path:uploads}")
@@ -98,8 +94,8 @@ public class AuthService {
 
         usuario = usuarioRepository.save(usuario);
 
-        // El evento se despacha solo después del commit para evitar enviar email si la tx hace rollback
-        eventPublisher.publishEvent(new RegistroCompletadoEvent(this, usuario.getId(), token));
+        // Se dispara de forma asíncrona: duerme 3s (mock) y luego envía el email con el token
+        mockVerificacionService.verificarYEnviarEmail(usuario.getId(), token);
 
         return RegistroResponse.builder()
                 .usuarioId(usuario.getId())
@@ -143,13 +139,11 @@ public class AuthService {
                 .build();
     }
 
-    private static final Tika TIKA = new Tika();
-
     private String guardarArchivoDni(MultipartFile archivo) {
         if (archivo == null || archivo.isEmpty()) return null;
         try {
-            String tipoDetectado = TIKA.detect(archivo.getBytes());
-            if (!tipoDetectado.startsWith("image/")) {
+            String contentType = archivo.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
                 throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
                         "Solo se permiten imágenes para el DNI");
             }
@@ -163,46 +157,6 @@ public class AuthService {
         } catch (IOException e) {
             throw new RuntimeException("Error al guardar archivo de DNI", e);
         }
-    }
-
-    @Transactional
-    public void reenviarToken(String email) {
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException(ErrorCodes.TOKEN_INVALIDO,
-                        "Email no encontrado", HttpStatus.BAD_REQUEST));
-
-        if (usuario.getEstado() != EstadoUsuario.PENDIENTE_VERIFICACION) {
-            throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
-                    "La cuenta no está pendiente de verificación", HttpStatus.BAD_REQUEST);
-        }
-
-        String token = UUID.randomUUID().toString();
-        usuario.setTokenEmail(token);
-        usuario.setTokenExpiracion(LocalDateTime.now().plusHours(24));
-        usuarioRepository.save(usuario);
-
-        emailService.enviarTokenRegistro(email, usuario.getNombre(), token);
-    }
-
-    public Map<String, String> refreshToken(String refreshToken) {
-        String email;
-        try {
-            email = jwtUtil.extractEmail(refreshToken);
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCodes.TOKEN_INVALIDO, "Refresh token inválido", HttpStatus.UNAUTHORIZED);
-        }
-
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException(ErrorCodes.TOKEN_INVALIDO,
-                        "Usuario no encontrado", HttpStatus.UNAUTHORIZED));
-
-        if (usuario.getEstado() == EstadoUsuario.BLOQUEADO) {
-            throw new BusinessException(ErrorCodes.USUARIO_BLOQUEADO,
-                    "La cuenta está bloqueada", HttpStatus.FORBIDDEN);
-        }
-
-        String nuevoToken = jwtUtil.generateToken(email);
-        return Map.of("tokenAcceso", nuevoToken);
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -229,7 +183,6 @@ public class AuthService {
 
         return LoginResponse.builder()
                 .tokenAcceso(jwt)
-                .tokenRefresh(jwtUtil.generateRefreshToken(request.getEmail()))
                 .usuario(LoginResponse.UsuarioInfo.builder()
                         .id(usuario.getId())
                         .nombre(usuario.getNombre())
