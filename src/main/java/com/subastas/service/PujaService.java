@@ -8,7 +8,10 @@ import com.subastas.model.dto.response.PujaResponse;
 import com.subastas.model.dto.websocket.BidConfirmedMessage;
 import com.subastas.model.dto.websocket.BidUpdatedMessage;
 import com.subastas.model.entity.*;
+import com.subastas.model.enums.EstadoItem;
+import com.subastas.model.enums.EstadoPago;
 import com.subastas.model.enums.EstadoPuja;
+import com.subastas.model.enums.TipoMedioPago;
 import com.subastas.model.enums.EstadoSubasta;
 import com.subastas.repository.*;
 import com.subastas.util.AliasUtil;
@@ -43,6 +46,7 @@ public class PujaService {
     private final ItemRepository itemRepository;
     private final MedioPagoRepository medioPagoRepository;
     private final ParticipacionRepository participacionRepository;
+    private final CompraRepository compraRepository;
     private final UsuarioService usuarioService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -96,12 +100,33 @@ public class PujaService {
         Item item = itemRepository.findByIdWithLock(request.getItemId())
                 .orElseThrow(() -> new ResourceNotFoundException("Item", request.getItemId()));
 
+        if (!item.getSubasta().getId().equals(subastaId)) {
+            throw new BusinessException(ErrorCodes.RECURSO_NO_ENCONTRADO,
+                    "El ítem no pertenece a esta subasta", HttpStatus.BAD_REQUEST);
+        }
+
+        if (item.getEstado() != EstadoItem.EN_SUBASTA) {
+            throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                    "El ítem no está en subasta activa", HttpStatus.BAD_REQUEST);
+        }
+
         MedioPago medioPago = medioPagoRepository.findByIdAndUsuario(request.getMedioPagoId(), usuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Medio de pago", request.getMedioPagoId()));
 
         if (subasta.getMoneda() != medioPago.getMoneda()) {
-            throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
-                    "La moneda del medio de pago no coincide con la moneda de la subasta");
+            throw new BusinessException(ErrorCodes.MONEDA_NO_COINCIDE,
+                    "La moneda del medio de pago no coincide con la moneda de la subasta", HttpStatus.BAD_REQUEST);
+        }
+
+        if (medioPago.getTipo() == TipoMedioPago.CHEQUE_CERTIFICADO && medioPago.getMontoLimite() != null) {
+            BigDecimal comprometido = compraRepository.sumTotalByUsuarioAndMedioPagoAndEstadoPago(
+                    usuario, medioPago, EstadoPago.PENDIENTE);
+            if (comprometido.add(request.getMonto()).compareTo(medioPago.getMontoLimite()) > 0) {
+                throw new BusinessException(ErrorCodes.LIMITE_CHEQUE_EXCEDIDO,
+                        String.format("Superás el límite del cheque certificado. Comprometido: %s, esta puja: %s, límite: %s",
+                                comprometido, request.getMonto(), medioPago.getMontoLimite()),
+                        HttpStatus.BAD_REQUEST);
+            }
         }
 
         BigDecimal pujaMinima = PujaRangeUtil.calcularMinima(item, subasta);

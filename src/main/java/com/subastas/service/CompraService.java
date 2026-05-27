@@ -7,6 +7,7 @@ import com.subastas.model.entity.Usuario;
 import com.subastas.repository.CompraRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +16,7 @@ public class CompraService {
     private final CompraRepository compraRepository;
     private final UsuarioService usuarioService;
 
+    @Transactional(readOnly = true)
     public CompraResponse obtenerCompra(Long compraId, String email) {
         Usuario usuario = usuarioService.obtenerPorEmail(email);
         Compra compra = compraRepository.findByIdAndUsuario(compraId, usuario)

@@ -140,7 +140,11 @@ public class AuthService {
     }
 
     private String guardarArchivoDni(MultipartFile archivo) {
-        if (archivo == null || archivo.isEmpty()) return null;
+        if (archivo == null || archivo.isEmpty()) {
+            throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                    "Las fotos del DNI son obligatorias para completar el registro",
+                    org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
         try {
             String contentType = archivo.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {

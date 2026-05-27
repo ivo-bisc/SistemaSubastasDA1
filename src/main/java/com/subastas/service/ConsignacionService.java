@@ -39,6 +39,7 @@ public class ConsignacionService {
 
     private final ConsignacionRepository consignacionRepository;
     private final MedioPagoRepository medioPagoRepository;
+    private final MockRevisionConsignacionService mockRevisionConsignacionService;
 
     @Value("${app.uploads.base-path:uploads}")
     private String uploadsBasePath;
@@ -66,11 +67,11 @@ public class ConsignacionService {
         for (MultipartFile foto : fotos) {
             String contentType = foto.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                throw new BusinessException(ErrorCodes.ARCHIVO_INVALIDO,
                         "Solo se permiten imágenes (JPEG, PNG, GIF, WebP)");
             }
             if (foto.getSize() > 5_242_880L) {
-                throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                throw new BusinessException(ErrorCodes.ARCHIVO_MUY_GRANDE,
                         "Cada foto no debe superar 5 MB");
             }
         }
@@ -101,7 +102,8 @@ public class ConsignacionService {
                 Files.createDirectories(destino.getParent());
                 foto.transferTo(destino.toFile());
             } catch (IOException e) {
-                throw new RuntimeException("Error al guardar foto de consignación", e);
+                throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                        "Error al guardar foto de consignación: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
             FotoConsignacion fotoConsignacion = FotoConsignacion.builder()
                     .url(urlRelativa)
@@ -113,8 +115,11 @@ public class ConsignacionService {
         consignacion.setFotos(fotosEntidad);
         consignacion = consignacionRepository.save(consignacion);
 
+        // Disparar revisión mock asíncrona (3 seg → ACEPTADA), igual que el mock de registro
+        mockRevisionConsignacionService.revisarYAceptar(consignacion.getId());
+
         ConsignacionResponse response = mapToResponse(consignacion);
-        response.setMensaje("Consignación creada. La empresa revisará tu solicitud.");
+        response.setMensaje("Consignación creada. La empresa revisará tu solicitud en breve.");
         return response;
     }
 

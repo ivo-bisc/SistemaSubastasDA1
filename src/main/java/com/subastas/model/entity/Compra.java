@@ -24,8 +24,9 @@ public class Compra {
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
+    // nullable: la empresa compra el ítem cuando nadie puja (usuario = null en ese caso)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
     @Column(name = "monto_ofertado", nullable = false, precision = 15, scale = 2)

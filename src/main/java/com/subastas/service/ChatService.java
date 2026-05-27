@@ -71,7 +71,7 @@ public class ChatService {
         Compra compra = obtenerCompraDelUsuario(compraId, usuario);
 
         if (compra.getModalidadEntrega() != null) {
-            throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+            throw new BusinessException(ErrorCodes.ENTREGA_YA_CONFIRMADA,
                     "La modalidad de entrega ya fue confirmada");
         }
 
@@ -79,7 +79,7 @@ public class ChatService {
 
         if (request.getModalidadEntrega() == ModalidadEntrega.ENVIO_DOMICILIO) {
             if (request.getDireccionEnvio() == null || request.getDireccionEnvio().isBlank()) {
-                throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                throw new BusinessException(ErrorCodes.DIRECCION_REQUERIDA,
                         "La dirección de envío es obligatoria para envío a domicilio");
             }
             compra.setDireccionEnvio(request.getDireccionEnvio());

@@ -176,6 +176,7 @@ util/           → Helpers (JwtUtil, etc.)
 - Si hay muchos objetos del mismo dueño → puede crearse una subasta "colección"
 - Se contrata un seguro por bien (agrupable por dueño)
 - El usuario puede ver la ubicación del bien (depósito) y la póliza de seguro
+- **Mock de revisión:** igual que el mock de verificación de identidad, al crear una consignación se dispara un proceso asíncrono con delay de 3 segundos que la pasa automáticamente de `PENDIENTE_REVISION` a `ACEPTADA`, con `valorBase = precioSugerido` (o un valor por defecto si no se proporcionó) y `comisiones = valorBase × 0.10`. Esto simula la revisión de la empresa y permite demo sin llamar endpoints adicionales.
 
 ---
 

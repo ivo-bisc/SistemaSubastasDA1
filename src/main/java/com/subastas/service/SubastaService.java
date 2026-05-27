@@ -9,8 +9,10 @@ import com.subastas.model.dto.response.EstadoPujaResponse;
 import com.subastas.model.dto.response.SubastaResponse;
 import com.subastas.model.dto.websocket.AuctionClosedMessage;
 import com.subastas.model.entity.*;
+import com.subastas.repository.MensajeChatRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.subastas.model.enums.EstadoPago;
+import com.subastas.model.enums.RemitenteMensaje;
 import com.subastas.util.AliasUtil;
 import com.subastas.util.PujaRangeUtil;
 import com.subastas.model.enums.Categoria;
@@ -48,6 +50,7 @@ public class SubastaService {
     private final MedioPagoRepository medioPagoRepository;
     private final ParticipacionRepository participacionRepository;
     private final CompraRepository compraRepository;
+    private final MensajeChatRepository mensajeChatRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final PujaService pujaService;
     private final EmailService emailService;
@@ -57,6 +60,7 @@ public class SubastaService {
      * Filtra las subastas que el usuario puede ver según su categoría.
      * Un usuario PLATA ve subastas COMUN, ESPECIAL y PLATA, pero no ORO ni PLATINO.
      */
+    @Transactional(readOnly = true)
     public List<SubastaResponse> listar(EstadoSubasta estado, Categoria categoria,
                                         Moneda moneda, String email) {
         Usuario usuario = usuarioService.obtenerPorEmail(email);
@@ -72,6 +76,7 @@ public class SubastaService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public SubastaResponse obtener(Long id, String email) {
         Usuario usuario = usuarioService.obtenerPorEmail(email);
         Subasta subasta = subastaRepository.findById(id)
@@ -120,7 +125,7 @@ public class SubastaService {
         }
 
         if (subasta.getMoneda() != medioPago.getMoneda()) {
-            throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+            throw new BusinessException(ErrorCodes.MONEDA_NO_COINCIDE,
                     "La moneda del medio de pago no coincide con la moneda de la subasta", HttpStatus.BAD_REQUEST);
         }
 
@@ -165,6 +170,7 @@ public class SubastaService {
         participacionRepository.save(participacion);
     }
 
+    @Transactional(readOnly = true)
     public EstadoPujaResponse obtenerEstadoPuja(Long subastaId, String email) {
         Usuario usuario = usuarioService.obtenerPorEmail(email);
         Subasta subasta = subastaRepository.findById(subastaId)
@@ -193,6 +199,7 @@ public class SubastaService {
         return buildEstadoPuja(itemActual, subasta);
     }
 
+    @Transactional(readOnly = true)
     public List<Item> obtenerCatalogo(Long subastaId) {
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subasta", subastaId));
@@ -255,6 +262,30 @@ public class SubastaService {
                         .build();
                 compraRepository.save(compra);
 
+                // Mensaje automático de bienvenida al chat post-subasta
+                String msgBienvenida = String.format(
+                        "¡Felicitaciones %s! Ganaste el ítem \"%s\" en la subasta.\n\n" +
+                        "Resumen de tu compra:\n" +
+                        "  • Monto ofertado:  %s %s\n" +
+                        "  • Comisiones:      %s %s\n" +
+                        "  • Costo de envío:  %s %s\n" +
+                        "  • Total a pagar:   %s %s\n\n" +
+                        "Tenés 72 horas para completar el pago.\n\n" +
+                        "Por este chat podés coordinar:\n" +
+                        "  • Modalidad de entrega: envío a domicilio (incluido) o retiro personal\n" +
+                        "  • Ampliación de la cobertura del seguro del bien",
+                        item.getMejorPostor().getNombre(), item.getDescripcion(),
+                        item.getMejorOferta(), subasta.getMoneda(),
+                        comisiones, subasta.getMoneda(),
+                        costoEnvio, subasta.getMoneda(),
+                        total, subasta.getMoneda());
+                mensajeChatRepository.save(MensajeChat.builder()
+                        .contenido(msgBienvenida)
+                        .remitente(RemitenteMensaje.EMPRESA)
+                        .compra(compra)
+                        .usuario(item.getMejorPostor())
+                        .build());
+
                 item.setEstado(EstadoItem.VENDIDO);
                 itemRepository.save(item);
 
@@ -277,7 +308,20 @@ public class SubastaService {
                                 .montoFinal(item.getMejorOferta())
                                 .build());
             } else {
-                item.setEstado(EstadoItem.DISPONIBLE);
+                // Nadie pujó: la empresa compra el ítem al precio base (consigna)
+                Compra compraEmpresa = Compra.builder()
+                        .item(item)
+                        .usuario(null)
+                        .montoOfertado(item.getPrecioBase())
+                        .comisiones(BigDecimal.ZERO)
+                        .costoEnvio(BigDecimal.ZERO)
+                        .total(item.getPrecioBase())
+                        .moneda(subasta.getMoneda())
+                        .estadoPago(EstadoPago.PAGADO)
+                        .build();
+                compraRepository.save(compraEmpresa);
+
+                item.setEstado(EstadoItem.VENDIDO);
                 itemRepository.save(item);
 
                 messagingTemplate.convertAndSend("/topic/subastas/" + subasta.getId(),

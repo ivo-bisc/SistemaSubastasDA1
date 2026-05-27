@@ -1,6 +1,7 @@
 package com.subastas.repository;
 
 import com.subastas.model.entity.Compra;
+import com.subastas.model.entity.MedioPago;
 import com.subastas.model.entity.Usuario;
 import com.subastas.model.enums.EstadoPago;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +27,9 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
 
     @Query("SELECT COALESCE(SUM(c.total), 0) FROM Compra c WHERE c.usuario = :usuario")
     BigDecimal sumTotalByUsuario(@Param("usuario") Usuario usuario);
+
+    @Query("SELECT COALESCE(SUM(c.total), 0) FROM Compra c WHERE c.usuario = :usuario AND c.medioPago = :medioPago AND c.estadoPago = :estadoPago")
+    BigDecimal sumTotalByUsuarioAndMedioPagoAndEstadoPago(@Param("usuario") Usuario usuario,
+                                                          @Param("medioPago") MedioPago medioPago,
+                                                          @Param("estadoPago") EstadoPago estadoPago);
 }
