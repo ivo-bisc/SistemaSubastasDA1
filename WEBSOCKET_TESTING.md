@@ -34,7 +34,34 @@ Guardar el valor de `tokenAcceso` de cada respuesta.
 
 ---
 
-## PASO 2 — Abrir 2 tabs de WebSocket en Hoppscotch
+## PASO 2 — Conectar a la subasta (REST, obligatorio antes de pujar)
+
+Antes de conectarse al WebSocket, cada usuario debe registrar su participación vía REST.
+Esto valida categoría, medio de pago y que no estén conectados a otra subasta.
+
+**Juan:**
+```json
+POST http://localhost:8080/api/v1/subastas/1/conectar
+Authorization: Bearer <tokenAcceso_de_juan>
+
+{
+  "medioPagoId": 1
+}
+```
+
+**María:**
+```json
+POST http://localhost:8080/api/v1/subastas/1/conectar
+Authorization: Bearer <tokenAcceso_de_maria>
+
+{
+  "medioPagoId": 2
+}
+```
+
+---
+
+## PASO 3 — Abrir 2 tabs de WebSocket en Hoppscotch
 
 Ir a **Realtime → WebSocket** y abrir dos tabs del browser.
 
@@ -48,7 +75,7 @@ ws://localhost:8080/ws/websocket
 
 ---
 
-## PASO 3 — Conectar con STOMP
+## PASO 4 — Conectar con STOMP
 
 Enviar el frame CONNECT con el JWT correspondiente en cada tab.
 
@@ -76,7 +103,7 @@ Deberías recibir `CONNECTED` en ambos tabs.
 
 ---
 
-## PASO 4 — Suscribirse a los topics
+## PASO 5 — Suscribirse a los topics
 
 Hacer esto en **ambos tabs**.
 
@@ -100,7 +127,7 @@ destination:/user/queue/pujas
 
 ---
 
-## PASO 5 — Juan envía una puja
+## PASO 6 — Juan envía una puja
 
 Desde **Tab 1 (Juan)**:
 
@@ -114,7 +141,8 @@ content-type:application/json
 ```
 
 > El Item 1 tiene precio base de **50.000 ARS**, así que 55.000 es una puja válida.  
-> El MedioPago 1 es la cuenta bancaria de Juan en ARS.
+> Rango válido: mín = 50.500, máx = 60.000 (mejor oferta + 1% / 20% del precio base).  
+> El MedioPago 1 es la cuenta bancaria ARS de Juan.
 
 **Resultado esperado:**
 
@@ -125,7 +153,7 @@ content-type:application/json
 
 ---
 
-## PASO 6 — María supera la oferta
+## PASO 7 — María supera la oferta
 
 Desde **Tab 2 (María)**:
 
@@ -134,31 +162,33 @@ SEND
 destination:/app/subastas/1/pujar
 content-type:application/json
 
-{"itemId":1,"monto":70000.00,"medioPagoId":2}
+{"itemId":1,"monto":60000.00,"medioPagoId":2}
 \0
 ```
 
-> El MedioPago 2 es la tarjeta Visa de María.
+> Después de la puja de Juan (55.000), el nuevo rango es: mín = 55.500, máx = 65.000.  
+> 60.000 está dentro del rango. ✅  
+> El MedioPago 2 es la cuenta bancaria ARS de María.
 
 **Resultado esperado:**
 
 | Tab | Canal | Mensaje |
 |-----|-------|---------|
-| Tab 2 (María) | `/user/queue/pujas` | `BID_CONFIRMED` con monto 70000 |
-| Tab 1 (Juan) | `/topic/subastas/1` | `BID_UPDATED` con nuevaMejorOferta: 70000 |
+| Tab 2 (María) | `/user/queue/pujas` | `BID_CONFIRMED` con monto 60000 |
+| Tab 1 (Juan) | `/topic/subastas/1` | `BID_UPDATED` con nuevaMejorOferta: 60000 |
 
 ---
 
-## PASO 7 — Probar un rechazo
+## PASO 8 — Probar un rechazo
 
-Desde **Tab 1 (Juan)**, pujar menos que la oferta actual (70.000):
+Desde **Tab 1 (Juan)**, pujar menos que el mínimo (después de 60.000, el mín es 60.500):
 
 ```
 SEND
 destination:/app/subastas/1/pujar
 content-type:application/json
 
-{"itemId":1,"monto":60000.00,"medioPagoId":1}
+{"itemId":1,"monto":50000.00,"medioPagoId":1}
 \0
 ```
 
@@ -179,11 +209,11 @@ Tab 1 (Juan)                    Servidor                    Tab 2 (María)
     |<-- BID_CONFIRMED /user/... ---|                              |
     |                               |--- BID_UPDATED /topic/... -->|
     |                               |                              |
-    |                               |<-- puja 70000 /app/... ------|
+    |                               |<-- puja 60000 /app/... ------|
     |<-- BID_UPDATED /topic/... ----|                              |
     |                               |--- BID_CONFIRMED /user/... ->|
     |                               |                              |
-    |--- puja 60000 /app/... ------>|                              |
+    |--- puja 50000 /app/... ------>|                              |
     |<-- BID_REJECTED /user/... ----|                              |
 ```
 
@@ -194,10 +224,11 @@ Tab 1 (Juan)                    Servidor                    Tab 2 (María)
 | Recurso | ID | Detalle |
 |--------|----|---------|
 | Subasta activa | 1 | "Subasta de Arte Argentino - Lote 01" — Estado: ABIERTA, Moneda: ARS |
-| Item | 1 | "Óleo sobre tela - Paisaje pampeano" — Precio base: 50.000 ARS |
-| Item | 2 | "Escultura de bronce - Figura abstracta" — Precio base: 80.000 ARS |
+| Item | 1 | "Óleo sobre tela - Paisaje pampeano" — Precio base: 50.000 ARS — Estado: EN_SUBASTA |
+| Item | 2 | "Escultura de bronce - Figura abstracta" — Precio base: 80.000 ARS — Estado: EN_SUBASTA |
 | MedioPago Juan | 1 | Cuenta Bancaria — Banco Nación, ARS |
-| MedioPago María | 2 | Tarjeta Visa, USD |
+| MedioPago María | 2 | Cuenta Corriente — Banco Galicia, ARS |
+| MedioPago María | 3 | Tarjeta Visa Internacional, USD (para subastas en USD) |
 
 ---
 
@@ -208,3 +239,4 @@ Tab 1 (Juan)                    Servidor                    Tab 2 (María)
   - JDBC URL: `jdbc:h2:mem:subastasdb`
   - Usuario: `sa` — Contraseña: *(vacía)*
 - La base de datos es **in-memory**, se reinicia con cada restart del servidor y los IDs vuelven desde 1.
+- **Recordá hacer el PASO 2 (REST conectar) antes de cualquier puja** — sin eso el WebSocket rechaza la puja con `USUARIO_NO_CONECTADO`.
