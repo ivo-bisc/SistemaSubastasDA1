@@ -24,7 +24,7 @@ const ballItem = {
 export const MOCK_HOME_CATEGORIES: CatalogCategory[] = [
   {
     id: 'cat-1',
-    name: 'Categoría #1',
+    name: 'Lote #1',
     items: [
       { ...watchItem, id: 'c1-i1' },
       { ...ballItem, id: 'c1-i2' },
@@ -33,7 +33,7 @@ export const MOCK_HOME_CATEGORIES: CatalogCategory[] = [
   },
   {
     id: 'cat-2',
-    name: 'Categoría #2',
+    name: 'Lote #2',
     items: [
       { ...ballItem, id: 'c2-i1' },
       { ...watchItem, id: 'c2-i2' },
@@ -42,7 +42,7 @@ export const MOCK_HOME_CATEGORIES: CatalogCategory[] = [
   },
   {
     id: 'cat-3',
-    name: 'Categoría #3',
+    name: 'Lote #3',
     items: [
       { ...watchItem, id: 'c3-i1' },
       { ...ballItem, id: 'c3-i2' },

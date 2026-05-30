@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, FontSize } from '../../constants';
+import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '../../stores';
 
 export default function PendingApprovalScreen() {
+  const navigation = useNavigation<any>();
+
+  const setGuest = useAuthStore((s) => s.setGuest);
+
+  useEffect(() => {
+    // Mark as guest so the RootNavigator will render the Main stack,
+    // then navigate into Main -> Home.
+    const id = setTimeout(() => {
+      setGuest();
+      navigation.navigate('Main' as any, { screen: 'Home' as any });
+    }, 5000);
+    return () => clearTimeout(id);
+  }, [navigation, setGuest]);
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
