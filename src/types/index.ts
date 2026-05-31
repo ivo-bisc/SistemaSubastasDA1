@@ -166,8 +166,10 @@ export type HomeStackParamList = {
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
+  EditUsername: undefined;
+  EditPassword: undefined;
   AddressList: undefined;
-  AddAddress: undefined;
+  AddAddress: { addressId?: string } | undefined;
   PaymentMethods: undefined;
   AddCard: undefined;
   AddCheck: undefined;

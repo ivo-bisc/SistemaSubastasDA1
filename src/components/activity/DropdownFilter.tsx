@@ -28,7 +28,8 @@ export default function DropdownFilter({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const selectedOption = options.find((opt) => opt.value === selectedValue) || options[0];
+  const selectedOption =
+    options.find((opt) => opt.value === selectedValue) || options[0];
 
   const handleSelect = (val: string) => {
     onValueChange(val);
@@ -37,24 +38,16 @@ export default function DropdownFilter({
 
   return (
     <View>
-      {/* Dropdown Button */}
       <Pressable
-        style={({ pressed }) => [
-          styles.button,
-          pressed && styles.buttonPressed,
-        ]}
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         onPress={() => setIsOpen(true)}
       >
-        <Text style={styles.buttonText}>{selectedOption.label}</Text>
-        <Ionicons
-          name="chevron-down"
-          size={16}
-          color={Colors.black}
-          style={styles.chevron}
-        />
+        <Text style={styles.buttonText} numberOfLines={1}>
+          {selectedOption.label}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={Colors.searchPlaceholder} />
       </Pressable>
 
-      {/* Popover / Overlay Modal */}
       <Modal
         visible={isOpen}
         transparent
@@ -78,7 +71,11 @@ export default function DropdownFilter({
                       >
                         <View style={styles.checkIconWrap}>
                           {isSelected ? (
-                            <Ionicons name="checkmark" size={16} color={Colors.black} />
+                            <Ionicons
+                              name="checkmark"
+                              size={16}
+                              color={Colors.accent}
+                            />
                           ) : null}
                         </View>
                         <Text
@@ -110,41 +107,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#EFEFEF',
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
+    backgroundColor: Colors.white,
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    minWidth: 160,
+    height: 40,
+    minWidth: 168,
+    maxWidth: '100%',
+    gap: 8,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   buttonPressed: {
-    opacity: 0.85,
+    opacity: 0.9,
   },
   buttonText: {
+    flex: 1,
     fontFamily: Fonts.bodyBold,
     fontSize: FontSize.sm,
     color: Colors.black,
-    marginRight: 8,
-  },
-  chevron: {
-    marginLeft: 2,
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(27, 32, 69, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   menuContainer: {
-    width: '80%',
-    maxWidth: 300,
+    width: '100%',
+    maxWidth: 320,
     backgroundColor: Colors.white,
     borderRadius: 16,
     paddingVertical: 8,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 5,
   },
@@ -155,23 +155,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   menuItemPressed: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: Colors.surface,
   },
   checkIconWrap: {
     width: 24,
     alignItems: 'flex-start',
-    justifyContent: 'center',
   },
   menuItemText: {
     fontFamily: Fonts.body,
     fontSize: FontSize.md,
-    color: Colors.black,
+    color: Colors.textPrimary,
   },
   menuItemTextActive: {
     fontFamily: Fonts.bodyBold,
+    color: Colors.black,
   },
   separator: {
-    height: 1,
-    backgroundColor: '#EAEAEA',
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border,
+    marginHorizontal: 16,
   },
 });

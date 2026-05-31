@@ -17,7 +17,7 @@ interface Props {
   imageUrl: string;
   timeRemaining: string;
   primaryPrice: string;
-  secondaryPrice?: string; // Optional: e.g. "Tu Puja: $X"
+  secondaryPrice?: string;
   badgeType: ActivityBadgeType;
   onPress?: () => void;
 }
@@ -31,68 +31,6 @@ export default function ActivityItemCard({
   badgeType,
   onPress,
 }: Props) {
-  // Determine badge styling and text dynamically
-  const getBadgeConfig = (type: ActivityBadgeType) => {
-    switch (type) {
-      case 'winning':
-        return {
-          text: 'Estás Ganando!',
-          bg: '#8CA73A', // Olive green
-          color: Colors.white,
-          icon: 'checkmark-circle-outline',
-        };
-      case 'losing':
-        return {
-          text: 'Estás Perdiendo!',
-          bg: Colors.accent, // Orange
-          color: Colors.white,
-          icon: 'alert-circle-outline',
-        };
-      case 'won':
-        return {
-          text: 'Ganaste!',
-          bg: Colors.success, // Solid Green
-          color: Colors.white,
-          icon: 'trophy-outline',
-        };
-      case 'lost':
-        return {
-          text: 'Perdiste',
-          bg: Colors.error, // Solid Red
-          color: Colors.white,
-          icon: 'close-circle-outline',
-        };
-      case 'soon':
-        return {
-          text: 'Falta Poco!',
-          bg: Colors.accent, // Orange
-          color: Colors.white,
-          icon: 'hourglass-outline',
-        };
-      case 'finished':
-        return {
-          text: 'Finalizada!',
-          bg: Colors.success, // Solid Green
-          color: Colors.white,
-          icon: 'checkmark-circle-outline',
-        };
-      case 'canceled':
-        return {
-          text: 'Cancelada',
-          bg: Colors.error, // Solid Red
-          color: Colors.white,
-          icon: 'ban-outline',
-        };
-      default:
-        return {
-          text: '',
-          bg: Colors.border,
-          color: Colors.black,
-          icon: undefined,
-        };
-    }
-  };
-
   const badgeConfig = getBadgeConfig(badgeType);
 
   return (
@@ -100,42 +38,39 @@ export default function ActivityItemCard({
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}
     >
-      {/* Thumbnail Circle */}
       <View style={styles.imageWrap}>
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.image} />
         ) : (
           <View style={[styles.image, styles.fallbackImage]}>
-            <Ionicons name="hammer" size={24} color={Colors.textSecondary} />
+            <Ionicons name="hammer-outline" size={26} color={Colors.cardTime} />
           </View>
         )}
       </View>
 
-      {/* Center Details */}
       <View style={styles.details}>
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
         <View style={styles.timeRow}>
-          <Text style={styles.hourglassIcon}>⌛</Text>
+          <Ionicons name="time-outline" size={12} color={Colors.cardTime} />
           <Text style={styles.timeText}>{timeRemaining}</Text>
         </View>
-      </View>
-
-      {/* Right Pricing and Badge */}
-      <View style={styles.rightSide}>
-        <View style={styles.priceContainer}>
-          <Text style={styles.primaryPrice}>{primaryPrice}</Text>
+        <View style={styles.priceRow}>
+          <View style={styles.priceTag}>
+            <Text style={styles.primaryPrice}>{primaryPrice}</Text>
+          </View>
           {secondaryPrice ? (
             <Text style={styles.secondaryPrice}>{secondaryPrice}</Text>
           ) : null}
         </View>
+      </View>
 
-        {/* Badge Capsule */}
+      <View style={styles.badgeWrap}>
         <View style={[styles.badge, { backgroundColor: badgeConfig.bg }]}>
           {badgeConfig.icon ? (
             <Ionicons
-              name={badgeConfig.icon as any}
+              name={badgeConfig.icon as keyof typeof Ionicons.glyphMap}
               size={12}
               color={badgeConfig.color}
               style={styles.badgeIcon}
@@ -150,27 +85,86 @@ export default function ActivityItemCard({
   );
 }
 
+function getBadgeConfig(type: ActivityBadgeType) {
+  switch (type) {
+    case 'winning':
+      return {
+        text: 'Estás Ganando!',
+        bg: '#8CA73A',
+        color: Colors.white,
+        icon: 'checkmark-circle-outline' as const,
+      };
+    case 'losing':
+      return {
+        text: 'Estás Perdiendo!',
+        bg: Colors.accent,
+        color: Colors.white,
+        icon: 'alert-circle-outline' as const,
+      };
+    case 'won':
+      return {
+        text: 'Ganaste!',
+        bg: Colors.success,
+        color: Colors.white,
+        icon: 'trophy-outline' as const,
+      };
+    case 'lost':
+      return {
+        text: 'Perdiste',
+        bg: Colors.error,
+        color: Colors.white,
+        icon: 'close-circle-outline' as const,
+      };
+    case 'soon':
+      return {
+        text: 'Falta Poco!',
+        bg: Colors.accent,
+        color: Colors.white,
+        icon: 'hourglass-outline' as const,
+      };
+    case 'finished':
+      return {
+        text: 'Finalizada!',
+        bg: Colors.success,
+        color: Colors.white,
+        icon: 'checkmark-circle-outline' as const,
+      };
+    case 'canceled':
+      return {
+        text: 'Cancelada',
+        bg: Colors.error,
+        color: Colors.white,
+        icon: 'ban-outline' as const,
+      };
+    default:
+      return { text: '', bg: Colors.border, color: Colors.black, icon: undefined };
+  }
+}
+
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: Colors.white,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderRadius: 12,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    padding: 12,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   pressed: {
-    backgroundColor: '#F9F9F9',
+    opacity: 0.94,
   },
   imageWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 72,
+    height: 72,
+    borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
+    backgroundColor: Colors.surface,
   },
   image: {
     width: '100%',
@@ -182,66 +176,68 @@ const styles = StyleSheet.create({
   },
   details: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingLeft: 12,
+    paddingRight: 8,
+    minHeight: 72,
     justifyContent: 'center',
   },
   title: {
     fontFamily: Fonts.bodyBold,
     fontSize: FontSize.sm,
     color: Colors.black,
-    lineHeight: 16,
-    marginBottom: 4,
+    lineHeight: 17,
+    marginBottom: 6,
   },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  hourglassIcon: {
-    fontSize: 12,
-    marginRight: 4,
+    marginBottom: 8,
   },
   timeText: {
     fontFamily: Fonts.body,
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    color: Colors.cardTime,
+    marginLeft: 4,
   },
-  rightSide: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    height: 64,
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  priceContainer: {
-    alignItems: 'flex-end',
+  priceTag: {
+    backgroundColor: Colors.cardPrice,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   primaryPrice: {
-    fontFamily: Fonts.title,
-    fontSize: FontSize.base,
-    color: Colors.black,
-    lineHeight: 18,
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.sm,
+    color: Colors.white,
   },
   secondaryPrice: {
     fontFamily: Fonts.body,
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    marginTop: 2,
+    color: Colors.cardTime,
+  },
+  badgeWrap: {
+    justifyContent: 'flex-start',
+    maxWidth: 108,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
   },
   badgeIcon: {
-    marginRight: 4,
+    marginRight: 3,
   },
   badgeText: {
     fontFamily: Fonts.bodyBold,
-    fontSize: 9.5,
+    fontSize: 9,
+    flexShrink: 1,
   },
 });

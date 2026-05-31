@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import BrandMark from '../auth/BrandMark';
 import { Colors, Fonts, FontSize } from '../../constants';
 
 type Props = {
@@ -23,9 +24,7 @@ export default function HomeHeader({
   return (
     <View style={styles.wrap}>
       <View style={styles.topRow}>
-        <View style={styles.logo}>
-          <Ionicons name="hammer" size={20} color={Colors.white} />
-        </View>
+        <BrandMark size={40} style={styles.logo} />
 
         <View style={styles.searchWrap}>
           <TextInput
@@ -76,12 +75,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 10,
   },
   searchWrap: {

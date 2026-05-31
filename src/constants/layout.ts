@@ -6,4 +6,6 @@ export const Layout = {
   inputBorderRadius: 8,
   inputBackground: '#EFEFEF',
   backButtonSize: 40,
+  pillBorderRadius: 28,
+  profileRowRadius: 8,
 } as const;

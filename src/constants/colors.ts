@@ -44,4 +44,8 @@ export const Colors = {
   cardTime: '#8F8F8F',
   /** Placeholder búsqueda */
   searchPlaceholder: '#9E9E9E',
+  /** Fondo splash / acceso (Figma) */
+  authBackground: '#292852',
+  /** Enlaces “Agregar” en perfil */
+  linkBlue: '#007AFF',
 } as const;

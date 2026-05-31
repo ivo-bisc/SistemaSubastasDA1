@@ -1,25 +1,77 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Colors, FontSize } from '../../constants';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { ProfileHeaderBar, ProfileScreenShell } from '../../components/profile';
+import { Colors, Fonts, FontSize, Layout } from '../../constants';
+import { formatAddressLine } from '../../data/mockProfile';
+import { useProfileStore } from '../../stores';
+import type { ProfileStackParamList } from '../../types';
+
+type Nav = StackNavigationProp<ProfileStackParamList, 'AddressList'>;
 
 export default function AddressListScreen() {
+  const navigation = useNavigation<Nav>();
+  const addresses = useProfileStore((s) => s.addresses);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>AddressListScreen</Text>
-    </View>
+    <ProfileScreenShell>
+      <ProfileHeaderBar
+        title="Direcciones"
+        onBack={() => navigation.goBack()}
+        rightAction={
+          <Pressable
+            onPress={() => navigation.navigate('AddAddress')}
+            hitSlop={8}
+          >
+            <Text style={styles.addLink}>Agregar</Text>
+          </Pressable>
+        }
+      />
+
+      {addresses.map((addr) => (
+        <View key={addr.id} style={styles.card}>
+          <Text style={styles.addressText}>{formatAddressLine(addr)}</Text>
+          <Pressable
+            onPress={() =>
+              navigation.navigate('AddAddress', { addressId: addr.id })
+            }
+            hitSlop={6}
+          >
+            <Text style={styles.editLink}>Editar</Text>
+          </Pressable>
+        </View>
+      ))}
+    </ProfileScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
+  addLink: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.md,
+    color: Colors.linkBlue,
   },
-  title: {
-    fontSize: FontSize.xxl,
-    fontWeight: '700',
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Layout.inputBackground,
+    borderRadius: Layout.profileRowRadius,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 10,
+  },
+  addressText: {
+    flex: 1,
+    fontFamily: Fonts.body,
+    fontSize: FontSize.base,
     color: Colors.textPrimary,
+    marginRight: 12,
+  },
+  editLink: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.md,
+    color: Colors.accent,
   },
 });

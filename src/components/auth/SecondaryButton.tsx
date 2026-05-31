@@ -14,22 +14,19 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
-  pill?: boolean;
 };
 
-export default function PrimaryButton({
+export default function SecondaryButton({
   label,
   onPress,
   disabled,
   loading,
   style,
-  pill,
 }: Props) {
   return (
     <Pressable
       style={({ pressed }) => [
         styles.button,
-        pill && styles.pill,
         (disabled || loading) && styles.disabled,
         pressed && !disabled && styles.pressed,
         style,
@@ -38,7 +35,7 @@ export default function PrimaryButton({
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator color={Colors.white} />
+        <ActivityIndicator color={Colors.accent} />
       ) : (
         <Text style={styles.label}>{label}</Text>
       )}
@@ -49,14 +46,11 @@ export default function PrimaryButton({
 const styles = StyleSheet.create({
   button: {
     height: Layout.buttonHeight,
-    borderRadius: Layout.buttonBorderRadius,
-    backgroundColor: Colors.accent,
+    borderRadius: Layout.pillBorderRadius,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-  },
-  pill: {
-    borderRadius: Layout.pillBorderRadius,
   },
   pressed: {
     opacity: 0.9,
@@ -67,6 +61,6 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: Fonts.bodyBold,
     fontSize: FontSize.base,
-    color: Colors.white,
+    color: Colors.accent,
   },
 });

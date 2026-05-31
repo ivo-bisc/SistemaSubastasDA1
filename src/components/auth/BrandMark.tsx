@@ -1,27 +1,26 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants';
+import { Image, StyleSheet, View, ViewStyle } from 'react-native';
 
-export default function BrandMark() {
+type Props = {
+  size?: number;
+  style?: ViewStyle;
+};
+
+export default function BrandMark({ size = 120, style }: Props) {
   return (
-    <View style={styles.wrap}>
-      <View style={styles.icon}>
-        <Ionicons name="megaphone" size={18} color={Colors.white} />
-      </View>
+    <View style={[styles.wrap, style]}>
+      <Image
+        source={require('../../assets/logo.png')}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
+        accessibilityLabel="BidUp"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 24,
-  },
-  icon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -4,6 +4,8 @@ export { default as BidUpTextField } from './BidUpTextField';
 export { default as PrimaryButton } from './PrimaryButton';
 export { default as BackButton } from './BackButton';
 export { default as BrandMark } from './BrandMark';
+export { default as WelcomeBranding } from './WelcomeBranding';
+export { default as SecondaryButton } from './SecondaryButton';
 export { default as AuthLink } from './AuthLink';
 export { default as StepLabel } from './StepLabel';
 export { default as CheckboxRow } from './CheckboxRow';

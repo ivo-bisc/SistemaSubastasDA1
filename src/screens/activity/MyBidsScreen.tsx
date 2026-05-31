@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { useAuthStore } from '../../stores';
 import HomeHeader from '../../components/home/HomeHeader';
 import {
   ActivityItemCard,
+  ActivitySectionHeader,
+  ActivityToolbar,
   DropdownFilter,
   DropdownOption,
 } from '../../components/activity';
@@ -28,7 +30,6 @@ export default function MyBidsScreen() {
 
   const [filter, setFilter] = useState('all');
 
-  // Filter items logically based on user selection
   const filteredBids = MOCK_BIDS.filter((bid) => {
     if (filter === 'all') return true;
     if (filter === 'lost') return bid.status === 'lost';
@@ -37,17 +38,8 @@ export default function MyBidsScreen() {
     return true;
   });
 
-  const handleBackPress = () => {
-    // Go to Home main if possible, else default goBack
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('Home');
-    }
-  };
-
-  const handleMenuPress = () => {
-    navigation.getParent()?.navigate('Profile');
+  const goHome = () => {
+    navigation.navigate('Home');
   };
 
   const handleChatPress = () => {
@@ -55,61 +47,39 @@ export default function MyBidsScreen() {
   };
 
   const handleItemPress = (auctionId: string) => {
-    // Navigate to auction detail
     navigation.navigate('AuctionDetail', { auctionId });
   };
 
-  const renderBidItem = ({ item }: { item: MockBidItem }) => {
-    return (
-      <ActivityItemCard
-        title={item.title}
-        imageUrl={item.imageUrl}
-        timeRemaining={item.timeRemaining}
-        primaryPrice={item.currentPrice}
-        secondaryPrice={`Tu Puja: ${item.myBid}`}
-        badgeType={item.status}
-        onPress={() => handleItemPress(item.id)}
-      />
-    );
-  };
+  const renderBidItem = ({ item }: { item: MockBidItem }) => (
+    <ActivityItemCard
+      title={item.title}
+      imageUrl={item.imageUrl}
+      timeRemaining={item.timeRemaining}
+      primaryPrice={item.currentPrice}
+      secondaryPrice={`Tu Puja: ${item.myBid}`}
+      badgeType={item.status}
+      onPress={() => handleItemPress(item.id)}
+    />
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Reusable Home Header */}
       <HomeHeader
         isLoggedIn={isAuthenticated}
         onIngresar={logout}
-        onMenuPress={handleMenuPress}
         onChatPress={handleChatPress}
       />
 
-      {/* Screen Title Capsule */}
-      <View style={styles.titleWrap}>
-        <View style={styles.titleCapsule}>
-          <Text style={styles.titleText}>Mis pujas</Text>
-        </View>
-      </View>
+      <ActivitySectionHeader title="Mis pujas" />
 
-      {/* Controls Row: Back Arrow + Dropdown Filter */}
-      <View style={styles.controlsRow}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.backCircleBtn,
-            pressed && styles.backCircleBtnPressed,
-          ]}
-          onPress={handleBackPress}
-        >
-          <Ionicons name="chevron-back" size={20} color={Colors.black} />
-        </Pressable>
-
+      <ActivityToolbar onBack={goHome}>
         <DropdownFilter
           options={FILTER_OPTIONS}
           selectedValue={filter}
           onValueChange={setFilter}
         />
-      </View>
+      </ActivityToolbar>
 
-      {/* Items List */}
       <FlatList
         data={filteredBids}
         keyExtractor={(item) => item.id}
@@ -117,8 +87,8 @@ export default function MyBidsScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="hammer-outline" size={48} color={Colors.textSecondary} />
+          <View style={styles.emptyCard}>
+            <Ionicons name="hammer-outline" size={40} color={Colors.cardTime} />
             <Text style={styles.emptyText}>No tenés pujas en esta categoría.</Text>
           </View>
         }
@@ -130,59 +100,30 @@ export default function MyBidsScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.background,
-  },
-  titleWrap: {
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  titleCapsule: {
-    backgroundColor: '#292852', // Dark blue/violet capsule
-    paddingHorizontal: 60,
-    paddingVertical: 12,
-    borderRadius: 24,
-    width: '90%',
-    alignItems: 'center',
-  },
-  titleText: {
-    fontFamily: Fonts.title,
-    fontSize: FontSize.lg,
-    color: Colors.white,
-    letterSpacing: 0.5,
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  backCircleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#EFEFEF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  backCircleBtnPressed: {
-    backgroundColor: '#E5E5E5',
+    backgroundColor: Colors.homeBackground,
   },
   listContent: {
+    paddingTop: 4,
     paddingBottom: 24,
   },
-  emptyContainer: {
+  emptyCard: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   emptyText: {
     fontFamily: Fonts.body,
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    color: Colors.cardTime,
     marginTop: 12,
     textAlign: 'center',
   },
