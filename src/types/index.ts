@@ -153,11 +153,19 @@ export type RootStackParamList = {
   Main: undefined;
   AuctionDetail: { auctionId: string };
   ConfirmBid: { auctionId: string; amount: number };
-  LoginWall: undefined;
-  ChatList: undefined;
-  ChatDetail: { conversationId: string };
+};
+
+export type HomeStackParamList = {
+  HomeMain: undefined;
   UploadItem: undefined;
   ItemUploaded: undefined;
+  ChatList: undefined;
+  ChatDetail: { conversationId: string };
+  LoginWall: undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
   AddressList: undefined;
   AddAddress: undefined;
   PaymentMethods: undefined;

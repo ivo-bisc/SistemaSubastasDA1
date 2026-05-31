@@ -15,11 +15,18 @@ import { CategorySection, HomeHeader } from '../../components/home';
 import { Colors, Fonts, FontSize, Layout } from '../../constants';
 import { MOCK_HOME_CATEGORIES } from '../../data/mockHomeCatalog';
 import { useAuthStore } from '../../stores';
-import type { MainTabParamList, RootStackParamList } from '../../types';
+import type {
+  HomeStackParamList,
+  MainTabParamList,
+  RootStackParamList,
+} from '../../types';
 
 type HomeNav = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'Home'>,
-  StackNavigationProp<RootStackParamList>
+  StackNavigationProp<HomeStackParamList, 'HomeMain'>,
+  CompositeNavigationProp<
+    BottomTabNavigationProp<MainTabParamList>,
+    StackNavigationProp<RootStackParamList>
+  >
 >;
 
 export default function HomeScreen() {
@@ -29,14 +36,10 @@ export default function HomeScreen() {
 
   const showPrice = isAuthenticated;
 
-  const openRoot = (screen: keyof RootStackParamList) => {
-    navigation.getParent()?.navigate(screen as never);
-  };
-
-  const handleItemPress = (itemId: string) => {
-    openRoot('AuctionDetail');
-    // auctionId disponible cuando se conecte la API
-    void itemId;
+  const openAuction = (itemId: string) => {
+    navigation.getParent()?.getParent()?.navigate('AuctionDetail', {
+      auctionId: itemId,
+    });
   };
 
   return (
@@ -44,8 +47,8 @@ export default function HomeScreen() {
       <HomeHeader
         isLoggedIn={isAuthenticated}
         onIngresar={logout}
-        onMenuPress={() => navigation.navigate('Profile')}
-        onChatPress={() => openRoot('ChatList')}
+        onMenuPress={() => navigation.getParent()?.navigate('Profile')}
+        onChatPress={() => navigation.navigate('ChatList')}
       />
 
       <ScrollView
@@ -58,7 +61,7 @@ export default function HomeScreen() {
             key={category.id}
             category={category}
             showPrice={showPrice}
-            onItemPress={handleItemPress}
+            onItemPress={openAuction}
           />
         ))}
 
@@ -67,7 +70,7 @@ export default function HomeScreen() {
             styles.consignBtn,
             pressed && styles.consignPressed,
           ]}
-          onPress={() => openRoot('UploadItem')}
+          onPress={() => navigation.navigate('UploadItem')}
         >
           <Text style={styles.consignText}>Subastá tu artículo</Text>
         </Pressable>

@@ -32,8 +32,10 @@ export const Colors = {
   tabBar: '#FFFFFF',
   /** Tab inactivo */
   tabInactive: '#8E8F8F',
-  /** Botón Ingresar (home invitado) */
+  /** Botón Ingresar / violeta subasta */
   loginButton: '#292852',
+  /** Fondo violeta AuctionDetail */
+  auctionViolet: '#292852',
   /** Fondo home */
   homeBackground: '#F0F0F0',
   /** Precio en card de subasta */

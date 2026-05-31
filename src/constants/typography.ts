@@ -26,6 +26,8 @@ export const FontWeight = {
 
 export const Fonts = {
   title: 'Sora_700Bold',
+  soraBold: 'Sora_700Bold',
+  sora: 'Sora_400Regular',
   input: 'Inter_700Bold',
   body: 'Inter_400Regular',
   bodyBold: 'Inter_700Bold',
