@@ -10,9 +10,13 @@ export const bidService = {
     return apiClient.get(Endpoints.BIDS.CURRENT(auctionId));
   },
 
-  placeBid: async (auctionId: string, amount: number) => {
-    // TODO: implementar
-    return apiClient.post(Endpoints.BIDS.PLACE(auctionId), { amount });
+  placeBid: async (
+    auctionId: string,
+    itemId: number,
+    monto: number,
+    medioPagoId: number
+  ) => {
+    return apiClient.post(Endpoints.BIDS.PLACE(auctionId), { itemId, monto, medioPagoId });
   },
 
   getBidHistory: async (auctionId: string) => {

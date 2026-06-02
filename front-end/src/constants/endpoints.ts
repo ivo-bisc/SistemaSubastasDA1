@@ -51,9 +51,6 @@ export const Endpoints = {
   // ── Payment Methods ────────────────────────────────────
   PAYMENTS: {
     METHODS: '/usuarios/medios-pago',
-    ADD_CARD: '/payment-methods/card',
-    ADD_BANK_ACCOUNT: '/payment-methods/bank-account',
-    ADD_CHECK: '/payment-methods/check',
     DELETE: (id: string) => `/usuarios/medios-pago/${id}`,
   },
 

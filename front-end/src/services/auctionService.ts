@@ -43,9 +43,8 @@ export const auctionService = {
     };
   },
 
-  connectToAuction: async (id: string) => {
-    // TODO: implementar
-    return apiClient.post(Endpoints.AUCTIONS.CONNECT(id));
+  connectToAuction: async (id: string, medioPagoId: number) => {
+    return apiClient.post(Endpoints.AUCTIONS.CONNECT(id), { medioPagoId });
   },
 
   disconnectFromAuction: async (id: string) => {

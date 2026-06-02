@@ -1,45 +1,34 @@
 import apiClient from './apiClient';
 import { Endpoints } from '../constants';
 
-/**
- * Servicio de métodos de pago
- */
+export interface MedioPagoRequest {
+  tipo: 'TARJETA_CREDITO' | 'CUENTA_BANCARIA' | 'CHEQUE_CERTIFICADO';
+  alias: string;
+  moneda: 'ARS' | 'USD';
+  // TARJETA_CREDITO
+  numeroTarjeta?: string;
+  titular?: string;
+  vencimiento?: string;
+  tipoTarjeta?: string;
+  // CUENTA_BANCARIA
+  numeroCuenta?: string;
+  banco?: string;
+  tipoCuenta?: string;
+  cbu?: string;
+  // CHEQUE_CERTIFICADO
+  montoCheque?: number;
+}
+
 export const paymentService = {
   getPaymentMethods: async () => {
-    // TODO: implementar
     return apiClient.get(Endpoints.PAYMENTS.METHODS);
   },
 
-  addCard: async (data: {
-    cardNumber: string;
-    cardHolder: string;
-    expirationDate: string;
-    cvv: string;
-  }) => {
-    // TODO: implementar
-    return apiClient.post(Endpoints.PAYMENTS.ADD_CARD, data);
-  },
-
-  addBankAccount: async (data: {
-    bankName: string;
-    accountNumber: string;
-    routingNumber: string;
-  }) => {
-    // TODO: implementar
-    return apiClient.post(Endpoints.PAYMENTS.ADD_BANK_ACCOUNT, data);
-  },
-
-  addCheck: async (data: {
-    bankName: string;
-    checkNumber: string;
-    amount: number;
-  }) => {
-    // TODO: implementar
-    return apiClient.post(Endpoints.PAYMENTS.ADD_CHECK, data);
+  addPaymentMethod: async (data: MedioPagoRequest) => {
+    return apiClient.post(Endpoints.PAYMENTS.METHODS, data);
   },
 
   deletePaymentMethod: async (id: string) => {
-    // TODO: implementar
     return apiClient.delete(Endpoints.PAYMENTS.DELETE(id));
   },
 };

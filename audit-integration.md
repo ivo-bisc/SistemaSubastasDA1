@@ -99,7 +99,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 | `/subastas` | GET | ✅ | |
 | `/subastas/{id}` | GET | ✅ | |
 | `/subastas/{id}/catalogo` | GET | ✅ | |
-| `/subastas/{id}/conectar` | POST | ✅ | Path correcto; contrato roto (ver sección 3) |
+| `/subastas/{id}/conectar` | POST | ✅ | Contrato corregido: body `{ medioPagoId }` |
 | `/subastas/{id}/desconectar` | POST | ✅ | |
 
 ### BIDS
@@ -107,7 +107,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 | Frontend path | Método | Estado | Observación |
 |---|---|---|---|
 | `/subastas/{auctionId}/pujas/estado` | GET | ✅ | |
-| `/subastas/{auctionId}/pujas` | POST | ✅ | Path correcto; contrato roto (ver sección 3) |
+| `/subastas/{auctionId}/pujas` | POST | ✅ | Contrato corregido: body `{ itemId, monto, medioPagoId }` |
 | `/subastas/{auctionId}/pujas/historial` | GET | ✅ | |
 
 ### PAYMENTS
@@ -115,9 +115,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 | Frontend path | Método | Estado | Observación |
 |---|---|---|---|
 | `/usuarios/medios-pago` | GET | ✅ | |
-| `/payment-methods/card` | POST | ❌ | Backend usa `POST /usuarios/medios-pago` unificado con campo `tipo` |
-| `/payment-methods/bank-account` | POST | ❌ | Ídem |
-| `/payment-methods/check` | POST | ❌ | Ídem |
+| `/usuarios/medios-pago` | POST | ✅ | Corregido: `addPaymentMethod(MedioPagoRequest)` unificado; paths incorrectos eliminados |
 | `/usuarios/medios-pago/{id}` | DELETE | ✅ | |
 
 ### CONSIGNMENT
@@ -198,39 +196,30 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 
 | Campo | Frontend envía | Backend espera | Estado |
 |---|---|---|---|
-| `medioPagoId` | NO enviado (body vacío) | `medioPagoId` @NotNull Long | ❌ Campo obligatorio faltante |
+| `medioPagoId` | `medioPagoId: number` | `medioPagoId` @NotNull Long | ✅ Corregido |
 
-`auctionService.ts` llama `apiClient.post(url)` sin body — el backend rechazará con 400.
+`auctionService.connectToAuction(id, medioPagoId)` — firma y body actualizados.
 
 ### `POST /subastas/{id}/pujas`
 
 | Campo | Frontend envía | Backend espera | Estado |
 |---|---|---|---|
-| `amount` | `amount: number` | `monto: BigDecimal` | ❌ Nombre de campo distinto |
-| `itemId` | NO enviado | `itemId` @NotNull @Positive | ❌ Campo obligatorio faltante |
-| `medioPagoId` | NO enviado | `medioPagoId` @NotNull @Positive | ❌ Campo obligatorio faltante |
+| `monto` | `monto: number` | `monto: BigDecimal` | ✅ Corregido (era `amount`) |
+| `itemId` | `itemId: number` | `itemId` @NotNull @Positive | ✅ Corregido |
+| `medioPagoId` | `medioPagoId: number` | `medioPagoId` @NotNull @Positive | ✅ Corregido |
 
-### `POST /usuarios/medios-pago` (agregar tarjeta)
+`bidService.placeBid(auctionId, itemId, monto, medioPagoId)` — firma y body actualizados.
 
-Frontend (`paymentService.ts`) envía a `/payment-methods/card`:
-```json
-{ "cardNumber": "...", "cardHolder": "...", "expirationDate": "...", "cvv": "..." }
-```
+### `POST /usuarios/medios-pago` (agregar medio de pago)
 
-Backend espera en `POST /usuarios/medios-pago`:
-```json
-{
-  "tipo": "TARJETA_CREDITO",
-  "alias": "...",
-  "moneda": "ARS|USD",
-  "numeroTarjeta": "...",
-  "titular": "...",
-  "vencimiento": "...",
-  "tipoTarjeta": "..."
-}
-```
+| Campo | Frontend envía | Backend espera | Estado |
+|---|---|---|---|
+| `tipo` | `'TARJETA_CREDITO' \| 'CUENTA_BANCARIA' \| 'CHEQUE_CERTIFICADO'` | `TipoMedioPago` enum | ✅ Corregido |
+| `alias` | `string` | `alias` @NotBlank | ✅ Corregido |
+| `moneda` | `'ARS' \| 'USD'` | `Moneda` enum | ✅ Corregido |
+| campos por tipo | opcionales según `tipo` | opcionales según `tipo` | ✅ Corregido |
 
-❌ Path incorrecto + campos distintos en los 3 tipos (tarjeta, banco, cheque).
+`paymentService.addPaymentMethod(MedioPagoRequest)` — reemplaza los 3 métodos separados (`addCard`, `addBankAccount`, `addCheck`) y sus paths incorrectos. Constantes huérfanas eliminadas de `endpoints.ts`.
 
 ### `GET /subastas` — response
 
@@ -332,15 +321,15 @@ Definidos en `SecurityConfig.java`:
 | **Variables de entorno backend** | ✅ OK | Ninguna |
 | **Variables de entorno frontend** | ⚠️ Pendiente | URL resuelta. Falta cambiar `EXPO_PUBLIC_USE_MOCKS=false` para deshabilitar mocks |
 | **Endpoints que coinciden (path)** | ✅ 18 de 29 | — |
-| **Endpoints inexistentes en backend** | ❌ 5 paths | Eliminar `/auth/register/step3`, `/catalog/items`, `/payment-methods/{card,bank-account,check}` del frontend |
+| **Endpoints inexistentes en backend** | ⚠️ 2 paths restantes | `/auth/register/step3`, `/catalog/items` — los 3 `/payment-methods/...` fueron eliminados |
 | **Endpoints del backend sin frontend** | ❌ 3 endpoints | Implementar chat (GET/POST `compras/{id}/chat`) y entrega (PATCH `compras/{id}/entrega`) |
 | **WebSocket STOMP** | ❌ No integrado | El backend tiene STOMP completo; el frontend no tiene cliente STOMP |
 | **Contrato registro paso 1** | ❌ Roto | Reescribir: cambiar `firstName/lastName` → `nombre/apellido`, agregar `numeroDni`, `domicilioLegal`, `paisOrigen`, mover `password` al paso 2, implementar multipart |
 | **Contrato registro paso 2** | ❌ Roto | Reescribir: agregar `tokenEmail` + `email` + `password`; quitar `dni`, `phone`, `address` |
 | **Contrato `POST /auth/register/step3`** | ❌ Roto | Eliminar — este endpoint no existe |
-| **Contrato `POST /subastas/{id}/conectar`** | ❌ Roto | Agregar `medioPagoId` en el body |
-| **Contrato `POST /subastas/{id}/pujas`** | ❌ Roto | Cambiar `amount` → `monto`; agregar `itemId` y `medioPagoId` |
-| **Contrato `POST /usuarios/medios-pago`** | ❌ Roto | Unificar los 3 endpoints en uno; adaptar campos al DTO `MedioPagoRequest` |
+| **Contrato `POST /subastas/{id}/conectar`** | ✅ Resuelto | `connectToAuction(id, medioPagoId)` envía `{ medioPagoId }` |
+| **Contrato `POST /subastas/{id}/pujas`** | ✅ Resuelto | `placeBid(auctionId, itemId, monto, medioPagoId)` envía los 3 campos correctos |
+| **Contrato `POST /usuarios/medios-pago`** | ✅ Resuelto | `addPaymentMethod(MedioPagoRequest)` unificado; paths incorrectos y constantes huérfanas eliminados |
 | **`PUT /usuarios/perfil`** | ❌ Roto | El backend no expone este endpoint; definir si se implementa |
 | **Login (autenticación real)** | ✅ Resuelto | `LoginScreen.tsx` llama a `authService.login()`, guarda JWT real. Verificado en web y emulador |
 | **Mocks hardcodeados en screens** | ❌ 5 archivos | `HomeScreen`, `AuctionDetailScreen`, `MyBidsScreen`, `MyAuctionsScreen`, `profileStore` usan mocks sin condicional |
