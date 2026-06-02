@@ -1,16 +1,10 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Maven
+target/
+*.class
+build/
+.gradle/
 
-# dependencies
-node_modules/
-
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
-
-# Native
-.kotlin/
+# Native / mobile (ignored here, managed in front-end/)
 *.orig.*
 *.jks
 *.p8
@@ -18,34 +12,20 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
 # macOS
 .DS_Store
 *.pem
 
-# local env files
+# Local env files
 .env
 .env*.local
 
-# editor
+# Editor
 .vscode/
+.idea/
 
-# typescript
+# TypeScript
 *.tsbuildinfo
-
-# generated native folders
-/ios
-/android
 
 # Claude AI (local memory, no subir)
 .claude/
-
-# Maven build output
-target/
