@@ -12,6 +12,7 @@ import {
 } from '../../components/auth';
 import { Colors, Fonts, FontSize } from '../../constants';
 import { useAuthStore } from '../../stores';
+import { authService } from '../../services';
 import type { AuthStackParamList } from '../../types';
 
 type Nav = StackNavigationProp<AuthStackParamList, 'Login'>;
@@ -26,6 +27,8 @@ export default function LoginScreen() {
     password: false,
   });
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const usernameValid = username.trim().length > 0;
   const passwordValid = password.trim().length > 0;
@@ -34,7 +37,7 @@ export default function LoginScreen() {
     [usernameValid, passwordValid]
   );
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setSubmitAttempted(true);
     setTouched({ username: true, password: true });
 
@@ -42,17 +45,32 @@ export default function LoginScreen() {
       return;
     }
 
-    login(
-      {
-        id: '1',
-        email: username.trim(),
-        firstName: 'Usuario',
-        lastName: 'Demo',
-        dni: '',
-        status: 'approved',
-      },
-      'demo-token'
-    );
+    setLoading(true);
+    setLoginError(null);
+    try {
+      const response = await authService.login(username.trim(), password);
+      const { token, user: u } = response.data;
+      const statusMap: Record<string, 'pending' | 'approved' | 'rejected'> = {
+        APROBADO: 'approved',
+        PENDIENTE_VERIFICACION: 'pending',
+        BLOQUEADO: 'rejected',
+      };
+      login(
+        {
+          id: String(u.id),
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          dni: '',
+          status: statusMap[u.status] ?? 'pending',
+        },
+        token
+      );
+    } catch {
+      setLoginError('Email o contraseña incorrectos.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,11 +115,14 @@ export default function LoginScreen() {
         </AuthLink>
       </View>
 
+      {loginError ? (
+        <Text style={styles.errorText}>{loginError}</Text>
+      ) : null}
       <View style={styles.spacer} />
       <PrimaryButton
         label="Continuar"
         onPress={handleContinue}
-        disabled={!isFormValid}
+        disabled={!isFormValid || loading}
       />
     </AuthScreen>
   );

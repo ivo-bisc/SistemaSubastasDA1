@@ -1,8 +1,9 @@
 # Auditoría de integración Backend ↔ Frontend
 
-> Fecha: 2026-06-02  
+> Auditoría: 2026-06-02  
+> Última actualización: 2026-06-02  
 > Alcance: monorepo `SistemaSubastasDA1` — Spring Boot 3.3.4 + Expo/React Native  
-> Método: análisis estático (solo lectura, sin modificaciones)
+> Método: análisis estático + fixes aplicados en la misma sesión
 
 ---
 
@@ -12,29 +13,25 @@
 
 ### ¿El baseURL de apiClient apunta correctamente al backend?
 
-**⚠️ BUG ACTIVO**
+**✅ CORREGIDO** — `front-end/src/services/apiClient.ts`
 
-`front-end/src/services/apiClient.ts` línea 4:
+`apiClient.ts` ahora detecta la plataforma automáticamente:
 ```ts
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8080/api/v1';
+const DEFAULT_URL =
+  Platform.OS === 'web'
+    ? 'http://localhost:8080/api/v1'
+    : 'http://10.0.2.2:8080/api/v1';
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 ```
 
-El operador `??` solo aplica el fallback si la variable es `null` o `undefined`. Como `front-end/.env` define la variable con valor `http://10.0.2.2:8080`, el fallback NUNCA se usa. El `BASE_URL` efectivo es `http://10.0.2.2:8080` — **sin el prefijo `/api/v1`**.
-
-Resultado: todas las llamadas van a `http://10.0.2.2:8080/auth/login` en lugar de `http://10.0.2.2:8080/api/v1/auth/login` → 404 en todos los endpoints.
+- **Expo web** → `localhost:8080/api/v1`
+- **Emulador Android** → `10.0.2.2:8080/api/v1`
+- **Override manual** → definir `EXPO_PUBLIC_API_URL` en `.env`
 
 ### ¿El prefijo `/api/v1` está configurado?
 
-**❌ FALTANTE en `.env`**
-
-- El backend expone todos sus endpoints bajo `/api/v1` (definido en cada `@RequestMapping` del controller).
-- `endpoints.ts` usa paths relativos sin el prefijo (correcto, delega al baseURL).
-- El prefijo existe en el fallback de `apiClient.ts` pero **no en `.env`**.
-
-Corrección necesaria en `front-end/.env`:
-```
-EXPO_PUBLIC_API_URL=http://10.0.2.2:8080/api/v1
-```
+**✅ CORREGIDO** — el prefijo queda en el `DEFAULT_URL` de `apiClient.ts`. La variable `EXPO_PUBLIC_API_URL` fue eliminada de `.env` para que la detección automática tome efecto.
 
 ### ¿CORS está configurado en Spring Boot?
 
@@ -56,7 +53,7 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:8080/api/v1
 | Backend | `JWT_SECRET` | Default de desarrollo | ✅ |
 | Backend | `jwt.expiration` | `86400000` (24h) | ✅ |
 | Backend | `cors.allowed-origins` | Configurable via env | ✅ |
-| Frontend | `EXPO_PUBLIC_API_URL` | `http://10.0.2.2:8080` (falta `/api/v1`) | ❌ |
+| Frontend | `EXPO_PUBLIC_API_URL` | Eliminada del `.env`; detección automática por plataforma en `apiClient.ts` | ✅ |
 | Frontend | `EXPO_PUBLIC_USE_MOCKS` | `true` (mocks activos) | ⚠️ |
 
 ---
@@ -278,16 +275,7 @@ Lee el token de `useAuthStore.getState().token`. Se aplica a todos los requests 
 
 ### ¿Hay endpoints protegidos que el frontend llama sin token?
 
-**❌ CRÍTICO** — `LoginScreen.tsx` (líneas 45-55) nunca llama a `authService.login()`. En su lugar, hardcodea:
-
-```ts
-login(
-  { id: '1', email: username.trim(), firstName: 'Usuario', lastName: 'Demo', ... },
-  'demo-token'   // ← token falso
-);
-```
-
-El token `'demo-token'` no es un JWT firmado válido. El backend lo rechazará con 401 en cualquier endpoint protegido (todos excepto los públicos de auth y catálogo). En la práctica, la app nunca puede hacer una llamada autenticada real.
+**✅ CORREGIDO** — `LoginScreen.tsx` ahora llama a `authService.login(email, password)`, recibe el JWT real del backend y lo guarda en el store. Verificado con `juan@test.com` / `password123`.
 
 ### Manejo de 401
 
@@ -339,10 +327,10 @@ Definidos en `SecurityConfig.java`:
 
 | Área | Estado | Acción requerida |
 |---|---|---|
-| **baseURL con prefijo `/api/v1`** | ❌ Roto | Cambiar `.env`: `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080/api/v1` |
+| **baseURL con prefijo `/api/v1`** | ✅ Resuelto | `apiClient.ts` detecta plataforma: `localhost` en web, `10.0.2.2` en Android |
 | **CORS (Spring Boot)** | ✅ OK | Ninguna |
 | **Variables de entorno backend** | ✅ OK | Ninguna |
-| **Variables de entorno frontend** | ⚠️ Incompleto | Corregir URL; cambiar `EXPO_PUBLIC_USE_MOCKS=false` para pruebas reales |
+| **Variables de entorno frontend** | ⚠️ Pendiente | URL resuelta. Falta cambiar `EXPO_PUBLIC_USE_MOCKS=false` para deshabilitar mocks |
 | **Endpoints que coinciden (path)** | ✅ 18 de 29 | — |
 | **Endpoints inexistentes en backend** | ❌ 5 paths | Eliminar `/auth/register/step3`, `/catalog/items`, `/payment-methods/{card,bank-account,check}` del frontend |
 | **Endpoints del backend sin frontend** | ❌ 3 endpoints | Implementar chat (GET/POST `compras/{id}/chat`) y entrega (PATCH `compras/{id}/entrega`) |
@@ -354,5 +342,5 @@ Definidos en `SecurityConfig.java`:
 | **Contrato `POST /subastas/{id}/pujas`** | ❌ Roto | Cambiar `amount` → `monto`; agregar `itemId` y `medioPagoId` |
 | **Contrato `POST /usuarios/medios-pago`** | ❌ Roto | Unificar los 3 endpoints en uno; adaptar campos al DTO `MedioPagoRequest` |
 | **`PUT /usuarios/perfil`** | ❌ Roto | El backend no expone este endpoint; definir si se implementa |
-| **Login (autenticación real)** | ❌ Crítico | `LoginScreen.tsx` debe llamar a `authService.login()` en lugar de hardcodear `'demo-token'` |
+| **Login (autenticación real)** | ✅ Resuelto | `LoginScreen.tsx` llama a `authService.login()`, guarda JWT real. Verificado en web y emulador |
 | **Mocks hardcodeados en screens** | ❌ 5 archivos | `HomeScreen`, `AuctionDetailScreen`, `MyBidsScreen`, `MyAuctionsScreen`, `profileStore` usan mocks sin condicional |
