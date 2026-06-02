@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Platform,
   Pressable,
@@ -9,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AuctionBottomBar,
@@ -20,23 +21,37 @@ import {
   ConfirmBidModal,
 } from '../../components/auction';
 import { Colors, Fonts, FontSize } from '../../constants';
-import { MOCK_AUCTION_DETAIL } from '../../data/mockAuctionDetail';
+import { auctionService } from '../../services';
+import type { AuctionDetail } from '../../types';
 
 const IMAGE_HEIGHT = 280;
 const DESCRIPTION_MAX_HEIGHT = 400;
 
 export default function AuctionDetailScreen() {
   const navigation = useNavigation();
-  const auction = MOCK_AUCTION_DETAIL;
+  const route = useRoute<any>();
+  const auctionId: string | undefined = route.params?.auctionId;
+
+  const [auction, setAuction] = useState<AuctionDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!auctionId) return;
+    setLoading(true);
+    auctionService
+      .getAuctionDetail(auctionId)
+      .then((data) => setAuction(data))
+      .catch(() => setFetchError('No se pudo cargar la subasta.'))
+      .finally(() => setLoading(false));
+  }, [auctionId]);
 
   const [descriptionOpen, setDescriptionOpen] = useState(false);
-  const [selectedAmount, setSelectedAmount] = useState(
-    auction.quickBidAmounts[0]
-  );
+  const [selectedAmount, setSelectedAmount] = useState(0);
   const [customBidMode, setCustomBidMode] = useState(false);
   const [customBidValue, setCustomBidValue] = useState('');
   const [confirmVisible, setConfirmVisible] = useState(false);
-  const [pendingAmount, setPendingAmount] = useState(selectedAmount);
+  const [pendingAmount, setPendingAmount] = useState(0);
 
   // Animated values
   const descHeight = useRef(new Animated.Value(0)).current;
@@ -69,7 +84,7 @@ export default function AuctionDetailScreen() {
     return Number.isFinite(parsed) ? parsed : 0;
   }, [customBidValue]);
 
-  const minBidAmount = auction.lastBid;
+  const minBidAmount = auction?.currentPrice ?? 0;
   const isCustomBidValid = effectiveCustomAmount > minBidAmount;
 
   const handlePlaceBid = () => {
@@ -100,6 +115,29 @@ export default function AuctionDetailScreen() {
     navigation.goBack();
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={[]}>
+        <ActivityIndicator size="large" color={Colors.auctionViolet} style={{ marginTop: 80 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fetchError || !auction) {
+    return (
+      <SafeAreaView style={styles.safe} edges={[]}>
+        <Pressable style={{ padding: 16 }} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={Colors.black} />
+        </Pressable>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontFamily: Fonts.sora, fontSize: FontSize.base, color: Colors.black }}>
+            {fetchError ?? 'Subasta no encontrada.'}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
       <View style={styles.container}>
@@ -120,8 +158,8 @@ export default function AuctionDetailScreen() {
           <Pressable style={styles.blueCard} onPress={toggleDescription}>
             <AuctionProductInfo
               title={auction.title}
-              sellerName={auction.sellerName}
-              sellerAvatarColor={auction.sellerAvatarColor}
+              sellerName={auction.seller.name}
+              sellerAvatarColor="#FC9905"
               status={auction.status}
               lotNumber="#029"
               titleSize={FontSize.xxl}
@@ -146,10 +184,10 @@ export default function AuctionDetailScreen() {
           {/* White Card (Bid Stats & Bidders History List) */}
           <View style={styles.whiteCard}>
             <AuctionStatsCards
-              initialPrice={auction.initialPrice}
-              lastBid={auction.lastBid}
-              currency={auction.currency}
-              timeRemaining={auction.timeRemaining}
+              initialPrice={auction.startingPrice}
+              lastBid={auction.currentPrice}
+              currency="ARS"
+              timeRemaining=""
             />
 
             <View style={styles.liveHeader}>
@@ -158,13 +196,9 @@ export default function AuctionDetailScreen() {
                 <Text style={styles.liveTitle}>Subasta en vivo</Text>
               </View>
               <Text style={styles.offerCount}>
-                {auction.offerCount} Ofertas
+                {auction.totalBids} Ofertas
               </Text>
             </View>
-
-            {auction.bids.map((bid) => (
-              <BidHistoryRow key={bid.id} bid={bid} variant="light" />
-            ))}
           </View>
 
           {/* Large bottom spacer to prevent sticky bottom bar occlusion */}
@@ -178,11 +212,11 @@ export default function AuctionDetailScreen() {
         {/* Fixed Floating Bottom Bar */}
         <View style={styles.fixedBottomBar}>
           <AuctionBottomBar
-            quickBidAmounts={auction.quickBidAmounts}
+            quickBidAmounts={[]}
             selectedAmount={selectedAmount}
             customBidMode={customBidMode}
             customBidValue={customBidValue}
-            currency={auction.currency}
+            currency="ARS"
             minBidAmount={minBidAmount}
             isCustomBidValid={isCustomBidValid}
             onSelectQuickBid={setSelectedAmount}
@@ -201,7 +235,7 @@ export default function AuctionDetailScreen() {
       <ConfirmBidModal
         visible={confirmVisible}
         amount={pendingAmount}
-        currency={auction.currency}
+        currency="ARS"
         onConfirm={handleConfirmBid}
         onCancel={() => setConfirmVisible(false)}
       />

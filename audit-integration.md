@@ -237,7 +237,7 @@ Status map en `auctionService.ts`: `PROXIMA→upcoming, ABIERTA→active, CERRAD
 | `items[0].startingPrice` | `ItemResponse.startingPrice` | ✅ |
 | `items[0].currentPrice` | `ItemResponse.currentPrice` | ✅ |
 
-`auctionService.getAuctionDetail()` está correctamente implementado y el mapeo de campos coincide. Sin embargo, `AuctionDetailScreen.tsx` nunca llama a este servicio — usa `MOCK_AUCTION_DETAIL` hardcodeado.
+`auctionService.getAuctionDetail()` está correctamente implementado y el mapeo de campos coincide. `AuctionDetailScreen.tsx` ahora lee `auctionId` de `route.params` y llama al servicio real.
 
 ### `GET /usuarios/perfil` — response
 
@@ -298,11 +298,11 @@ Definidos en `SecurityConfig.java`:
 
 | Archivo | Mock usado | Impacto |
 |---|---|---|
-| `HomeScreen.tsx` línea 54 | `MOCK_HOME_CATEGORIES` (3 categorías, 9 items ficticios) | El Home nunca llama a ningún endpoint de la API |
-| `AuctionDetailScreen.tsx` línea 30 | `MOCK_AUCTION_DETAIL` (subasta única hardcodeada) | El detalle nunca llama a `auctionService.getAuctionDetail()`, aunque el servicio está implementado |
-| `MyBidsScreen.tsx` línea 17 | `MOCK_BIDS` (4 pujas ficticias) | La pantalla de mis pujas nunca llama a la API |
-| `MyAuctionsScreen.tsx` línea 20 | `MOCK_AUCTIONS` (5 subastas ficticias) | Combina mocks con `userSubmissions` del store; nunca consulta el backend |
-| `profileStore.ts` líneas 37-46 | `MOCK_USER`, `MOCK_ADDRESSES`, `MOCK_CARDS` | El store se inicializa con datos falsos; `GET /usuarios/perfil` nunca se llama |
+| `HomeScreen.tsx` | ~~`MOCK_HOME_CATEGORIES`~~ | ✅ Reemplazado — llama a `auctionService.getAuctions()`, muestra loading/error |
+| `AuctionDetailScreen.tsx` | ~~`MOCK_AUCTION_DETAIL`~~ | ✅ Reemplazado — lee `route.params.auctionId`, llama a `auctionService.getAuctionDetail(id)` |
+| `MyBidsScreen.tsx` | `MOCK_BIDS` (4 pujas ficticias) | ❌ Pendiente — `metricsService` no devuelve la forma necesaria (`imageUrl`, `myBid`, `winning/losing`) |
+| `MyAuctionsScreen.tsx` | `MOCK_AUCTIONS` (5 subastas ficticias) | ❌ Pendiente — `consignService.getConsignaciones()` no existe |
+| `profileStore.ts` | `MOCK_USER`, `MOCK_ADDRESSES`, `MOCK_CARDS` | ❌ Pendiente — `username`/`avatarColor` no existen en backend; estructura de addresses/cards incompatible |
 
 ### ¿Hay algún mock que intercepta llamadas reales sin que sea obvio?
 
@@ -332,4 +332,4 @@ Definidos en `SecurityConfig.java`:
 | **Contrato `POST /usuarios/medios-pago`** | ✅ Resuelto | `addPaymentMethod(MedioPagoRequest)` unificado; paths incorrectos y constantes huérfanas eliminados |
 | **`PUT /usuarios/perfil`** | ❌ Roto | El backend no expone este endpoint; definir si se implementa |
 | **Login (autenticación real)** | ✅ Resuelto | `LoginScreen.tsx` llama a `authService.login()`, guarda JWT real. Verificado en web y emulador |
-| **Mocks hardcodeados en screens** | ❌ 5 archivos | `HomeScreen`, `AuctionDetailScreen`, `MyBidsScreen`, `MyAuctionsScreen`, `profileStore` usan mocks sin condicional |
+| **Mocks hardcodeados en screens** | ⚠️ 3 pendientes | `HomeScreen` y `AuctionDetailScreen` resueltos. Quedan: `MyBidsScreen`, `MyAuctionsScreen`, `profileStore` |

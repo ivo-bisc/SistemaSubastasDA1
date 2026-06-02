@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -11,7 +11,7 @@ import {
   HomeHeader,
 } from '../../components/home';
 import { Colors } from '../../constants';
-import { MOCK_HOME_CATEGORIES } from '../../data/mockHomeCatalog';
+import { auctionService } from '../../services';
 import { useAuthStore } from '../../stores';
 import type {
   HomeStackParamList,
@@ -32,8 +32,20 @@ export default function HomeScreen() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
   const [searchQuery, setSearchQuery] = useState('');
+  const [auctions, setAuctions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const showPrice = isAuthenticated;
+
+  useEffect(() => {
+    setLoading(true);
+    auctionService
+      .getAuctions()
+      .then((res) => setAuctions(res.data ?? []))
+      .catch(() => setError('No se pudieron cargar las subastas.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const requireAuth = (action: () => void) => {
     if (isAuthenticated) {
@@ -47,26 +59,32 @@ export default function HomeScreen() {
     requireAuth(() => navigation.navigate('LotDetail', { lotId }));
   };
 
+  const categories = useMemo(
+    () =>
+      auctions.map((s: any) => ({
+        id: String(s.id),
+        name: s.title,
+        description: s.description ?? '',
+        items: [
+          {
+            id: String(s.id),
+            title: s.description || s.title,
+            price: '',
+            timeRemaining: '',
+            imageUrl: '',
+          },
+        ],
+      })),
+    [auctions]
+  );
+
   const filteredCategories = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return MOCK_HOME_CATEGORIES;
-    }
-
-    return MOCK_HOME_CATEGORIES
-      .map((category) => ({
-        ...category,
-        items: category.items.filter((item) => {
-          const searchText = [category.name, item.title, item.price, item.timeRemaining]
-            .join(' ')
-            .toLowerCase();
-
-          return searchText.includes(normalizedQuery);
-        }),
-      }))
-      .filter((category) => category.items.length > 0);
-  }, [searchQuery]);
+    if (!normalizedQuery) return categories;
+    return categories.filter((c) =>
+      [c.name, c.description].join(' ').toLowerCase().includes(normalizedQuery)
+    );
+  }, [searchQuery, categories]);
 
   const openAuction = (itemId: string) => {
     requireAuth(() => {
@@ -93,7 +111,13 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredCategories.length > 0 ? (
+        {loading ? (
+          <ActivityIndicator size="large" color={Colors.black} style={{ marginTop: 40 }} />
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>{error}</Text>
+          </View>
+        ) : filteredCategories.length > 0 ? (
           filteredCategories.map((category) => (
             <CategorySection
               key={category.id}
