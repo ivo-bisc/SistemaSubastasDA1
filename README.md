@@ -10,11 +10,22 @@ Tobías Hernández
 
 ---
 
-## App — React Native (Expo)
+## Estructura del repositorio
+
+| Carpeta | Descripción |
+|---|---|
+| `front-end/` | App React Native (Expo) — cliente móvil |
+| `backend/` | API REST (Java/Spring) — en desarrollo |
+| `subastas-api.yaml` | Contrato OpenAPI del backend (raíz) |
+
+---
+
+## Front-end — React Native (Expo)
 
 Cliente móvil multiplataforma con **React Native + Expo**, **TypeScript**, **React Navigation** y **Zustand**.
 
 ```bash
+cd front-end
 npm install
 npm run web
 ```
@@ -22,6 +33,7 @@ npm run web
 En redes corporativas, si Expo falla al validar dependencias:
 
 ```powershell
+cd front-end
 $env:EXPO_OFFLINE="1"
 npx expo start --web --offline
 ```
@@ -30,9 +42,9 @@ Luego abrir **http://localhost:8081**. En la pantalla de acceso, usar **Ingresar
 
 | Carpeta / archivo | Descripción |
 |---|---|
-| `src/screens/` | Pantallas por módulo |
-| `src/navigation/` | Navegación (auth, tabs, modales) |
-| `src/services/` | Cliente API (stubs) |
+| `front-end/src/screens/` | Pantallas por módulo |
+| `front-end/src/navigation/` | Navegación (auth, tabs, modales) |
+| `front-end/src/services/` | Cliente API (stubs) |
 | `subastas-api.yaml` | Contrato OpenAPI del backend |
 
 ---

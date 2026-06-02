@@ -2,12 +2,15 @@
 
 # dependencies
 node_modules/
+front-end/node_modules/
 
 # Expo
 .expo/
+front-end/.expo/
 dist/
 web-build/
 expo-env.d.ts
+front-end/expo-env.d.ts
 
 # Native
 .kotlin/
@@ -20,6 +23,7 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+front-end/.metro-health-check*
 
 # debug
 npm-debug.*
@@ -33,13 +37,24 @@ yarn-error.*
 # local env files
 .env
 .env*.local
+front-end/.env
+front-end/.env*.local
 
 # editor
 .vscode/
 
 # typescript
 *.tsbuildinfo
+front-end/*.tsbuildinfo
 
 # generated native folders
 /ios
 /android
+front-end/ios
+front-end/android
+
+# backend
+backend/target/
+backend/.gradle/
+backend/build/
+*.class
