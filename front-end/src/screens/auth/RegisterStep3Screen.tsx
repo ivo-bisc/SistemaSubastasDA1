@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
+import { paymentService } from '../../services';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import {
@@ -53,6 +54,8 @@ export default function RegisterStep3Screen() {
   }, [cardName]);
 
   const formValid = cardNumberValid && securityValid && expirationValid && cardNameValid;
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   return (
     <AuthScreen>
@@ -118,14 +121,36 @@ export default function RegisterStep3Screen() {
         Más tarde
       </AuthLink>
 
+      {apiError ? (
+        <Text style={{ color: '#FF3B30', marginBottom: 8 }}>{apiError}</Text>
+      ) : null}
+
       <PrimaryButton
         label="Continuar"
-        onPress={() => {
+        onPress={async () => {
           setTouched({ cardNumber: true, securityCode: true, expiration: true, cardName: true });
-          if (formValid) navigation.navigate('PendingApproval');
+          if (!formValid) return;
+          setLoading(true);
+          setApiError(null);
+          try {
+            await paymentService.addPaymentMethod({
+              tipo: 'TARJETA_CREDITO',
+              alias: cardName,
+              moneda: 'ARS',
+              numeroTarjeta: cardNumber,
+              titular: cardName,
+              vencimiento: expiration,
+              tipoTarjeta: 'CREDITO',
+            });
+            navigation.navigate('PendingApproval');
+          } catch {
+            setApiError('No se pudo registrar la tarjeta. Intentá de nuevo.');
+          } finally {
+            setLoading(false);
+          }
         }}
         style={styles.button}
-        disabled={!formValid}
+        disabled={!formValid || loading}
       />
     </AuthScreen>
   );

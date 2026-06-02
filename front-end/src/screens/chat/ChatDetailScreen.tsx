@@ -2,36 +2,77 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  ActivityIndicator,
   StyleSheet,
   ScrollView,
   TextInput,
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors, FontSize, Fonts } from '../../constants';
+import { chatService } from '../../services/chatService';
+
+const formatTime = (ts: string) => {
+  const d = new Date(ts);
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+};
 
 export default function ChatDetailScreen() {
   const navigation = useNavigation<any>();
-  const initial = [
-    { id: 'm1', type: 'out', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin eros felis, tristique ultricies nibh a, luctus scelerisque nunc. Fusce cursus augue et metus facilisis mattis.', time: '7:20' },
-    { id: 'm2', type: 'in', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin eros felis, tristique ultricies nibh a, luctus scelerisque nunc. Fusce cursus augue et metus facilisis mattis.', time: '7:20' },
-  ];
+  const route = useRoute<any>();
+  const purchaseId: string | undefined = route.params?.purchaseId ?? route.params?.conversationId;
 
-  const [messages, setMessages] = useState(initial);
+  const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const scrollRef = useRef<any>(null);
 
   useEffect(() => {
-    // Scroll to bottom on mount
+    if (!purchaseId) return;
+    setLoading(true);
+    chatService
+      .getMessages(purchaseId)
+      .then((res) => {
+        const data: any[] = res.data ?? [];
+        setMessages(
+          data.map((m) => ({
+            id: String(m.mensajeId),
+            type: m.remitente === 'USUARIO' ? 'out' : 'in',
+            text: m.contenido,
+            time: formatTime(m.timestamp),
+          }))
+        );
+      })
+      .catch(() => setLoadError('No se pudieron cargar los mensajes.'))
+      .finally(() => setLoading(false));
+  }, [purchaseId]);
+
+  useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 0);
   }, []);
 
   useEffect(() => {
-    // Scroll to bottom whenever messages change
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.white} />
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: Colors.white, fontFamily: Fonts.sora }}>{loadError}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -91,6 +132,9 @@ export default function ChatDetailScreen() {
             const newMsg = { id: `m${Date.now()}`, type: 'out', text, time };
             setMessages((prev) => [...prev, newMsg]);
             setInputText('');
+            if (purchaseId) {
+              chatService.sendMessage(purchaseId, text).catch(() => {});
+            }
           }}
         >
           <Ionicons name="send" size={20} color={Colors.white} />

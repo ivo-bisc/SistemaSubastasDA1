@@ -147,9 +147,9 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 
 | Backend path | Método | Estado |
 |---|---|---|
-| `/compras/{compraId}/chat` | GET | ❌ Falta en frontend |
-| `/compras/{compraId}/chat` | POST | ❌ Falta en frontend |
-| `/compras/{compraId}/entrega` | PATCH | ❌ Falta en frontend |
+| `/compras/{compraId}/chat` | GET | ✅ Implementado — `chatService.getMessages(purchaseId)` |
+| `/compras/{compraId}/chat` | POST | ✅ Implementado — `chatService.sendMessage(purchaseId, text)` |
+| `/compras/{compraId}/entrega` | PATCH | ⚠️ Path agregado en `endpoints.ts` (`PURCHASES.DELIVERY`); sin servicio ni pantalla aún |
 
 ### WEBSOCKET STOMP — backend implementado, frontend ausente
 
@@ -290,9 +290,9 @@ Definidos en `SecurityConfig.java`:
 
 | Archivo | Mock | Comportamiento |
 |---|---|---|
-| `ChatListScreen.tsx` línea 69 | `MOCK_CHATS` (2 chats ficticios) | Usa mocks si `EXPO_PUBLIC_USE_MOCKS=true`; lista vacía si false |
+| `ChatListScreen.tsx` | `MOCK_CHATS` (2 chats ficticios) | ⚠️ Pendiente — el backend no expone listado de chats del usuario; TODO documentado en el archivo |
 
-**Actualmente**: `.env` tiene `EXPO_PUBLIC_USE_MOCKS=true` → ChatListScreen siempre muestra mocks.
+**Nota**: `ChatDetailScreen.tsx` ya llama a `chatService.getMessages()` y `sendMessage()` con datos reales. El listado queda en mock hasta que el backend implemente `GET /compras/chat` o similar.
 
 ### Mocks HARDCODEADOS — siempre activos, ignoran el flag
 
@@ -322,7 +322,7 @@ Definidos en `SecurityConfig.java`:
 | **Variables de entorno frontend** | ⚠️ Pendiente | URL resuelta. Falta cambiar `EXPO_PUBLIC_USE_MOCKS=false` para deshabilitar mocks |
 | **Endpoints que coinciden (path)** | ✅ 18 de 29 | — |
 | **Endpoints inexistentes en backend** | ⚠️ 2 paths restantes | `/auth/register/step3`, `/catalog/items` — los 3 `/payment-methods/...` fueron eliminados |
-| **Endpoints del backend sin frontend** | ❌ 3 endpoints | Implementar chat (GET/POST `compras/{id}/chat`) y entrega (PATCH `compras/{id}/entrega`) |
+| **Endpoints del backend sin frontend** | ⚠️ 1 pendiente | Chat GET/POST resueltos. Falta: lógica de pantalla para `PATCH /compras/{id}/entrega` |
 | **WebSocket STOMP** | ❌ No integrado | El backend tiene STOMP completo; el frontend no tiene cliente STOMP |
 | **Contrato registro paso 1** | ❌ Roto | Reescribir: cambiar `firstName/lastName` → `nombre/apellido`, agregar `numeroDni`, `domicilioLegal`, `paisOrigen`, mover `password` al paso 2, implementar multipart |
 | **Contrato registro paso 2** | ❌ Roto | Reescribir: agregar `tokenEmail` + `email` + `password`; quitar `dni`, `phone`, `address` |

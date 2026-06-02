@@ -46,6 +46,8 @@ export const Endpoints = {
   // ── Purchases ──────────────────────────────────────────
   PURCHASES: {
     DETAIL: (id: string) => `/usuarios/compras/${id}`,
+    CHAT: (id: string) => `/compras/${id}/chat`,
+    DELIVERY: (id: string) => `/compras/${id}/entrega`,
   },
 
   // ── Payment Methods ────────────────────────────────────

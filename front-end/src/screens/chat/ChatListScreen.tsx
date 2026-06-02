@@ -12,6 +12,12 @@ import { Colors, FontSize, Fonts } from '../../constants';
 
 const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
 
+// TODO: el backend no expone un endpoint de listado de chats del usuario.
+// Existe GET /compras/{compraId}/chat (por compra individual) pero no
+// GET /compras/chat ni similar. Cuando se implemente en el backend,
+// reemplazar MOCK_CHATS con chatService.getChats() y pasar purchaseId
+// real al navegar a ChatDetail.
+
 const MOCK_CHATS = [
   {
     id: '1',
