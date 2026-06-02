@@ -29,4 +29,9 @@ public class UsuarioResponse {
     private LocalDateTime fechaRegistro;
     @JsonProperty("pendingFines")
     private int multasPendientes;
+    @JsonProperty("dni")
+    private String numeroDni;
+    @JsonProperty("phone")
+    private String telefono;
+    private String avatarUrl;
 }

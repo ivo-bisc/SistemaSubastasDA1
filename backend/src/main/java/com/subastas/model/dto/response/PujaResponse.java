@@ -23,4 +23,8 @@ public class PujaResponse {
     private BigDecimal nuevaMejorOferta;
     @JsonProperty("bidderAlias")
     private String postorAlias;
+    @JsonProperty("auctionId")
+    private Long subastaId;
+    @JsonProperty("userId")
+    private Long usuarioId;
 }

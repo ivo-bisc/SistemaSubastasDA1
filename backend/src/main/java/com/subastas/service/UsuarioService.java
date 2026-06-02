@@ -121,6 +121,9 @@ public class UsuarioService {
                 .paisOrigen(u.getPaisOrigen())
                 .fechaRegistro(u.getFechaRegistro())
                 .multasPendientes(u.getMultasPendientes())
+                .numeroDni(u.getNumeroDni())
+                .telefono(u.getTelefono())
+                .avatarUrl(u.getAvatarUrl())
                 .build();
     }
 

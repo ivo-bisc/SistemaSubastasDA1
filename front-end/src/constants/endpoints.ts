@@ -31,6 +31,7 @@ export const Endpoints = {
   AUCTIONS: {
     LIST: '/auctions',
     DETAIL: (id: string) => `/auctions/${id}`,
+    CATALOG: (id: string) => `/auctions/${id}/catalog`,
     CONNECT: (id: string) => `/auctions/${id}/connect`,
     DISCONNECT: (id: string) => `/auctions/${id}/disconnect`,
   },

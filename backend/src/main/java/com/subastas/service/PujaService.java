@@ -183,6 +183,8 @@ public class PujaService {
                 .timestamp(puja.getTimestamp())
                 .nuevaMejorOferta(nuevaMejorOferta)
                 .postorAlias(alias)
+                .subastaId(puja.getSubasta().getId())
+                .usuarioId(puja.getUsuario().getId())
                 .build();
     }
 
@@ -221,6 +223,8 @@ public class PujaService {
                         .postorAlias(AliasUtil.generarAlias(p.getUsuario()))
                         .timestamp(p.getTimestamp())
                         .estado(p.getEstado())
+                        .subastaId(p.getSubasta().getId())
+                        .usuarioId(p.getUsuario().getId())
                         .build())
                 .collect(Collectors.toList());
     }

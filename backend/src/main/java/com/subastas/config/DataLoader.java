@@ -52,6 +52,7 @@ public class DataLoader implements CommandLineRunner {
                 .paisOrigen("Argentina")
                 .categoria(Categoria.PLATA)
                 .estado(EstadoUsuario.APROBADO)
+                .telefono("+54 11 1234-5678")
                 .build();
         postor1 = usuarioRepository.save(postor1);
 
@@ -65,6 +66,7 @@ public class DataLoader implements CommandLineRunner {
                 .paisOrigen("Argentina")
                 .categoria(Categoria.ORO)
                 .estado(EstadoUsuario.APROBADO)
+                .telefono("+54 11 8765-4321")
                 .build();
         postor2 = usuarioRepository.save(postor2);
 

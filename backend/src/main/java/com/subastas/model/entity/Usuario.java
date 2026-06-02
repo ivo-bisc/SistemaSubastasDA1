@@ -60,6 +60,11 @@ public class Usuario {
     @Column(name = "foto_dni_dorso")
     private String fotoDniDorso;
 
+    private String telefono;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Column(name = "multas_pendientes", nullable = false)
     @Builder.Default
     private int multasPendientes = 0;
