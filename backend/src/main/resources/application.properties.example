@@ -1,0 +1,70 @@
+# ============================================================
+# application.properties.example
+# Copiá este archivo a application.properties y completá los valores.
+# NUNCA commitees application.properties con credenciales reales.
+# ============================================================
+
+spring.application.name=subastas-api
+server.port=8080
+
+# --- Base de datos MySQL ---
+# URL de conexión. En desarrollo local: jdbc:mysql://localhost:3306/subastas?useSSL=false&serverTimezone=America/Argentina/Buenos_Aires&allowPublicKeyRetrieval=true
+DB_URL=jdbc:mysql://localhost:3306/subastas?useSSL=false&serverTimezone=America/Argentina/Buenos_Aires&allowPublicKeyRetrieval=true
+spring.datasource.url=${DB_URL}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Usuario de la base de datos (default dev: root)
+DB_USERNAME=root
+spring.datasource.username=${DB_USERNAME}
+
+# Contraseña de la base de datos — REQUERIDA, no tiene fallback seguro
+DB_PASSWORD=tu_password_aqui
+spring.datasource.password=${DB_PASSWORD}
+
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# --- CORS ---
+# Orígenes permitidos, separados por coma.
+# Valores de desarrollo incluidos por defecto en application.properties:
+#   http://localhost:3000    → React web (dev)
+#   http://localhost:4200    → Angular web (dev)
+#   http://localhost:8081    → Expo web / Metro bundler
+#   http://10.0.2.2:8081    → Emulador Android (apunta al host)
+#   null                     → Requests sin origin header (apps móviles nativas)
+# En producción, reemplazar con los dominios reales:
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:4200,http://localhost:8081,http://10.0.2.2:8081,null
+cors.allowed-origins=${ALLOWED_ORIGINS}
+
+# --- JWT ---
+# Clave secreta para firmar los tokens. En producción usar una cadena aleatoria larga (mínimo 32 chars).
+JWT_SECRET=reemplazar-con-clave-secreta-aleatoria-larga
+jwt.secret=${JWT_SECRET}
+jwt.expiration=86400000
+
+# --- Mail SMTP ---
+# En desarrollo se puede usar MailHog (localhost:1025) sin autenticación.
+# En producción configurar con el servidor SMTP real.
+spring.mail.host=localhost
+spring.mail.port=1025
+spring.mail.username=
+spring.mail.password=
+spring.mail.properties.mail.smtp.auth=false
+spring.mail.properties.mail.smtp.starttls.enable=false
+
+# --- Uploads ---
+# Directorio base donde se guardan los archivos subidos.
+# Puede ser una ruta absoluta o relativa al directorio de trabajo del proceso.
+UPLOADS_PATH=uploads
+app.uploads.base-path=${UPLOADS_PATH}
+
+# --- Multipart ---
+spring.servlet.multipart.max-file-size=6MB
+spring.servlet.multipart.max-request-size=50MB
+
+# --- Logging ---
+logging.level.com.subastas=DEBUG
+logging.level.org.springframework.security=INFO
+logging.level.org.springframework.web.socket=INFO

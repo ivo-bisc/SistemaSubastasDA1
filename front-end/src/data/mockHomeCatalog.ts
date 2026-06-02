@@ -1,5 +1,7 @@
 import { CatalogCategory } from '../types/catalog';
 
+export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
+
 const WATCH_IMAGE =
   'https://images.unsplash.com/photo-1523170335258-f5ed11844cae?w=400&q=80';
 const BALL_IMAGE =

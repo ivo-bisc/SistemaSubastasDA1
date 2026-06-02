@@ -3,6 +3,8 @@
  * Replace with API / store when backend is ready.
  */
 
+export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
+
 export const MOCK_USER = {
   id: 'usr_001',
   name: 'Jane Doe',

@@ -1,5 +1,6 @@
 package com.subastas.model.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoSubasta;
 import com.subastas.model.enums.Moneda;
@@ -12,12 +13,19 @@ import java.time.LocalDateTime;
 @Builder
 public class SubastaResponse {
     private Long id;
+    @JsonProperty("title")
     private String titulo;
+    @JsonProperty("description")
     private String descripcion;
+    @JsonProperty("startDate")
     private LocalDateTime fechaInicio;
+    @JsonProperty("category")
     private Categoria categoria;
+    @JsonProperty("currency")
     private Moneda moneda;
+    @JsonProperty("status")
     private EstadoSubasta estado;
+    @JsonProperty("location")
     private String ubicacion;
     private RematadorInfo rematador;
     private int totalItems;
@@ -26,8 +34,11 @@ public class SubastaResponse {
     @Builder
     public static class RematadorInfo {
         private Long id;
+        @JsonProperty("firstName")
         private String nombre;
+        @JsonProperty("lastName")
         private String apellido;
+        @JsonProperty("license")
         private String matricula;
     }
 }

@@ -10,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, Fonts } from '../../constants';
 
+const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
+
 const MOCK_CHATS = [
   {
     id: '1',
@@ -64,7 +66,7 @@ export default function ChatListScreen() {
       </View>
 
       <FlatList
-        data={MOCK_CHATS}
+        data={USE_MOCKS ? MOCK_CHATS : []}
         keyExtractor={(i) => i.id}
         renderItem={({ item }) => <ChatItem item={item} />}
         contentContainerStyle={styles.list}

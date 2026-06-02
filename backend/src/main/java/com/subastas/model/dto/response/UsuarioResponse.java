@@ -1,5 +1,6 @@
 package com.subastas.model.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoUsuario;
 import lombok.Builder;
@@ -11,13 +12,21 @@ import java.time.LocalDateTime;
 @Builder
 public class UsuarioResponse {
     private Long id;
+    @JsonProperty("firstName")
     private String nombre;
+    @JsonProperty("lastName")
     private String apellido;
     private String email;
+    @JsonProperty("category")
     private Categoria categoria;
+    @JsonProperty("status")
     private EstadoUsuario estado;
+    @JsonProperty("address")
     private String domicilioLegal;
+    @JsonProperty("country")
     private String paisOrigen;
+    @JsonProperty("registeredAt")
     private LocalDateTime fechaRegistro;
+    @JsonProperty("pendingFines")
     private int multasPendientes;
 }

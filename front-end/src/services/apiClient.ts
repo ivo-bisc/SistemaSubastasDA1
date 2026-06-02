@@ -1,10 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-/**
- * Base URL de la API — reemplazar con la URL real del backend
- */
-const BASE_URL = 'https://api.bidup.com'; // TODO: configurar con la URL real
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8080';
 
 /**
  * Cliente Axios centralizado para BidUp
