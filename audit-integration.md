@@ -343,6 +343,7 @@ Definidos en `SecurityConfig.java`:
 | **Chat GET/POST** | `ChatDetailScreen` llama a `chatService.getMessages()` y `sendMessage()` con datos reales |
 | **`PUT /usuarios/perfil`** | Endpoint implementado en backend (`ActualizarPerfilRequest`: firstName, lastName, phone); verificado con curl; path coincide con `endpoints.ts` |
 | **`profileStore.ts` conectado al backend** | `loadProfile()` reemplaza MOCK_USER/MOCK_CARDS/MOCK_CHECKS con llamadas reales; `isLoading`/`error` agregados |
+| **`ProfileScreen` carga datos reales** | `useEffect` llama a `loadProfile()` al montar; loading y error manejados visualmente |
 | **`CATALOG.ITEMS` eliminado** | Constante removida de `endpoints.ts`; no existía en backend |
 | **`EXPO_PUBLIC_USE_MOCKS=false`** | Mocks desactivados en `.env` |
 
@@ -352,7 +353,7 @@ Definidos en `SecurityConfig.java`:
 
 | Área | Estado | Qué falta |
 |---|---|---|
-| **`ProfileScreen` — llamar `loadProfile()`** | ⚠️ Pendiente | `loadProfile()` existe en el store pero no se llama desde ninguna pantalla todavía; los campos del perfil aparecerán vacíos hasta que se agregue el `useEffect` correspondiente |
+| **`ProfileScreen` — llamar `loadProfile()`** | ✅ Resuelto | `useEffect` llama a `loadProfile()` al montar; muestra `ActivityIndicator` mientras carga y texto de error si falla |
 | **`PATCH /compras/{id}/entrega`** | ⚠️ Pendiente | `PURCHASES.DELIVERY` marcado en `endpoints.ts`; sin servicio ni pantalla |
 | **`ChatListScreen`** | ⚠️ Pendiente | Backend no expone listado de chats del usuario. Muestra lista vacía con `EXPO_PUBLIC_USE_MOCKS=false` |
 | **`MOCK_ADDRESSES`** | ⚠️ Pendiente | `profileStore.ts` sigue usando `MOCK_ADDRESSES`; TODO comentado; bloqueado por falta de endpoint en backend |

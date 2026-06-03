@@ -1,5 +1,5 @@
-import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View, Modal } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View, Modal } from 'react-native';
 import { useState } from 'react';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -18,7 +18,11 @@ type Nav = StackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const logout = useAuthStore((s) => s.logout);
-  const { name, email, category, avatarColor } = useProfileStore();
+  const { name, email, category, avatarColor, isLoading, error, loadProfile } = useProfileStore();
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
 
   const handleLogout = () => {
     setModalVisible(true);
@@ -44,14 +48,24 @@ export default function ProfileScreen() {
   };
 
   const initials = name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+    ? name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
+    : '';
+
+  if (isLoading) {
+    return (
+      <ProfileScreenShell>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </ProfileScreenShell>
+    );
+  }
 
   return (
     <ProfileScreenShell>
+      {error !== null && (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
       <View style={styles.hero}>
         <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
           <Text style={styles.avatarText}>{initials}</Text>
@@ -156,6 +170,18 @@ const styles = StyleSheet.create({
   supportBtn: {
     flex: 1,
     borderRadius: 8,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.base,
+    color: Colors.error,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   logoutWrap: {
     alignItems: 'center',
