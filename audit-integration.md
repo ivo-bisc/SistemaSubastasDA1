@@ -299,9 +299,9 @@ Definidos en `SecurityConfig.java`:
 
 | Archivo | Mock | Comportamiento |
 |---|---|---|
-| `ChatListScreen.tsx` | `MOCK_CHATS` (2 chats ficticios) | ⚠️ Mejorado (commit `cb73651`) — ahora respeta el flag: con `true` muestra MOCK_CHATS, con `false` lista vacía. TODO sigue vigente: el backend no expone listado de chats del usuario |
+| `ChatListScreen.tsx` | ~~`MOCK_CHATS`~~ | ✅ Resuelto (commit `d1edc49`) — llama a `chatService.getCompras()` → `GET /usuarios/compras`. Sin mocks. Lista vacía muestra "No tenés compras con chat activo." |
 
-**Nota**: `ChatDetailScreen.tsx` llama a `chatService.getMessages()` y `sendMessage()` con datos reales. Acepta `purchaseId` o `conversationId` como param de navegación. El listado (`ChatListScreen`) queda en mock hasta que el backend implemente `GET /compras/chat` o similar.
+**Nota**: `ChatDetailScreen.tsx` llama a `chatService.getMessages()` y `sendMessage()` con datos reales. Acepta `purchaseId` o `conversationId` como param de navegación.
 
 ### Mocks HARDCODEADOS — siempre activos, ignoran el flag
 
