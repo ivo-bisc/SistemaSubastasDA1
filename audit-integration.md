@@ -1,7 +1,7 @@
 # Auditoría de integración Backend ↔ Frontend
 
 > Auditoría: 2026-06-02  
-> Última actualización: 2026-06-02 (rev 2 — commits `cb73651`, `e36dab5`, `e9183ad`)  
+> Última actualización: 2026-06-03 (rev 3 — commits `cb73651`, `e36dab5`, `e9183ad`, `fa8cd1c` + sesión actual)  
 > Alcance: monorepo `SistemaSubastasDA1` — Spring Boot 3.3.4 + Expo/React Native  
 > Método: análisis estático + fixes aplicados en la misma sesión
 
@@ -54,7 +54,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 | Backend | `jwt.expiration` | `86400000` (24h) | ✅ |
 | Backend | `cors.allowed-origins` | Configurable via env | ✅ |
 | Frontend | `EXPO_PUBLIC_API_URL` | Eliminada del `.env`; detección automática por plataforma en `apiClient.ts` | ✅ |
-| Frontend | `EXPO_PUBLIC_USE_MOCKS` | `true` (mocks activos) | ⚠️ |
+| Frontend | `EXPO_PUBLIC_USE_MOCKS` | `false` | ✅ |
 
 ---
 
@@ -82,13 +82,13 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 | Frontend path | Método | Estado | Observación |
 |---|---|---|---|
 | `/usuarios/perfil` | GET | ✅ | |
-| `/usuarios/perfil` | PUT | ❌ | Backend no expone `PUT /api/v1/usuarios/perfil` |
+| `/usuarios/perfil` | PUT | ✅ | Endpoint implementado en backend (`ActualizarPerfilRequest`: firstName, lastName, phone); verificado con curl |
 
 ### CATALOG
 
 | Frontend path | Método | Estado | Observación |
 |---|---|---|---|
-| `/catalog/items` | GET | ❌ | No existe en backend; el catálogo se obtiene por subasta: `GET /subastas/{id}/catalogo` |
+| `/catalog/items` | GET | ✅ Eliminado | Constante `CATALOG.ITEMS` removida de `endpoints.ts`; el catálogo se obtiene por `GET /subastas/{id}/catalogo` |
 | `/items/{id}` | GET | ✅ | |
 | `/items/{id}/imagenes` | GET | ✅ | |
 
@@ -147,9 +147,9 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 
 | Backend path | Método | Estado |
 |---|---|---|
-| `/compras/{compraId}/chat` | GET | ✅ Implementado — `chatService.getMessages(purchaseId)` |
-| `/compras/{compraId}/chat` | POST | ✅ Implementado — `chatService.sendMessage(purchaseId, text)` |
-| `/compras/{compraId}/entrega` | PATCH | ⚠️ Path agregado en `endpoints.ts` (`PURCHASES.DELIVERY`); sin servicio ni pantalla aún |
+| `/compras/{compraId}/chat` | GET | ✅ Implementado — `chatService.getMessages(purchaseId)`; `PURCHASES.CHAT` marcado como PENDIENTE en `endpoints.ts` |
+| `/compras/{compraId}/chat` | POST | ✅ Implementado — `chatService.sendMessage(purchaseId, text)`; ídem |
+| `/compras/{compraId}/entrega` | PATCH | ⚠️ `PURCHASES.DELIVERY` marcado como PENDIENTE en `endpoints.ts`; sin servicio ni pantalla |
 
 ### WEBSOCKET STOMP — ✅ INTEGRADO (commit `e9183ad`)
 
@@ -310,11 +310,11 @@ Definidos en `SecurityConfig.java`:
 | `AuctionDetailScreen.tsx` | ~~`MOCK_AUCTION_DETAIL`~~ | ✅ Reemplazado — lee `route.params.auctionId`, llama a `auctionService.getAuctionDetail(id)` |
 | `MyBidsScreen.tsx` | — | ✅ Pantalla eliminada del proyecto (no existe en `screens/profile/`) |
 | `MyAuctionsScreen.tsx` | — | ✅ Pantalla eliminada del proyecto (no existe en `screens/profile/`) |
-| `profileStore.ts` | `MOCK_USER`, `MOCK_ADDRESSES`, `MOCK_CARDS`, `MOCK_CHECKS` | ❌ Sigue pendiente — `username`/`avatarColor` no existen en backend; inicializado directamente con datos de mock sin flag condicional |
+| `profileStore.ts` | ~~`MOCK_USER`, `MOCK_CARDS`, `MOCK_CHECKS`~~ | ✅ Conectado — `loadProfile()` llama a `GET /usuarios/perfil` y `GET /usuarios/medios-pago`; estado inicial vacío; `isLoading`/`error` agregados. `MOCK_ADDRESSES` se mantiene hasta que el backend exponga `GET /usuarios/direcciones` (TODO comentado en el store) |
 
 ### ¿Hay algún mock que intercepta llamadas reales sin que sea obvio?
 
-**Sí** — `profileStore.ts` inicializa el estado directamente con `MOCK_USER` sin ningún flag condicional ni comentario visible. Un desarrollador que llame a `useProfileStore()` recibirá datos de mock sin saberlo, incluso con `EXPO_PUBLIC_USE_MOCKS=false`.
+**No** — `profileStore.ts` ya no inicializa con datos de mock. El estado arranca vacío y se puebla mediante `loadProfile()`. Queda pendiente llamar a `loadProfile()` desde `ProfileScreen` al montar la pantalla.
 
 ---
 
@@ -341,6 +341,10 @@ Definidos en `SecurityConfig.java`:
 | **Mocks en `HomeScreen` y `AuctionDetailScreen`** | Reemplazados por llamadas reales al backend |
 | **`MyBidsScreen` / `MyAuctionsScreen`** | Pantallas eliminadas del proyecto; mocks ya no aplican |
 | **Chat GET/POST** | `ChatDetailScreen` llama a `chatService.getMessages()` y `sendMessage()` con datos reales |
+| **`PUT /usuarios/perfil`** | Endpoint implementado en backend (`ActualizarPerfilRequest`: firstName, lastName, phone); verificado con curl; path coincide con `endpoints.ts` |
+| **`profileStore.ts` conectado al backend** | `loadProfile()` reemplaza MOCK_USER/MOCK_CARDS/MOCK_CHECKS con llamadas reales; `isLoading`/`error` agregados |
+| **`CATALOG.ITEMS` eliminado** | Constante removida de `endpoints.ts`; no existía en backend |
+| **`EXPO_PUBLIC_USE_MOCKS=false`** | Mocks desactivados en `.env` |
 
 ---
 
@@ -348,9 +352,7 @@ Definidos en `SecurityConfig.java`:
 
 | Área | Estado | Qué falta |
 |---|---|---|
-| **`PUT /usuarios/perfil`** | ❌ Roto | El backend no expone este endpoint; `endpoints.ts` lo define pero sin servicio ni pantalla que lo use. Decidir si se implementa en Spring Boot o se elimina del frontend |
-| **`/catalog/items`** | ❌ Roto | No existe en backend; el catálogo se obtiene por `GET /subastas/{id}/catalogo`. La constante `CATALOG.ITEMS` sigue definida pero sin uso |
-| **`PATCH /compras/{id}/entrega`** | ⚠️ Parcial | `PURCHASES.DELIVERY` definido en `endpoints.ts`; sin servicio ni pantalla que lo use |
-| **`profileStore.ts`** | ⚠️ Pendiente | Inicializado con `MOCK_USER`, `MOCK_CARDS`, `MOCK_CHECKS` sin flag. Hay que conectarlo a `GET /usuarios/perfil` y `GET /usuarios/medios-pago` |
+| **`ProfileScreen` — llamar `loadProfile()`** | ⚠️ Pendiente | `loadProfile()` existe en el store pero no se llama desde ninguna pantalla todavía; los campos del perfil aparecerán vacíos hasta que se agregue el `useEffect` correspondiente |
+| **`PATCH /compras/{id}/entrega`** | ⚠️ Pendiente | `PURCHASES.DELIVERY` marcado en `endpoints.ts`; sin servicio ni pantalla |
 | **`ChatListScreen`** | ⚠️ Pendiente | Backend no expone listado de chats del usuario. Muestra lista vacía con `EXPO_PUBLIC_USE_MOCKS=false` |
-| **`EXPO_PUBLIC_USE_MOCKS`** | ⚠️ Pendiente | Sigue en `true` en `.env`; cambiar a `false` una vez que `profileStore` esté conectado al backend |
+| **`MOCK_ADDRESSES`** | ⚠️ Pendiente | `profileStore.ts` sigue usando `MOCK_ADDRESSES`; TODO comentado; bloqueado por falta de endpoint en backend |

@@ -3,6 +3,7 @@ package com.subastas.service;
 import com.subastas.exception.BusinessException;
 import com.subastas.exception.ErrorCodes;
 import com.subastas.exception.ResourceNotFoundException;
+import com.subastas.model.dto.request.ActualizarPerfilRequest;
 import com.subastas.model.dto.request.MedioPagoRequest;
 import com.subastas.model.dto.response.MedioPagoResponse;
 import com.subastas.model.dto.response.MetricasResponse;
@@ -52,6 +53,16 @@ public class UsuarioService {
 
     public UsuarioResponse obtenerPerfil(String email) {
         Usuario usuario = obtenerPorEmail(email);
+        return mapToResponse(usuario);
+    }
+
+    @Transactional
+    public UsuarioResponse actualizarPerfil(String email, ActualizarPerfilRequest request) {
+        Usuario usuario = obtenerPorEmail(email);
+        if (request.getFirstName() != null) usuario.setNombre(request.getFirstName());
+        if (request.getLastName()  != null) usuario.setApellido(request.getLastName());
+        if (request.getPhone()     != null) usuario.setTelefono(request.getPhone());
+        usuarioRepository.save(usuario);
         return mapToResponse(usuario);
     }
 

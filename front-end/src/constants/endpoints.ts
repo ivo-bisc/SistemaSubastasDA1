@@ -21,7 +21,6 @@ export const Endpoints = {
 
   // ── Catalog ────────────────────────────────────────────
   CATALOG: {
-    ITEMS: '/catalog/items',
     ITEM_DETAIL: (id: string) => `/items/${id}`,
     ITEM_IMAGES: (id: string) => `/items/${id}/imagenes`,
   },
@@ -45,7 +44,9 @@ export const Endpoints = {
   // ── Purchases ──────────────────────────────────────────
   PURCHASES: {
     DETAIL: (id: string) => `/usuarios/compras/${id}`,
+    // PENDIENTE: sin pantalla ni servicio implementado
     CHAT: (id: string) => `/compras/${id}/chat`,
+    // PENDIENTE: sin pantalla ni servicio implementado
     DELIVERY: (id: string) => `/compras/${id}/entrega`,
   },
 

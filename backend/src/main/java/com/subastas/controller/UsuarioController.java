@@ -1,5 +1,6 @@
 package com.subastas.controller;
 
+import com.subastas.model.dto.request.ActualizarPerfilRequest;
 import com.subastas.model.dto.request.MedioPagoRequest;
 import com.subastas.model.dto.request.PagarMultaRequest;
 import com.subastas.model.dto.response.CompraResponse;
@@ -41,6 +42,14 @@ public class UsuarioController {
     @GetMapping("/perfil")
     public ResponseEntity<UsuarioResponse> obtenerPerfil(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(usuarioService.obtenerPerfil(userDetails.getUsername()));
+    }
+
+    @PutMapping("/perfil")
+    public ResponseEntity<UsuarioResponse> actualizarPerfil(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody ActualizarPerfilRequest request) {
+        return ResponseEntity.ok(
+                usuarioService.actualizarPerfil(userDetails.getUsername(), request));
     }
 
     @GetMapping("/medios-pago")
