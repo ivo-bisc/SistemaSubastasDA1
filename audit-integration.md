@@ -73,9 +73,9 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 |---|---|---|---|
 | `/auth/login` | POST | ✅ | Path correcto; contrato OK; pero `LoginScreen.tsx` nunca llama a `authService.login()` |
 | `/auth/logout` | POST | ✅ | |
-| `/auth/registro/paso1` | POST | ✅ | Path correcto; contrato roto (ver sección 3) |
-| `/auth/registro/paso2` | POST | ✅ | Path correcto; contrato roto (ver sección 3) |
-| `/auth/register/step3` | POST | ❌ | El backend no tiene un paso 3 de auth; endpoint inexistente |
+| `/auth/registro/paso1` | POST | ✅ | Contrato corregido: FormData multipart con `nombre`, `apellido`, `email`, `numeroDni`, `domicilioLegal`, `paisOrigen`, fotos DNI |
+| `/auth/registro/paso2` | POST | ✅ | Contrato corregido: `{ tokenEmail, email, password }` |
+| `/auth/register/step3` | POST | ✅ Eliminado | Constante `REGISTER_STEP3` y método `registerStep3` removidos |
 
 ### USERS
 
@@ -169,28 +169,26 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 
 | Campo | Frontend envía | Backend espera | Estado |
 |---|---|---|---|
-| `nombre` | `firstName` | `nombre` @NotBlank | ❌ Nombre de campo distinto |
-| `apellido` | `lastName` | `apellido` @NotBlank | ❌ Nombre de campo distinto |
-| `email` | `email` | `email` @Email @NotBlank | ✅ |
-| `password` | `password` (aquí) | NO — va en paso 2 | ❌ Campo en paso incorrecto |
-| `numeroDni` | NO enviado | `numeroDni` @NotBlank | ❌ Campo obligatorio faltante |
-| `domicilioLegal` | NO enviado | `domicilioLegal` @NotBlank | ❌ Campo obligatorio faltante |
-| `paisOrigen` | NO enviado | `paisOrigen` @NotBlank | ❌ Campo obligatorio faltante |
-| `foto_dni_frente` | NO enviado | MultipartFile (recomendado) | ❌ Multipart no implementado |
-| `foto_dni_dorso` | NO enviado | MultipartFile (recomendado) | ❌ Multipart no implementado |
+| `nombre` | `nombre` (de Step1 params) | `nombre` @NotBlank | ✅ Corregido |
+| `apellido` | `apellido` (de Step1 params) | `apellido` @NotBlank | ✅ Corregido |
+| `email` | `email` (de Step1 params) | `email` @Email @NotBlank | ✅ |
+| `numeroDni` | `numeroDoc` (de Step2) | `numeroDni` @NotBlank | ✅ Corregido |
+| `domicilioLegal` | `direccion` (de Step2) | `domicilioLegal` @NotBlank | ✅ Corregido |
+| `paisOrigen` | `pais` (de Step2) | `paisOrigen` @NotBlank | ✅ Corregido |
+| `foto_dni_frente` | URI del picker | MultipartFile | ✅ Implementado con `expo-image-picker` |
+| `foto_dni_dorso` | URI del picker | MultipartFile | ✅ Implementado con `expo-image-picker` |
+
+Step2 llama con FormData multipart. Step1 pasa sus datos a Step2 vía `route.params`.
 
 ### `POST /auth/registro/paso2`
 
 | Campo | Frontend envía | Backend espera | Estado |
 |---|---|---|---|
-| `tokenEmail` | NO enviado | `tokenEmail` @NotBlank | ❌ Campo obligatorio faltante |
-| `email` | NO enviado | `email` @NotBlank | ❌ Campo obligatorio faltante |
-| `password` | NO enviado | `password` @Size(min=8) | ❌ Campo obligatorio faltante |
-| `dni` | `dni` | NO | ❌ Campo extra (no esperado) |
-| `phone` | `phone` | NO | ❌ Campo extra (no esperado) |
-| `address` | `address` | NO | ❌ Campo extra (no esperado) |
+| `tokenEmail` | `'dev-bypass'` | `tokenEmail` @NotBlank | ✅ Corregido (bypass para dev; backend acepta `'dev-bypass'`) |
+| `email` | `params.email` (de Step1) | `email` @NotBlank | ✅ Corregido |
+| `password` | `params.password` (de Step1) | `password` @Size(min=8) | ✅ Corregido |
 
-**Conclusión**: los pasos están invertidos. El frontend manda en paso 1 datos que corresponden al paso 2 y viceversa; además omite `tokenEmail` que es el campo central del paso 2.
+Llamado desde `RegisterStep2Screen` inmediatamente después de paso1. JWT guardado en `authStore` al recibir `tokenAcceso`.
 
 ### `POST /subastas/{id}/conectar`
 
@@ -321,12 +319,12 @@ Definidos en `SecurityConfig.java`:
 | **Variables de entorno backend** | ✅ OK | Ninguna |
 | **Variables de entorno frontend** | ⚠️ Pendiente | URL resuelta. Falta cambiar `EXPO_PUBLIC_USE_MOCKS=false` para deshabilitar mocks |
 | **Endpoints que coinciden (path)** | ✅ 18 de 29 | — |
-| **Endpoints inexistentes en backend** | ⚠️ 2 paths restantes | `/auth/register/step3`, `/catalog/items` — los 3 `/payment-methods/...` fueron eliminados |
+| **Endpoints inexistentes en backend** | ⚠️ 1 path restante | `/catalog/items` — `/auth/register/step3` eliminado del frontend |
 | **Endpoints del backend sin frontend** | ⚠️ 1 pendiente | Chat GET/POST resueltos. Falta: lógica de pantalla para `PATCH /compras/{id}/entrega` |
 | **WebSocket STOMP** | ❌ No integrado | El backend tiene STOMP completo; el frontend no tiene cliente STOMP |
-| **Contrato registro paso 1** | ❌ Roto | Reescribir: cambiar `firstName/lastName` → `nombre/apellido`, agregar `numeroDni`, `domicilioLegal`, `paisOrigen`, mover `password` al paso 2, implementar multipart |
-| **Contrato registro paso 2** | ❌ Roto | Reescribir: agregar `tokenEmail` + `email` + `password`; quitar `dni`, `phone`, `address` |
-| **Contrato `POST /auth/register/step3`** | ❌ Roto | Eliminar — este endpoint no existe |
+| **Contrato registro paso 1** | ✅ Resuelto | FormData multipart desde Step2 con datos de Step1+Step2+fotos DNI |
+| **Contrato registro paso 2** | ✅ Resuelto | `{ tokenEmail: 'dev-bypass', email, password }` — bypass habilitado en backend |
+| **Contrato `POST /auth/register/step3`** | ✅ Eliminado | Constante y método removidos del frontend |
 | **Contrato `POST /subastas/{id}/conectar`** | ✅ Resuelto | `connectToAuction(id, medioPagoId)` envía `{ medioPagoId }` |
 | **Contrato `POST /subastas/{id}/pujas`** | ✅ Resuelto | `placeBid(auctionId, itemId, monto, medioPagoId)` envía los 3 campos correctos |
 | **Contrato `POST /usuarios/medios-pago`** | ✅ Resuelto | `addPaymentMethod(MedioPagoRequest)` unificado; paths incorrectos y constantes huérfanas eliminados |

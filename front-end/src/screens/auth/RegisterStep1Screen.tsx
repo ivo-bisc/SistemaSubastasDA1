@@ -100,7 +100,7 @@ export default function RegisterStep1Screen() {
         onPress={() => {
           // mark all touched to show errors if any
           setTouched({ nombre: true, apellido: true, email: true, password: true });
-          if (isFormValid) navigation.navigate('RegisterStep2');
+          if (isFormValid) navigation.navigate('RegisterStep2', { nombre, apellido, email, password });
         }}
         style={styles.button}
         disabled={!isFormValid}

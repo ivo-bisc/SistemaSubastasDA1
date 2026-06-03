@@ -11,7 +11,6 @@ export const Endpoints = {
     LOGOUT: '/auth/logout',
     REGISTER_STEP1: '/auth/registro/paso1',
     REGISTER_STEP2: '/auth/registro/paso2',
-    REGISTER_STEP3: '/auth/register/step3',
   },
 
   // ── Users ──────────────────────────────────────────────

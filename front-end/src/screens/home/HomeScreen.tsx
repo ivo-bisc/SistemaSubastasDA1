@@ -59,32 +59,27 @@ export default function HomeScreen() {
     requireAuth(() => navigation.navigate('LotDetail', { lotId }));
   };
 
-  const categories = useMemo(
-    () =>
-      auctions.map((s: any) => ({
-        id: String(s.id),
-        name: s.title,
-        description: s.description ?? '',
-        items: [
-          {
-            id: String(s.id),
-            title: s.description || s.title,
-            price: '',
-            timeRemaining: '',
-            imageUrl: '',
-          },
-        ],
-      })),
-    [auctions]
-  );
-
   const filteredCategories = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
+    const categories = auctions.map((s: any) => ({
+      id: String(s.id),
+      name: s.title,
+      description: s.description ?? '',
+      items: [
+        {
+          id: String(s.id),
+          title: s.description || s.title,
+          price: '',
+          timeRemaining: '',
+          imageUrl: '',
+        },
+      ],
+    }));
     if (!normalizedQuery) return categories;
     return categories.filter((c) =>
       [c.name, c.description].join(' ').toLowerCase().includes(normalizedQuery)
     );
-  }, [searchQuery, categories]);
+  }, [searchQuery, auctions]);
 
   const openAuction = (itemId: string) => {
     requireAuth(() => {

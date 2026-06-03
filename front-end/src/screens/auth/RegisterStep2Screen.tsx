@@ -8,8 +8,9 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import * as ImagePicker from 'expo-image-picker';
 import {
   AuthScreen,
   AuthTitle,
@@ -19,12 +20,18 @@ import {
   PrimaryButton,
   StepLabel,
 } from '../../components/auth';
+import { authService } from '../../services';
+import { useAuthStore } from '../../stores';
 import type { AuthStackParamList } from '../../types';
 
 type Nav = StackNavigationProp<AuthStackParamList, 'RegisterStep2'>;
 
 export default function RegisterStep2Screen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<any>();
+  const params = route.params as { nombre: string; apellido: string; email: string; password: string };
+  const login = useAuthStore((s) => s.login);
+
   const [tipoDoc, setTipoDoc] = useState('');
   const [numeroDoc, setNumeroDoc] = useState('');
   const [pais, setPais] = useState('');
@@ -38,9 +45,18 @@ export default function RegisterStep2Screen() {
     direccion: false,
     codigoPostal: false,
   });
+  const [fotoDniFrente, setFotoDniFrente] = useState<string | null>(null);
+  const [fotoDniDorso, setFotoDniDorso] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [showTipoModal, setShowTipoModal] = useState(false);
   const [showPaisModal, setShowPaisModal] = useState(false);
+
+  const pickImage = async (setter: (uri: string) => void) => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] });
+    if (!result.canceled) setter(result.assets[0].uri);
+  };
 
   return (
     <AuthScreen>
@@ -68,6 +84,17 @@ export default function RegisterStep2Screen() {
       {touched.numeroDoc && numeroDoc.length !== 8 ? (
         <Text style={{ color: '#FF3B30', marginBottom: 8 }}>El número debe tener 8 dígitos.</Text>
       ) : null}
+
+      <Pressable style={styles.photoBtn} onPress={() => pickImage(setFotoDniFrente)}>
+        <Text style={styles.photoBtnText}>
+          {fotoDniFrente ? '✓ Foto frente del DNI' : 'Foto frente del DNI'}
+        </Text>
+      </Pressable>
+      <Pressable style={styles.photoBtn} onPress={() => pickImage(setFotoDniDorso)}>
+        <Text style={styles.photoBtnText}>
+          {fotoDniDorso ? '✓ Foto dorso del DNI' : 'Foto dorso del DNI'}
+        </Text>
+      </Pressable>
       <Pressable onPress={() => setShowPaisModal(true)}>
         <BidUpTextField placeholder="País" value={pais} editable={false} />
       </Pressable>
@@ -99,9 +126,14 @@ export default function RegisterStep2Screen() {
         checked={termsAccepted}
         onToggle={() => setTermsAccepted((v) => !v)}
       />
+
+      {apiError ? (
+        <Text style={{ color: '#FF3B30', marginBottom: 8 }}>{apiError}</Text>
+      ) : null}
+
       <PrimaryButton
         label="Continuar"
-        onPress={() => {
+        onPress={async () => {
           setTouched({ tipoDoc: true, numeroDoc: true, pais: true, direccion: true, codigoPostal: true });
           const allValid =
             (tipoDoc === 'DNI' || tipoDoc === 'Pasaporte') &&
@@ -109,17 +141,53 @@ export default function RegisterStep2Screen() {
             pais.length > 0 &&
             direccion.trim().length > 0 &&
             codigoPostal.length === 4 &&
-            termsAccepted;
-          if (allValid) navigation.navigate('RegisterStep3');
+            termsAccepted &&
+            !!fotoDniFrente &&
+            !!fotoDniDorso;
+          if (!allValid) return;
+
+          setLoading(true);
+          setApiError(null);
+          try {
+            const form = new FormData();
+            form.append('nombre', params.nombre);
+            form.append('apellido', params.apellido);
+            form.append('email', params.email);
+            form.append('numeroDni', numeroDoc);
+            form.append('domicilioLegal', direccion);
+            form.append('paisOrigen', pais);
+            form.append('foto_dni_frente', { uri: fotoDniFrente, name: 'frente.jpg', type: 'image/jpeg' } as any);
+            form.append('foto_dni_dorso', { uri: fotoDniDorso, name: 'dorso.jpg', type: 'image/jpeg' } as any);
+
+            await authService.registerStep1(form);
+
+            const paso2Res = await authService.registerStep2({
+              tokenEmail: 'dev-bypass',
+              email: params.email,
+              password: params.password,
+            });
+
+            const { tokenAcceso, usuarioId } = paso2Res.data;
+            login(
+              {
+                id: String(usuarioId),
+                email: params.email,
+                firstName: params.nombre,
+                lastName: params.apellido,
+                dni: numeroDoc,
+                status: 'pending',
+              },
+              tokenAcceso
+            );
+
+            navigation.navigate('RegisterStep3');
+          } catch {
+            setApiError('No se pudo completar el registro. Intentá de nuevo.');
+          } finally {
+            setLoading(false);
+          }
         }}
-        disabled={!(
-          (tipoDoc === 'DNI' || tipoDoc === 'Pasaporte') &&
-          numeroDoc.length === 8 &&
-          pais.length > 0 &&
-          direccion.trim().length > 0 &&
-          codigoPostal.length === 4 &&
-          termsAccepted
-        )}
+        disabled={loading}
         style={styles.button}
       />
 
@@ -180,6 +248,19 @@ export default function RegisterStep2Screen() {
 const styles = StyleSheet.create({
   button: {
     marginTop: 4,
+  },
+  photoBtn: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  photoBtnText: {
+    color: '#555555',
+    fontSize: 14,
   },
 });
 

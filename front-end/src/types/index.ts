@@ -183,7 +183,12 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
   ForgotPasswordSent: undefined;
   RegisterStep1: undefined;
-  RegisterStep2: undefined;
+  RegisterStep2: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    password: string;
+  };
   RegisterStep3: undefined;
   PendingApproval: undefined;
 };

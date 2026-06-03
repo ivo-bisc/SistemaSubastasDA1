@@ -17,7 +17,6 @@ import {
   AuctionImageHeader,
   AuctionProductInfo,
   AuctionStatsCards,
-  BidHistoryRow,
   ConfirmBidModal,
 } from '../../components/auction';
 import { Colors, Fonts, FontSize } from '../../constants';
