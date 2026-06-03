@@ -131,19 +131,3 @@ Escaneá el QR con Expo Go o presioná `a` (Android) / `i` (iOS) para abrir el e
 |----------|-----------|---------|-------------|
 | `EXPO_PUBLIC_API_URL` | No | `http://10.0.2.2:8080` | URL base del backend |
 | `EXPO_PUBLIC_USE_MOCKS` | No | — | `true` = datos de prueba, `false` = API real |
-
----
-
-## Pendiente para integración completa
-
-Los nombres de campos JSON del backend (español) no coinciden con los tipos TypeScript del frontend (inglés). Esto debe resolverse antes de desactivar los mocks:
-
-| Backend (JSON) | Frontend (TypeScript) |
-|----------------|-----------------------|
-| `titulo` | `title` |
-| `descripcion` | `description` |
-| `fechaInicio` | `startDate` |
-| `nombre` / `apellido` | `firstName` / `lastName` |
-| `tokenAcceso` | `token` |
-| `precioBase` | `startingPrice` |
-| `mejorOferta` | `currentPrice` |

@@ -1,7 +1,7 @@
 # Auditoría de integración Backend ↔ Frontend
 
 > Auditoría: 2026-06-02  
-> Última actualización: 2026-06-02  
+> Última actualización: 2026-06-02 (rev 2 — commits `cb73651`, `e36dab5`, `e9183ad`)  
 > Alcance: monorepo `SistemaSubastasDA1` — Spring Boot 3.3.4 + Expo/React Native  
 > Método: análisis estático + fixes aplicados en la misma sesión
 
@@ -151,13 +151,23 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 | `/compras/{compraId}/chat` | POST | ✅ Implementado — `chatService.sendMessage(purchaseId, text)` |
 | `/compras/{compraId}/entrega` | PATCH | ⚠️ Path agregado en `endpoints.ts` (`PURCHASES.DELIVERY`); sin servicio ni pantalla aún |
 
-### WEBSOCKET STOMP — backend implementado, frontend ausente
+### WEBSOCKET STOMP — ✅ INTEGRADO (commit `e9183ad`)
 
 | Destino STOMP | Dirección | Estado |
 |---|---|---|
-| `/app/subastas/{id}/pujar` | Cliente → Servidor | ❌ No hay cliente STOMP en el frontend |
-| `/topic/subastas/{id}` | Servidor → Broadcast | ❌ No hay suscripción en el frontend |
-| `/user/queue/pujas` | Servidor → Privado | ❌ No hay suscripción en el frontend |
+| `/app/subastas/{id}/pujar` | Cliente → Servidor | ✅ `stompService.send()` vía `useAuctionSocket.sendBid()` |
+| `/topic/subastas/{id}` | Servidor → Broadcast | ✅ Suscripción en `useAuctionSocket`; actualiza `currentPrice` en tiempo real |
+| `/user/queue/pujas` | Servidor → Privado | ✅ Suscripción en `useAuctionSocket`; expone `confirmation` y `rejection` |
+
+Archivos nuevos:
+- `front-end/src/services/stompService.ts` — cliente STOMP (`@stomp/stompjs`), detección de plataforma (web → `localhost:8080`, Android → `10.0.2.2:8080`), reconexión automática, auth `Bearer` en headers de conexión. URL override vía `EXPO_PUBLIC_WS_URL`.
+- `front-end/src/hooks/useAuctionSocket.ts` — hook que conecta, suscribe a ambos canales y expone `{ liveBid, confirmation, rejection, sendBid }`.
+- Tipos `BidUpdatedMessage`, `BidConfirmedMessage`, `BidRejectedMessage` agregados a `front-end/src/types/index.ts`.
+
+`AuctionDetailScreen.tsx` integra el hook:
+- Actualiza `currentPrice` y `pujaMinima` en tiempo real cuando llega `BID_UPDATED`.
+- Muestra banner de error cuando llega `BID_REJECTED`.
+- Usa `sendBid({ itemId, monto, medioPagoId })` en lugar del REST `POST /subastas/{id}/pujas`.
 
 ---
 
@@ -288,9 +298,9 @@ Definidos en `SecurityConfig.java`:
 
 | Archivo | Mock | Comportamiento |
 |---|---|---|
-| `ChatListScreen.tsx` | `MOCK_CHATS` (2 chats ficticios) | ⚠️ Pendiente — el backend no expone listado de chats del usuario; TODO documentado en el archivo |
+| `ChatListScreen.tsx` | `MOCK_CHATS` (2 chats ficticios) | ⚠️ Mejorado (commit `cb73651`) — ahora respeta el flag: con `true` muestra MOCK_CHATS, con `false` lista vacía. TODO sigue vigente: el backend no expone listado de chats del usuario |
 
-**Nota**: `ChatDetailScreen.tsx` ya llama a `chatService.getMessages()` y `sendMessage()` con datos reales. El listado queda en mock hasta que el backend implemente `GET /compras/chat` o similar.
+**Nota**: `ChatDetailScreen.tsx` llama a `chatService.getMessages()` y `sendMessage()` con datos reales. Acepta `purchaseId` o `conversationId` como param de navegación. El listado (`ChatListScreen`) queda en mock hasta que el backend implemente `GET /compras/chat` o similar.
 
 ### Mocks HARDCODEADOS — siempre activos, ignoran el flag
 
@@ -298,9 +308,9 @@ Definidos en `SecurityConfig.java`:
 |---|---|---|
 | `HomeScreen.tsx` | ~~`MOCK_HOME_CATEGORIES`~~ | ✅ Reemplazado — llama a `auctionService.getAuctions()`, muestra loading/error |
 | `AuctionDetailScreen.tsx` | ~~`MOCK_AUCTION_DETAIL`~~ | ✅ Reemplazado — lee `route.params.auctionId`, llama a `auctionService.getAuctionDetail(id)` |
-| `MyBidsScreen.tsx` | `MOCK_BIDS` (4 pujas ficticias) | ❌ Pendiente — `metricsService` no devuelve la forma necesaria (`imageUrl`, `myBid`, `winning/losing`) |
-| `MyAuctionsScreen.tsx` | `MOCK_AUCTIONS` (5 subastas ficticias) | ❌ Pendiente — `consignService.getConsignaciones()` no existe |
-| `profileStore.ts` | `MOCK_USER`, `MOCK_ADDRESSES`, `MOCK_CARDS` | ❌ Pendiente — `username`/`avatarColor` no existen en backend; estructura de addresses/cards incompatible |
+| `MyBidsScreen.tsx` | — | ✅ Pantalla eliminada del proyecto (no existe en `screens/profile/`) |
+| `MyAuctionsScreen.tsx` | — | ✅ Pantalla eliminada del proyecto (no existe en `screens/profile/`) |
+| `profileStore.ts` | `MOCK_USER`, `MOCK_ADDRESSES`, `MOCK_CARDS`, `MOCK_CHECKS` | ❌ Sigue pendiente — `username`/`avatarColor` no existen en backend; inicializado directamente con datos de mock sin flag condicional |
 
 ### ¿Hay algún mock que intercepta llamadas reales sin que sea obvio?
 
@@ -312,22 +322,35 @@ Definidos en `SecurityConfig.java`:
 ## 6. RESUMEN EJECUTIVO
 ## ════════════════════════
 
-| Área | Estado | Acción requerida |
+### ✅ Resuelto
+
+| Área | Detalle |
+|---|---|
+| **baseURL con prefijo `/api/v1`** | `apiClient.ts` detecta plataforma: `localhost` en web, `10.0.2.2` en Android |
+| **CORS (Spring Boot)** | Configurado en `SecurityConfig.java`; orígenes, métodos y headers correctos |
+| **Variables de entorno backend** | DB, JWT y CORS configurados con defaults de desarrollo |
+| **WebSocket STOMP** | `stompService.ts` + `useAuctionSocket.ts`; `AuctionDetailScreen` usa WebSocket para pujas en tiempo real (commit `e9183ad`) |
+| **Selectores Android en RegisterStep2** | `tipoDoc` y `pais` usan `Modal` nativo + `FlatList`, fuera del ScrollView (commit `e36dab5`) |
+| **Login (autenticación real)** | `LoginScreen.tsx` llama a `authService.login()`, guarda JWT real |
+| **Contrato registro paso 1** | FormData multipart con datos de Step1+Step2+fotos DNI |
+| **Contrato registro paso 2** | `{ tokenEmail: 'dev-bypass', email, password }` — bypass habilitado en backend |
+| **Contrato `POST /auth/register/step3`** | Constante y método eliminados del frontend |
+| **Contrato `POST /subastas/{id}/conectar`** | `connectToAuction(id, medioPagoId)` envía `{ medioPagoId }` |
+| **Contrato `POST /subastas/{id}/pujas`** | Resuelto vía WS — `useAuctionSocket.sendBid()` publica en `/app/subastas/{id}/pujar` |
+| **Contrato `POST /usuarios/medios-pago`** | `addPaymentMethod(MedioPagoRequest)` unificado; paths incorrectos y constantes huérfanas eliminados |
+| **Mocks en `HomeScreen` y `AuctionDetailScreen`** | Reemplazados por llamadas reales al backend |
+| **`MyBidsScreen` / `MyAuctionsScreen`** | Pantallas eliminadas del proyecto; mocks ya no aplican |
+| **Chat GET/POST** | `ChatDetailScreen` llama a `chatService.getMessages()` y `sendMessage()` con datos reales |
+
+---
+
+### ❌ / ⚠️ Pendiente
+
+| Área | Estado | Qué falta |
 |---|---|---|
-| **baseURL con prefijo `/api/v1`** | ✅ Resuelto | `apiClient.ts` detecta plataforma: `localhost` en web, `10.0.2.2` en Android |
-| **CORS (Spring Boot)** | ✅ OK | Ninguna |
-| **Variables de entorno backend** | ✅ OK | Ninguna |
-| **Variables de entorno frontend** | ⚠️ Pendiente | URL resuelta. Falta cambiar `EXPO_PUBLIC_USE_MOCKS=false` para deshabilitar mocks |
-| **Endpoints que coinciden (path)** | ✅ 18 de 29 | — |
-| **Endpoints inexistentes en backend** | ⚠️ 1 path restante | `/catalog/items` — `/auth/register/step3` eliminado del frontend |
-| **Endpoints del backend sin frontend** | ⚠️ 1 pendiente | Chat GET/POST resueltos. Falta: lógica de pantalla para `PATCH /compras/{id}/entrega` |
-| **WebSocket STOMP** | ❌ No integrado | El backend tiene STOMP completo; el frontend no tiene cliente STOMP |
-| **Contrato registro paso 1** | ✅ Resuelto | FormData multipart desde Step2 con datos de Step1+Step2+fotos DNI |
-| **Contrato registro paso 2** | ✅ Resuelto | `{ tokenEmail: 'dev-bypass', email, password }` — bypass habilitado en backend |
-| **Contrato `POST /auth/register/step3`** | ✅ Eliminado | Constante y método removidos del frontend |
-| **Contrato `POST /subastas/{id}/conectar`** | ✅ Resuelto | `connectToAuction(id, medioPagoId)` envía `{ medioPagoId }` |
-| **Contrato `POST /subastas/{id}/pujas`** | ✅ Resuelto | `placeBid(auctionId, itemId, monto, medioPagoId)` envía los 3 campos correctos |
-| **Contrato `POST /usuarios/medios-pago`** | ✅ Resuelto | `addPaymentMethod(MedioPagoRequest)` unificado; paths incorrectos y constantes huérfanas eliminados |
-| **`PUT /usuarios/perfil`** | ❌ Roto | El backend no expone este endpoint; definir si se implementa |
-| **Login (autenticación real)** | ✅ Resuelto | `LoginScreen.tsx` llama a `authService.login()`, guarda JWT real. Verificado en web y emulador |
-| **Mocks hardcodeados en screens** | ⚠️ 3 pendientes | `HomeScreen` y `AuctionDetailScreen` resueltos. Quedan: `MyBidsScreen`, `MyAuctionsScreen`, `profileStore` |
+| **`PUT /usuarios/perfil`** | ❌ Roto | El backend no expone este endpoint; `endpoints.ts` lo define pero sin servicio ni pantalla que lo use. Decidir si se implementa en Spring Boot o se elimina del frontend |
+| **`/catalog/items`** | ❌ Roto | No existe en backend; el catálogo se obtiene por `GET /subastas/{id}/catalogo`. La constante `CATALOG.ITEMS` sigue definida pero sin uso |
+| **`PATCH /compras/{id}/entrega`** | ⚠️ Parcial | `PURCHASES.DELIVERY` definido en `endpoints.ts`; sin servicio ni pantalla que lo use |
+| **`profileStore.ts`** | ⚠️ Pendiente | Inicializado con `MOCK_USER`, `MOCK_CARDS`, `MOCK_CHECKS` sin flag. Hay que conectarlo a `GET /usuarios/perfil` y `GET /usuarios/medios-pago` |
+| **`ChatListScreen`** | ⚠️ Pendiente | Backend no expone listado de chats del usuario. Muestra lista vacía con `EXPO_PUBLIC_USE_MOCKS=false` |
+| **`EXPO_PUBLIC_USE_MOCKS`** | ⚠️ Pendiente | Sigue en `true` en `.env`; cambiar a `false` una vez que `profileStore` esté conectado al backend |
