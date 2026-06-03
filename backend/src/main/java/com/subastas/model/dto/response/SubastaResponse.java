@@ -19,6 +19,8 @@ public class SubastaResponse {
     private String descripcion;
     @JsonProperty("startDate")
     private LocalDateTime fechaInicio;
+    @JsonProperty("endDate")
+    private LocalDateTime fechaFin;
     @JsonProperty("category")
     private Categoria categoria;
     @JsonProperty("currency")
@@ -29,6 +31,8 @@ public class SubastaResponse {
     private String ubicacion;
     private RematadorInfo rematador;
     private int totalItems;
+    @JsonProperty("coverImageUrl")
+    private String coverImageUrl;
 
     @Data
     @Builder

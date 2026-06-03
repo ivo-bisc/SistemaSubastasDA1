@@ -32,7 +32,7 @@ function nextId(prefix: string) {
   return `${prefix}_${idCounter}`;
 }
 
-export const useProfileStore = create<ProfileStore>((set) => ({
+export const useProfileStore = create<ProfileStore>((set, get) => ({
   name: '',
   username: '',
   email: '',
@@ -45,6 +45,8 @@ export const useProfileStore = create<ProfileStore>((set) => ({
   error: null,
 
   loadProfile: async () => {
+    if (get().isLoading) return;
+
     set({ isLoading: true, error: null });
     try {
       const [profileRes, paymentsRes] = await Promise.all([
@@ -59,9 +61,10 @@ export const useProfileStore = create<ProfileStore>((set) => ({
         .filter((mp) => mp.tipo === 'TARJETA_CREDITO')
         .map((mp) => ({
           id: String(mp.id),
-          last4: '****',
-          brand: 'visa' as const,
-          holderName: mp.alias ?? '',
+          alias: mp.alias ?? '',
+          tipo: mp.tipo ?? 'TARJETA_CREDITO',
+          moneda: mp.moneda ?? '',
+          verificado: mp.verificado,
         }));
 
       const checks: MockCheck[] = payments
@@ -113,6 +116,10 @@ export const useProfileStore = create<ProfileStore>((set) => ({
         ...s.cards,
         {
           id: String(mp.id),
+          alias: mp.alias ?? data.alias,
+          tipo: mp.tipo ?? data.tipo,
+          moneda: mp.moneda ?? data.moneda,
+          verificado: mp.verificado,
           last4: digits.slice(-4) || '****',
           brand: detectCardBrand(digits),
           holderName: data.titular ?? mp.alias ?? '',

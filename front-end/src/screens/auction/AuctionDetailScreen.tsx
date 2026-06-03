@@ -21,6 +21,7 @@ import {
 } from '../../components/auction';
 import { Colors, Fonts, FontSize } from '../../constants';
 import { useAuctionSocket } from '../../hooks/useAuctionSocket';
+import { useTimeRemaining } from '../../hooks/useTimeRemaining';
 import { auctionService } from '../../services';
 import { useProfileStore } from '../../stores/profileStore';
 import type { AuctionDetail } from '../../types';
@@ -107,6 +108,7 @@ export default function AuctionDetailScreen() {
   }, [customBidValue]);
 
   const minBidAmount = livePujaMinima ?? auction?.currentPrice ?? 0;
+  const timeRemaining = useTimeRemaining(auction?.endDate, 1000, { variant: 'detailed' });
   const isCustomBidValid = effectiveCustomAmount > minBidAmount;
 
   const handlePlaceBid = () => {
@@ -219,7 +221,7 @@ export default function AuctionDetailScreen() {
               initialPrice={auction.startingPrice}
               lastBid={auction.currentPrice}
               currency="ARS"
-              timeRemaining=""
+              timeRemaining={timeRemaining}
             />
 
             <View style={styles.liveHeader}>

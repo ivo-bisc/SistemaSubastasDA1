@@ -29,4 +29,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     Optional<Item> findByIdWithLock(@Param("id") Long id);
 
     long countBySubasta(Subasta subasta);
+
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.imagenes WHERE i.numeroPieza = :numeroPieza")
+    Optional<Item> findByNumeroPiezaWithImagenes(@Param("numeroPieza") String numeroPieza);
 }

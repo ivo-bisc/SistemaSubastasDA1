@@ -27,6 +27,7 @@ export default function ChatDetailScreen() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const scrollRef = useRef<any>(null);
 
@@ -112,33 +113,44 @@ export default function ChatDetailScreen() {
         ))}
       </ScrollView>
 
-      <View style={styles.inputBar}>
-        <TextInput
-          placeholder="Escribí tu mensaje..."
-          placeholderTextColor="#9A9A9A"
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-        />
-        <Pressable
-          style={styles.sendBtn}
-          onPress={() => {
-            const text = inputText.trim();
-            if (!text) return;
-            const now = new Date();
-            const h = now.getHours().toString().padStart(2, '0');
-            const m = now.getMinutes().toString().padStart(2, '0');
-            const time = `${h}:${m}`;
-            const newMsg = { id: `m${Date.now()}`, type: 'out', text, time };
-            setMessages((prev) => [...prev, newMsg]);
-            setInputText('');
-            if (purchaseId) {
-              chatService.sendMessage(purchaseId, text).catch(() => {});
-            }
-          }}
-        >
-          <Ionicons name="send" size={20} color={Colors.white} />
-        </Pressable>
+      <View style={styles.inputArea}>
+        {sendError ? <Text style={styles.sendError}>{sendError}</Text> : null}
+        <View style={styles.inputBar}>
+          <TextInput
+            placeholder="Escribí tu mensaje..."
+            placeholderTextColor="#9A9A9A"
+            style={styles.input}
+            value={inputText}
+            onChangeText={(text) => {
+              setInputText(text);
+              if (sendError) setSendError(null);
+            }}
+          />
+          <Pressable
+            style={styles.sendBtn}
+            onPress={() => {
+              const text = inputText.trim();
+              if (!text) return;
+              const now = new Date();
+              const h = now.getHours().toString().padStart(2, '0');
+              const m = now.getMinutes().toString().padStart(2, '0');
+              const time = `${h}:${m}`;
+              const msgId = `m${Date.now()}`;
+              const newMsg = { id: msgId, type: 'out', text, time };
+              setSendError(null);
+              setMessages((prev) => [...prev, newMsg]);
+              setInputText('');
+              if (purchaseId) {
+                chatService.sendMessage(purchaseId, text).catch(() => {
+                  setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
+                  setSendError('No se pudo enviar el mensaje. Intentá de nuevo.');
+                });
+              }
+            }}
+          >
+            <Ionicons name="send" size={20} color={Colors.white} />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -233,11 +245,20 @@ const styles = StyleSheet.create({
     marginTop: 6,
     alignSelf: 'flex-end',
   },
-  inputBar: {
+  inputArea: {
     position: 'absolute',
     left: 12,
     right: 12,
     bottom: 16,
+  },
+  sendError: {
+    color: Colors.error,
+    fontFamily: Fonts.body,
+    fontSize: FontSize.sm,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F2F2F4',

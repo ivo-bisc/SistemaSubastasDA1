@@ -30,7 +30,7 @@ export default function RegisterStep1Screen() {
   // Validation rules
   const nameRegex = useMemo(() => /^[A-Za-zÁÉÍÓÚáéíóúÑñ]{3,}$/, []);
   const emailRegex = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/, []);
-  const passwordRegex = useMemo(() => /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{3,}/, []);
+  const passwordRegex = useMemo(() => /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}/, []);
 
   const nombreValid = nameRegex.test(nombre);
   const apellidoValid = nameRegex.test(apellido);
@@ -91,7 +91,7 @@ export default function RegisterStep1Screen() {
       />
       {touched.password && !passwordValid ? (
         <Text style={{ color: '#FF3B30', marginBottom: 8 }}>
-          Contraseña inválida. Mínimo 3 caracteres, debe incluir número, mayúscula y minúscula.
+          Contraseña inválida. Mínimo 8 caracteres, debe incluir número, mayúscula y minúscula.
         </Text>
       ) : null}
 

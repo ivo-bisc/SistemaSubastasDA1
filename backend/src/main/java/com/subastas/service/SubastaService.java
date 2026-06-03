@@ -361,13 +361,23 @@ public class SubastaService {
                 .titulo(s.getTitulo())
                 .descripcion(s.getDescripcion())
                 .fechaInicio(s.getFechaInicio())
+                .fechaFin(s.getFechaFin())
                 .categoria(s.getCategoria())
                 .moneda(s.getMoneda())
                 .estado(s.getEstado())
                 .ubicacion(s.getUbicacion())
                 .rematador(rematadorInfo)
                 .totalItems((int) itemRepository.countBySubasta(s))
+                .coverImageUrl(resolveCoverImageUrl(s))
                 .build();
+    }
+
+    private String resolveCoverImageUrl(Subasta subasta) {
+        return itemRepository.findBySubastaWithDetails(subasta).stream()
+                .filter(item -> item.getImagenes() != null && !item.getImagenes().isEmpty())
+                .findFirst()
+                .map(item -> item.getImagenes().get(0).getUrl())
+                .orElse(null);
     }
 
 }

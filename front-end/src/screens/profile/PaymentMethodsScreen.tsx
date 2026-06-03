@@ -6,11 +6,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProfileHeaderBar, ProfileScreenShell } from '../../components/profile';
 import { Colors, Fonts, FontSize, Layout } from '../../constants';
 import { useProfileStore } from '../../stores';
+import type { MockCard } from '../../data/mockProfile';
 import type { ProfileStackParamList } from '../../types';
 
 type Nav = StackNavigationProp<ProfileStackParamList, 'PaymentMethods'>;
 
-function CardBrandIcon({ brand }: { brand: 'visa' | 'mastercard' }) {
+function formatCardLabel(card: MockCard): string {
+  const parts = [card.alias, card.tipo, card.moneda].filter(Boolean);
+  if (parts.length > 0) return parts.join(' · ');
+  if (card.last4) return `**** ${card.last4}`;
+  return 'Tarjeta';
+}
+
+function CardBrandIcon({ brand }: { brand?: MockCard['brand'] }) {
   const name = brand === 'visa' ? 'card' : 'card-outline';
   return <Ionicons name={name} size={22} color={Colors.accent} />;
 }
@@ -37,10 +45,14 @@ export default function PaymentMethodsScreen() {
       {cards.map((card) => (
         <View key={card.id} style={styles.cardRow}>
           <CardBrandIcon brand={card.brand} />
-          <Text style={styles.cardMask}>**** {card.last4}</Text>
+          <Text style={styles.cardMask}>{formatCardLabel(card)}</Text>
           <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} />
         </View>
       ))}
+
+      {cards.length === 0 ? (
+        <Text style={styles.empty}>No hay tarjetas guardadas</Text>
+      ) : null}
 
       <View style={[styles.sectionHeader, styles.sectionGap]}>
         <Text style={styles.sectionTitle}>Cheques</Text>

@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -8,6 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import RemoteImage from '../common/RemoteImage';
 import { Colors, Fonts, FontSize } from '../../constants';
 import { CatalogCardItem } from '../../types/catalog';
 
@@ -29,7 +29,7 @@ export default function AuctionItemCard({
       style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}
       onPress={onPress}
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
+      <RemoteImage uri={item.imageUrl} style={styles.image} iconSize={28} />
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>
           {item.title}

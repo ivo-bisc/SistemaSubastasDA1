@@ -17,9 +17,14 @@ export const MOCK_USER = {
 
 export type MockCard = {
   id: string;
-  last4: string;
-  brand: 'visa' | 'mastercard';
-  holderName: string;
+  alias: string;
+  tipo: string;
+  moneda: string;
+  verificado?: boolean;
+  /** Present when added locally from the card form */
+  last4?: string;
+  brand?: 'visa' | 'mastercard';
+  holderName?: string;
 };
 
 export type MockCheck = {
@@ -32,8 +37,24 @@ export type MockCheck = {
 };
 
 export const MOCK_CARDS: MockCard[] = [
-  { id: 'card_01', last4: '4187', brand: 'mastercard', holderName: 'Jane Doe' },
-  { id: 'card_02', last4: '9387', brand: 'mastercard', holderName: 'Jane Doe' },
+  {
+    id: 'card_01',
+    alias: 'Jane Doe',
+    tipo: 'TARJETA_CREDITO',
+    moneda: 'ARS',
+    last4: '4187',
+    brand: 'mastercard',
+    holderName: 'Jane Doe',
+  },
+  {
+    id: 'card_02',
+    alias: 'Jane Doe',
+    tipo: 'TARJETA_CREDITO',
+    moneda: 'ARS',
+    last4: '9387',
+    brand: 'mastercard',
+    holderName: 'Jane Doe',
+  },
 ];
 
 export const MOCK_CHECKS: MockCheck[] = [];

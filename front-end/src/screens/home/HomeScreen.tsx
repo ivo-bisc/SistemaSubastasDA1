@@ -13,6 +13,8 @@ import {
 import { Colors } from '../../constants';
 import { auctionService } from '../../services';
 import { useAuthStore } from '../../stores';
+import { formatTimeRemaining } from '../../utils/format';
+import { resolveImageUrl } from '../../utils/media';
 import type {
   HomeStackParamList,
   MainTabParamList,
@@ -35,6 +37,7 @@ export default function HomeScreen() {
   const [auctions, setAuctions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   const showPrice = isAuthenticated;
 
@@ -45,6 +48,11 @@ export default function HomeScreen() {
       .then((res) => setAuctions(res.data ?? []))
       .catch(() => setError('No se pudieron cargar las subastas.'))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
   }, []);
 
   const requireAuth = (action: () => void) => {
@@ -70,8 +78,8 @@ export default function HomeScreen() {
           id: String(s.id),
           title: s.description || s.title,
           price: '',
-          timeRemaining: '',
-          imageUrl: '',
+          timeRemaining: formatTimeRemaining(s.endDate ?? ''),
+          imageUrl: resolveImageUrl(s.coverImageUrl ?? ''),
         },
       ],
     }));
@@ -79,7 +87,7 @@ export default function HomeScreen() {
     return categories.filter((c) =>
       [c.name, c.description].join(' ').toLowerCase().includes(normalizedQuery)
     );
-  }, [searchQuery, auctions]);
+  }, [searchQuery, auctions, tick]);
 
   const openAuction = (itemId: string) => {
     requireAuth(() => {

@@ -1,9 +1,11 @@
 import React from 'react';
-import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import RemoteImage from '../common/RemoteImage';
 import { Colors } from '../../constants';
+import { hasImageUrl } from '../../utils/media';
 
 type Props = {
   imageUrl: string;
@@ -22,13 +24,14 @@ export default function AuctionImageHeader({
 }: Props) {
   const [fullscreen, setFullscreen] = React.useState(false);
   const insets = useSafeAreaInsets();
+  const showImage = hasImageUrl(imageUrl);
 
   const dynamicTop = insets.top > 0 ? insets.top + 8 : 12;
 
   return (
     <>
       <View style={[styles.wrap, { height }]}>
-        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+        <RemoteImage uri={imageUrl} style={styles.image} containerStyle={styles.image} iconSize={48} />
 
         {/* Real high-fidelity Linear Gradient Overlay */}
         <LinearGradient
@@ -55,8 +58,9 @@ export default function AuctionImageHeader({
 
         <Pressable
           style={styles.expandBtn}
-          onPress={() => setFullscreen(true)}
+          onPress={() => showImage && setFullscreen(true)}
           hitSlop={8}
+          disabled={!showImage}
         >
           <Ionicons name="expand-outline" size={20} color={Colors.black} />
         </Pressable>
@@ -67,10 +71,12 @@ export default function AuctionImageHeader({
           <Pressable style={styles.fullscreenClose} onPress={() => setFullscreen(false)}>
             <Ionicons name="close" size={28} color={Colors.white} />
           </Pressable>
-          <Image
-            source={{ uri: imageUrl }}
+          <RemoteImage
+            uri={imageUrl}
             style={styles.fullscreenImage}
+            containerStyle={styles.fullscreenImage}
             resizeMode="contain"
+            iconSize={64}
           />
         </View>
       </Modal>

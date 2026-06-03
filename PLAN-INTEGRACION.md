@@ -1,31 +1,45 @@
 # Plan de Integración — Sistema de Subastas DA1
 **Basado en:** AUDIT-V2.md  
 **Fecha:** 2026-06-03  
+**Última actualización:** 2026-06-03  
 **Criterio de prioridad:** costo/beneficio académico — primero lo que rompe funcionalidad visible, último lo cosmético.
+
+---
+
+## Progreso
+
+| Estado | Pasos |
+|--------|-------|
+| ✅ **Completados** | 1, 2, 3, 4, 7b, 10 |
+| ⏳ **Pendientes** | 5, 6, 7, 7c, 8, 9, 11 |
+
+**Fase 1 (fixes críticos): terminada.**
 
 ---
 
 ## Resumen rápido
 
-| # | Tarea | Impacto | Esfuerzo | Prioridad |
-|---|-------|---------|----------|-----------|
-| 1 | Alinear validación de contraseña (3→8 chars) | 🔴 Crítico | ~5 min | 1 |
-| 2 | Fix mapeo `MedioPagoResponse` en `profileStore` | 🔴 Crítico | ~30 min | 2 |
-| 3 | Fix silencio de errores en `chatService.sendMessage` | 🔴 Crítico | ~10 min | 3 |
-| 4 | Conectar `AddCardScreen` a `POST /usuarios/medios-pago` | 🟡 Medio | ~45 min | 4 |
-| 5 | Conectar `MyBidsScreen` a API real | 🟡 Medio | ~1 h | 5 |
-| 6 | Conectar `MyAuctionsScreen` a API real | 🟡 Medio | ~1 h | 6 |
-| 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 |
-| 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b |
-| 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c |
-| 8 | Credenciales: sacar defaults de `application.properties` | 🔴 Crítico | ~20 min | 8 |
-| 9 | Eliminar `tokenEmail: 'dev-bypass'` | 🔴 Crítico | ~30 min | 9 |
-| 10 | Race condition en `profileStore.loadProfile()` | 🟢 Menor | ~5 min | 10 |
-| 11 | Limpieza: servicios muertos, tipos sin usar, `bidService` | 🟢 Menor | ~1 h | 11 |
+| # | Tarea | Impacto | Esfuerzo | Prioridad | Estado |
+|---|-------|---------|----------|-----------|--------|
+| 1 | Alinear validación de contraseña (3→8 chars) | 🔴 Crítico | ~5 min | 1 | ✅ |
+| 2 | Fix mapeo `MedioPagoResponse` en `profileStore` | 🔴 Crítico | ~30 min | 2 | ✅ |
+| 3 | Fix silencio de errores en `chatService.sendMessage` | 🔴 Crítico | ~10 min | 3 | ✅ |
+| 4 | Conectar `AddCardScreen` a `POST /usuarios/medios-pago` | 🟡 Medio | ~45 min | 4 | ✅ |
+| 5 | Conectar `MyBidsScreen` a API real | 🟡 Medio | ~1 h | 5 | ⏳ |
+| 6 | Conectar `MyAuctionsScreen` a API real | 🟡 Medio | ~1 h | 6 | ⏳ |
+| 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 | ⏳ |
+| 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b | ✅ |
+| 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c | ⏳ |
+| 8 | Credenciales: sacar defaults de `application.properties` | 🔴 Crítico | ~20 min | 8 | ⏳ |
+| 9 | Eliminar `tokenEmail: 'dev-bypass'` | 🔴 Crítico | ~30 min | 9 | ⏳ |
+| 10 | Race condition en `profileStore.loadProfile()` | 🟢 Menor | ~5 min | 10 | ✅ |
+| 11 | Limpieza: servicios muertos, tipos sin usar, `bidService` | 🟢 Menor | ~1 h | 11 | ⏳ |
 
 ---
 
-## Paso 1 — Alinear validación de contraseña
+## Paso 1 — Alinear validación de contraseña ✅
+
+**Estado:** Completado (2026-06-03). Regex en `RegisterStep1Screen.tsx` exige mínimo 8 caracteres.
 
 **Archivo:** `front-end/src/screens/auth/RegisterStep1Screen.tsx`  
 **Problema:** frontend valida mínimo 3 caracteres; backend tiene `@Size(min=8)`. Contraseñas de 3-7 chars pasan el formulario y explotan con 400 en backend.
@@ -39,7 +53,9 @@
 
 ---
 
-## Paso 2 — Fix mapeo `MedioPagoResponse` en `profileStore`
+## Paso 2 — Fix mapeo `MedioPagoResponse` en `profileStore` ✅
+
+**Estado:** Completado (2026-06-03). `loadProfile()` mapea `alias`, `tipo`, `moneda`, `verificado`. `PaymentMethodsScreen` muestra esos campos.
 
 **Archivo:** `front-end/src/stores/profileStore.ts`  
 **Problema:** `loadProfile()` mapea la respuesta de `GET /usuarios/medios-pago` a objetos `MockCard { last4, brand, holderName }`, pero el backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoLimite }`. Los campos `last4`, `brand` y `holderName` no existen en la respuesta → las tarjetas se muestran vacías en `ProfileScreen`.
@@ -58,9 +74,11 @@
 
 ---
 
-## Paso 3 — Fix silencio de errores en `chatService.sendMessage`
+## Paso 3 — Fix silencio de errores en `chatService.sendMessage` ✅
 
-**Archivo:** `front-end/src/screens/chat/ChatDetailScreen.tsx` (o `front-end/src/services/chatService.ts`)  
+**Estado:** Completado (2026-06-03). `ChatDetailScreen` muestra `sendError`, revierte mensaje optimista si falla el POST.
+
+**Archivo:** `front-end/src/screens/chat/ChatDetailScreen.tsx`  
 **Problema:** `.catch(() => {})` después de `sendMessage()` descarta el error por completo. El usuario no sabe si el mensaje falló.
 
 **Qué hacer:**
@@ -75,7 +93,9 @@
 
 ---
 
-## Paso 4 — Conectar `AddCardScreen` a `POST /usuarios/medios-pago`
+## Paso 4 — Conectar `AddCardScreen` a `POST /usuarios/medios-pago` ✅
+
+**Estado:** Completado. `AddCardScreen` llama a `addCardViaApi()` → `paymentService.addPaymentMethod()`. Manejo de error con `Alert` y estado `loading`.
 
 **Archivo:** `front-end/src/screens/profile/AddCardScreen.tsx`  
 **Problema:** al agregar una tarjeta desde el perfil, solo se guarda en el store local sin llamar al backend. Al recargar la app, la tarjeta desaparece.
@@ -163,9 +183,11 @@
 
 ---
 
-## Paso 7b — Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo
+## Paso 7b — Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo ✅
 
-**Archivos:** `front-end/src/screens/home/LotDetailScreen.tsx`, `front-end/src/screens/home/HomeScreen.tsx`  
+**Estado:** Completado (2026-06-03). `auctionService.getLotDetail()` carga subasta + catálogo. `LotDetailScreen` usa API real con loading/error. Navegación a `AuctionDetail` con `auctionId: lotId`.
+
+**Archivos:** `front-end/src/services/auctionService.ts`, `front-end/src/screens/home/LotDetailScreen.tsx`  
 **Problema:** `LotDetailScreen` llama a `getLotById(route.params.lotId)` del mock. Un "lote" en el frontend (nombre + descripción + lista de ítems) corresponde exactamente a una **subasta** en el backend. El backend tiene `GET /subastas/{id}` y `GET /subastas/{id}/catalogo` completamente implementados.
 
 **Por qué es más complejo que otros mocks:**  
@@ -222,7 +244,9 @@ El mock usa IDs string (`'cat-1'`, `'cat-2'`). El backend usa IDs Long. Para que
 
 ---
 
-## Paso 10 — Race condition en `profileStore.loadProfile()`
+## Paso 10 — Race condition en `profileStore.loadProfile()` ✅
+
+**Estado:** Completado (2026-06-03). Store usa `(set, get)` y `if (get().isLoading) return;` al inicio de `loadProfile()`.
 
 **Archivo:** `front-end/src/stores/profileStore.ts`  
 **Problema:** si `ProfileScreen` se desmonta y remonta, se lanza una segunda llamada a `loadProfile()` en paralelo. La última en llegar gana y puede sobrescribir datos inconsistentes.
@@ -269,22 +293,21 @@ Para cada uno de estos servicios, elegir: **implementar** o **eliminar**.
 ## Orden de ejecución sugerido
 
 ```
-Paso 1  (5 min)   ← fix inmediato, 1 línea
-Paso 3  (10 min)  ← fix inmediato, 2 líneas
-Paso 10 (5 min)   ← fix inmediato, 1 línea
-Paso 2  (30 min)  ← fix de contrato de datos, impacto visible
-Paso 8  (20 min)  ← seguridad, no bloquea funcionalidad pero es fácil
-Paso 4  (45 min)  ← conectar AddCardScreen
-Paso 9  (30 min)  ← requiere revisar backend primero
-Paso 5  (1 h)     ← conectar MyBidsScreen
-Paso 6  (1 h)     ← conectar MyAuctionsScreen
-Paso 7  (1 h)     ← conectar UploadItemScreen
-Paso 7c (15 min)  ← disconnectFromAuction al salir de subasta
-Paso 7b (1.5 h)   ← conectar LotDetailScreen (requiere tocar HomeScreen también)
-Paso 11 (1 h)     ← limpieza final
+✅ Paso 1  (5 min)   — contraseña 8 chars
+✅ Paso 3  (10 min)  — error visible en chat
+✅ Paso 10 (5 min)   — race condition perfil
+✅ Paso 2  (30 min)  — mapeo tarjetas
+✅ Paso 4  (45 min)  — AddCardScreen → API
+✅ Paso 7b (1.5 h)   — LotDetailScreen + getLotDetail
+⏳ Paso 7c (15 min)  — disconnectFromAuction al salir de subasta  ← siguiente rápido
+⏳ Paso 7  (1 h)     — UploadItemScreen → consignaciones
+⏳ Paso 5  (1 h)     — MyBidsScreen (USE_MOCKS o endpoint nuevo)
+⏳ Paso 6  (1 h)     — MyAuctionsScreen
+⏳ Paso 11 (1 h)     — limpieza final
 ```
 
-**Total estimado:** ~8.75 horas de trabajo.
+**Completado:** ~3 h (pasos 1–4, 7b, 10).  
+**Restante estimado:** ~5.5 h.
 
 ---
 

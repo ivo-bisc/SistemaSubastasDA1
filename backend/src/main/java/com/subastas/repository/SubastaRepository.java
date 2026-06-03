@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SubastaRepository extends JpaRepository<Subasta, Long> {
@@ -28,4 +29,6 @@ public interface SubastaRepository extends JpaRepository<Subasta, Long> {
             @Param("categoria") Categoria categoria,
             @Param("moneda") Moneda moneda,
             @Param("categoriasAccesibles") List<Categoria> categoriasAccesibles);
+
+    Optional<Subasta> findByTitulo(String titulo);
 }

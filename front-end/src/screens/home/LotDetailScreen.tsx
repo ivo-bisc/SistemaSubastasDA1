@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -7,8 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuctionItemCard } from '../../components/home';
 import ProfileHeaderBar from '../../components/profile/ProfileHeaderBar';
 import { Colors, Fonts, FontSize } from '../../constants';
-import { getLotById } from '../../data/mockHomeCatalog';
+import { auctionService } from '../../services';
 import { useAuthStore } from '../../stores';
+import { formatTimeRemaining } from '../../utils/format';
+import type { CatalogCategory } from '../../types/catalog';
 import type { HomeStackParamList, RootStackParamList } from '../../types';
 
 type Route = RouteProp<HomeStackParamList, 'LotDetail'>;
@@ -17,8 +19,13 @@ type Nav = StackNavigationProp<HomeStackParamList, 'LotDetail'>;
 export default function LotDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const lotId = route.params.lotId;
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const lot = getLotById(route.params.lotId);
+
+  const [lot, setLot] = useState<CatalogCategory | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,25 +33,66 @@ export default function LotDetailScreen() {
     }
   }, [isAuthenticated, navigation]);
 
-  if (!lot) {
+  useEffect(() => {
+    if (!lotId) {
+      setError('No encontramos este lote.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    auctionService
+      .getLotDetail(lotId)
+      .then(setLot)
+      .catch(() => setError('No se pudo cargar el lote.'))
+      .finally(() => setLoading(false));
+  }, [lotId]);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const displayItems = useMemo(() => {
+    if (!lot) return [];
+    const endDate = lot.endDate ?? '';
+    return lot.items.map((item) => ({
+      ...item,
+      timeRemaining: formatTimeRemaining(endDate),
+    }));
+  }, [lot, tick]);
+
+  const openProduct = () => {
+    navigation
+      .getParent()
+      ?.getParent()
+      ?.navigate('AuctionDetail' as keyof RootStackParamList, {
+        auctionId: lotId,
+      });
+  };
+
+  if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ProfileHeaderBar title="Lote" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
-          <Text style={styles.errorText}>No encontramos este lote.</Text>
+          <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       </SafeAreaView>
     );
   }
 
-  const openProduct = (itemId: string) => {
-    navigation
-      .getParent()
-      ?.getParent()
-      ?.navigate('AuctionDetail' as keyof RootStackParamList, {
-        auctionId: itemId,
-      });
-  };
+  if (error || !lot) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ProfileHeaderBar title="Lote" onBack={() => navigation.goBack()} />
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error ?? 'No encontramos este lote.'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -64,15 +112,19 @@ export default function LotDetailScreen() {
           Productos ({lot.items.length})
         </Text>
 
-        {lot.items.map((item) => (
-          <AuctionItemCard
-            key={item.id}
-            item={item}
-            showPrice
-            onPress={() => openProduct(item.id)}
-            style={styles.productCard}
-          />
-        ))}
+        {displayItems.length === 0 ? (
+          <Text style={styles.emptyText}>No hay ítems en este lote.</Text>
+        ) : (
+          displayItems.map((item) => (
+            <AuctionItemCard
+              key={item.id}
+              item={item}
+              showPrice
+              onPress={openProduct}
+              style={styles.productCard}
+            />
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -107,6 +159,12 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 22,
     marginBottom: 20,
+  },
+  emptyText: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.md,
+    color: Colors.textSecondary,
+    marginBottom: 12,
   },
   productCard: {
     width: '100%',

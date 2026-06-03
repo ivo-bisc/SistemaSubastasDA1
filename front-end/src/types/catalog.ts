@@ -10,5 +10,6 @@ export type CatalogCategory = {
   id: string;
   name: string;
   description: string;
+  endDate?: string;
   items: CatalogCardItem[];
 };
