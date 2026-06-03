@@ -43,6 +43,7 @@ export const Endpoints = {
 
   // ── Purchases ──────────────────────────────────────────
   PURCHASES: {
+    LIST: '/usuarios/compras',
     DETAIL: (id: string) => `/usuarios/compras/${id}`,
     // PENDIENTE: sin pantalla ni servicio implementado
     CHAT: (id: string) => `/compras/${id}/chat`,

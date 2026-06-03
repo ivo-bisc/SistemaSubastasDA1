@@ -5,6 +5,7 @@ import com.subastas.model.dto.response.CompraResponse;
 import com.subastas.model.entity.Compra;
 import com.subastas.model.entity.Usuario;
 import com.subastas.repository.CompraRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,14 @@ public class CompraService {
 
     private final CompraRepository compraRepository;
     private final UsuarioService usuarioService;
+
+    @Transactional(readOnly = true)
+    public List<CompraResponse> listarCompras(String email) {
+        Usuario usuario = usuarioService.obtenerPorEmail(email);
+        return compraRepository.findByUsuarioOrderByIdDesc(usuario).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
     @Transactional(readOnly = true)
     public CompraResponse obtenerCompra(Long compraId, String email) {

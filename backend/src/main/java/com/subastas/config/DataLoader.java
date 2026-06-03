@@ -33,6 +33,8 @@ public class DataLoader implements CommandLineRunner {
     private final RematadorRepository rematadorRepository;
     private final PolizaRepository polizaRepository;
     private final ConsignacionRepository consignacionRepository;
+    private final CompraRepository compraRepository;
+    private final MensajeChatRepository mensajeChatRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -254,8 +256,87 @@ public class DataLoader implements CommandLineRunner {
         }
         consignacionRepository.save(consignacion2);
 
-        log.info("Datos de prueba cargados: 2 usuarios, 2 medios de pago, 2 subastas, 2 ítems, 2 consignaciones");
+        // Subasta cerrada — para datos de compra y chat
+        Subasta subasta3 = Subasta.builder()
+                .titulo("Subasta Cerrada - Fotografía Latinoamericana")
+                .descripcion("Obras de fotógrafos contemporáneos de América Latina")
+                .fechaInicio(LocalDateTime.now().minusDays(14))
+                .fechaFin(LocalDateTime.now().minusDays(7))
+                .categoria(Categoria.COMUN)
+                .moneda(Moneda.ARS)
+                .estado(EstadoSubasta.CERRADA)
+                .ubicacion("Galería Praxis, CABA")
+                .rematador(rematador)
+                .build();
+        subasta3 = subastaRepository.save(subasta3);
+
+        Item item3 = Item.builder()
+                .numeroPieza("P-003")
+                .descripcion("Fotografía en gelatina de plata - \"Mercado de Abasto\" - 40x50cm")
+                .precioBase(new BigDecimal("30000.00"))
+                .estado(EstadoItem.VENDIDO)
+                .duenioActual("Colección Fernández")
+                .esObraArte(true)
+                .artista("Horacio Coppola")
+                .historia("Copia vintage de 1936, tiraje limitado")
+                .ubicacionFisica("Depósito Central - Av. Industria 4500, Dock Sud")
+                .subasta(subasta3)
+                .build();
+        item3 = itemRepository.save(item3);
+
+        // Juan ganó item3 — compra pendiente de pago
+        BigDecimal montoOfertado = new BigDecimal("42000.00");
+        BigDecimal comisiones    = new BigDecimal("4200.00");
+        BigDecimal costoEnvio    = new BigDecimal("1500.00");
+        Compra compra1 = Compra.builder()
+                .item(item3)
+                .usuario(postor1)
+                .montoOfertado(montoOfertado)
+                .comisiones(comisiones)
+                .costoEnvio(costoEnvio)
+                .total(montoOfertado.add(comisiones).add(costoEnvio))
+                .moneda(Moneda.ARS)
+                .medioPago(mp1)
+                .estadoPago(EstadoPago.PENDIENTE)
+                .fechaLimitePago(LocalDateTime.now().plusDays(3))
+                .build();
+        compra1 = compraRepository.save(compra1);
+
+        // Conversación de coordinación de entrega
+        mensajeChatRepository.save(MensajeChat.builder()
+                .contenido("¡Felicitaciones! Ganaste \"Mercado de Abasto\" de Horacio Coppola por $42.000 ARS. " +
+                           "El total a pagar es $47.700 (incluye comisión del 10% + envío). " +
+                           "¿Preferís envío a domicilio o retiro personal en depósito?")
+                .remitente(RemitenteMensaje.EMPRESA)
+                .timestamp(LocalDateTime.now().minusDays(6))
+                .compra(compra1)
+                .usuario(postor1)
+                .leido(true)
+                .build());
+
+        mensajeChatRepository.save(MensajeChat.builder()
+                .contenido("Hola, prefiero envío a domicilio. Mi dirección es Av. Corrientes 1234, CABA.")
+                .remitente(RemitenteMensaje.USUARIO)
+                .timestamp(LocalDateTime.now().minusDays(5))
+                .compra(compra1)
+                .usuario(postor1)
+                .leido(true)
+                .build());
+
+        mensajeChatRepository.save(MensajeChat.builder()
+                .contenido("Perfecto, coordinaremos el envío una vez confirmado el pago. " +
+                           "Tenés hasta " + LocalDateTime.now().plusDays(3).toLocalDate() + " para abonar. " +
+                           "¿Necesitás información sobre los medios de pago aceptados?")
+                .remitente(RemitenteMensaje.EMPRESA)
+                .timestamp(LocalDateTime.now().minusDays(5).plusHours(2))
+                .compra(compra1)
+                .usuario(postor1)
+                .leido(false)
+                .build());
+
+        log.info("Datos de prueba cargados: 2 usuarios, 2 medios de pago, 3 subastas, 3 ítems, 2 consignaciones, 1 compra, 3 mensajes de chat");
         log.debug("Login de prueba: juan@test.com / password123 (PLATA)");
         log.debug("Login de prueba: maria@test.com / password123 (ORO)");
+        log.debug("Compra de prueba: juan@test.com ganó item3 (P-003) — compraId = 1");
     }
 }

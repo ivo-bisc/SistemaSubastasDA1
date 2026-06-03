@@ -88,6 +88,12 @@ public class UsuarioController {
         return ResponseEntity.ok(multaService.pagarMulta(id, userDetails.getUsername(), request));
     }
 
+    @GetMapping("/compras")
+    public ResponseEntity<List<CompraResponse>> listarCompras(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(compraService.listarCompras(userDetails.getUsername()));
+    }
+
     @GetMapping("/compras/{compraId}")
     public ResponseEntity<CompraResponse> obtenerCompra(
             @AuthenticationPrincipal UserDetails userDetails,

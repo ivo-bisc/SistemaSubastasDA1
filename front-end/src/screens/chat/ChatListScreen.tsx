@@ -1,82 +1,102 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, Fonts } from '../../constants';
+import { chatService } from '../../services/chatService';
 
-const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
+type CompraItem = {
+  compraId: number;
+  item: { id: number; descripcion: string; numeroPieza: string };
+  estadoPago: string;
+  total: number;
+  moneda: string;
+};
 
-// TODO: el backend no expone un endpoint de listado de chats del usuario.
-// Existe GET /compras/{compraId}/chat (por compra individual) pero no
-// GET /compras/chat ni similar. Cuando se implemente en el backend,
-// reemplazar MOCK_CHATS con chatService.getChats() y pasar purchaseId
-// real al navegar a ChatDetail.
-
-const MOCK_CHATS = [
-  {
-    id: '1',
-    name: 'Marvin McKinney',
-    subtitle: 'Reloj vintage',
-    preview: 'Lorem ipsum dolor sit amet',
-    time: '5m',
-    unread: true,
-  },
-  {
-    id: '2',
-    name: 'Leslie Alexander',
-    subtitle: 'Pelota Final 2010 usada en partido',
-    preview: 'Lorem ipsum dolor sit amet',
-    time: '5m',
-    unread: false,
-  },
-];
-
-function ChatItem({ item }: { item: any }) {
+function ChatItem({ item }: { item: CompraItem }) {
   const navigation = useNavigation<any>();
   const [pressed, setPressed] = useState(false);
 
+  const estadoLabel: Record<string, string> = {
+    PENDIENTE: 'Pago pendiente',
+    PAGADO: 'Pagado',
+    INCUMPLIDO: 'Incumplido',
+  };
+
   return (
     <Pressable
-      onPress={() => navigation.navigate('ChatDetail', { conversationId: item.id })}
+      onPress={() => navigation.navigate('ChatDetail', { purchaseId: String(item.compraId) })}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
-      style={[styles.chatItem, (pressed || item.unread) && styles.chatItemActive]}
+      style={[styles.chatItem, pressed && styles.chatItemActive]}
     >
-      <View style={[styles.avatar, (pressed || item.unread) && styles.avatarActive]}>
-        <Text style={styles.avatarInitial}>{item.name.split(' ')[0][0]}</Text>
+      <View style={[styles.avatar, pressed && styles.avatarActive]}>
+        <Text style={styles.avatarInitial}>{item.item.numeroPieza[0]}</Text>
       </View>
 
       <View style={styles.chatContent}>
         <View style={styles.chatTopRow}>
-          <Text style={[styles.chatName, (pressed || item.unread) && styles.chatNameActive]}>{item.name}</Text>
-          <Text style={[styles.chatTime, (pressed || item.unread) && styles.chatTimeActive]}>{item.time}</Text>
+          <Text style={[styles.chatName, pressed && styles.chatNameActive]} numberOfLines={1}>
+            {item.item.descripcion}
+          </Text>
+          <Text style={[styles.chatTime, pressed && styles.chatTimeActive]}>
+            #{item.item.numeroPieza}
+          </Text>
         </View>
-        <Text style={[styles.chatSubtitle, (pressed || item.unread) && styles.chatSubtitleActive]}>{item.subtitle}</Text>
-        <Text style={[styles.chatPreview, (pressed || item.unread) && styles.chatPreviewActive]}>{item.preview}</Text>
+        <Text style={[styles.chatSubtitle, pressed && styles.chatSubtitleActive]}>
+          {item.moneda} {item.total?.toLocaleString('es-AR')}
+        </Text>
+        <Text style={[styles.chatPreview, pressed && styles.chatPreviewActive]}>
+          {estadoLabel[item.estadoPago] ?? item.estadoPago}
+        </Text>
       </View>
     </Pressable>
   );
 }
 
 export default function ChatListScreen() {
+  const [compras, setCompras] = useState<CompraItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    chatService.getCompras()
+      .then((res) => setCompras(res.data))
+      .catch(() => setError('No se pudieron cargar los chats'))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Chats</Text>
       </View>
 
-      <FlatList
-        data={USE_MOCKS ? MOCK_CHATS : []}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => <ChatItem item={item} />}
-        contentContainerStyle={styles.list}
-      />
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.auctionViolet} />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={compras}
+          keyExtractor={(i) => String(i.compraId)}
+          renderItem={({ item }) => <ChatItem item={item} />}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No tenés compras con chat activo.</Text>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -104,6 +124,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     marginTop: 8,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: Colors.textSecondary,
+    fontFamily: Fonts.body,
+    fontSize: FontSize.base,
+    marginTop: 40,
+  },
+  errorText: {
+    color: Colors.error,
+    fontFamily: Fonts.body,
+    fontSize: FontSize.base,
+    textAlign: 'center',
   },
   chatItem: {
     flexDirection: 'row',
@@ -145,6 +183,8 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.soraBold,
     color: Colors.textPrimary,
     fontSize: FontSize.base,
+    flex: 1,
+    marginRight: 8,
   },
   chatNameActive: {
     color: Colors.white,

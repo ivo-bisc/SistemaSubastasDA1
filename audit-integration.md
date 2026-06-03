@@ -141,6 +141,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
 
 | Frontend path | Método | Estado | Observación |
 |---|---|---|---|
+| `/usuarios/compras` | GET | ✅ | Nuevo endpoint — lista todas las compras del usuario; usado por `ChatListScreen` |
 | `/usuarios/compras/{id}` | GET | ✅ | |
 
 ### CHAT — backend implementado, frontend ausente
@@ -344,6 +345,8 @@ Definidos en `SecurityConfig.java`:
 | **`PUT /usuarios/perfil`** | Endpoint implementado en backend (`ActualizarPerfilRequest`: firstName, lastName, phone); verificado con curl; path coincide con `endpoints.ts` |
 | **`profileStore.ts` conectado al backend** | `loadProfile()` reemplaza MOCK_USER/MOCK_CARDS/MOCK_CHECKS con llamadas reales; `isLoading`/`error` agregados |
 | **`ProfileScreen` carga datos reales** | `useEffect` llama a `loadProfile()` al montar; loading y error manejados visualmente |
+| **`ChatListScreen` conectada al backend** | `GET /usuarios/compras` nuevo en backend; `ChatListScreen` reemplaza mock por llamada real |
+| **DataLoader: compra + chat de prueba** | `subasta3` CERRADA + `item3` VENDIDO + `compra1` (Juan) + 3 `MensajeChat` cargados al iniciar con BD vacía |
 | **`CATALOG.ITEMS` eliminado** | Constante removida de `endpoints.ts`; no existía en backend |
 | **`EXPO_PUBLIC_USE_MOCKS=false`** | Mocks desactivados en `.env` |
 
@@ -355,5 +358,6 @@ Definidos en `SecurityConfig.java`:
 |---|---|---|
 | **`ProfileScreen` — llamar `loadProfile()`** | ✅ Resuelto | `useEffect` llama a `loadProfile()` al montar; muestra `ActivityIndicator` mientras carga y texto de error si falla |
 | **`PATCH /compras/{id}/entrega`** | ⚠️ Pendiente | `PURCHASES.DELIVERY` marcado en `endpoints.ts`; sin servicio ni pantalla |
-| **`ChatListScreen`** | ⚠️ Pendiente | Backend no expone listado de chats del usuario. Muestra lista vacía con `EXPO_PUBLIC_USE_MOCKS=false` |
+| **`ChatListScreen`** | ✅ Resuelto | `GET /usuarios/compras` implementado en backend; `ChatListScreen` carga compras reales, muestra loading/error/vacío, navega a `ChatDetail` con `purchaseId` |
 | **`MOCK_ADDRESSES`** | ⚠️ Pendiente | `profileStore.ts` sigue usando `MOCK_ADDRESSES`; TODO comentado; bloqueado por falta de endpoint en backend |
+| **DataLoader: compra + chat** | ⚠️ Pendiente | Los datos de prueba (compra1 + 3 mensajes) solo se cargan si la BD está vacía al arrancar. Requiere truncate manual si ya había datos previos |
