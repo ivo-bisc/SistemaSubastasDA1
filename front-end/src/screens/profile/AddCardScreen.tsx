@@ -1,84 +1,80 @@
-import React, { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { BidUpTextField, PrimaryButton } from '../../components/auth';
+import { CreditCardFields, PrimaryButton } from '../../components/auth';
 import { ProfileHeaderBar, ProfileScreenShell } from '../../components/profile';
 import { useProfileStore } from '../../stores';
 import type { ProfileStackParamList } from '../../types';
+import {
+  ALL_CARD_TOUCHED,
+  buildCardMedioPagoRequest,
+  EMPTY_CARD_TOUCHED,
+  isCreditCardFormValid,
+  type CreditCardTouched,
+} from '../../utils/cardForm';
 
 type Nav = StackNavigationProp<ProfileStackParamList, 'AddCard'>;
 
 export default function AddCardScreen() {
   const navigation = useNavigation<Nav>();
-  const addCard = useProfileStore((s) => s.addCard);
+  const addCardViaApi = useProfileStore((s) => s.addCardViaApi);
 
   const [cardNumber, setCardNumber] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [expiry, setExpiry] = useState('');
+  const [securityCode, setSecurityCode] = useState('');
+  const [expiration, setExpiration] = useState('');
   const [holderName, setHolderName] = useState('');
+  const [touched, setTouched] = useState<CreditCardTouched>(EMPTY_CARD_TOUCHED);
+  const [loading, setLoading] = useState(false);
 
-  const handleConfirm = () => {
-    const digits = cardNumber.replace(/\D/g, '');
-    if (digits.length < 4 || !holderName.trim()) {
-      Alert.alert('Tarjeta', 'Completá los datos de la tarjeta.');
-      return;
+  const formValid = useMemo(
+    () => isCreditCardFormValid(cardNumber, securityCode, expiration, holderName),
+    [cardNumber, securityCode, expiration, holderName]
+  );
+
+  const handleBlur = (field: keyof CreditCardTouched) => {
+    setTouched((current) => ({ ...current, [field]: true }));
+  };
+
+  const handleConfirm = async () => {
+    setTouched(ALL_CARD_TOUCHED);
+    if (!formValid) return;
+
+    setLoading(true);
+    try {
+      await addCardViaApi(buildCardMedioPagoRequest(cardNumber, holderName, expiration));
+      navigation.goBack();
+    } catch {
+      Alert.alert('Tarjeta', 'No se pudo registrar la tarjeta. Intentá de nuevo.');
+    } finally {
+      setLoading(false);
     }
-    addCard({
-      last4: digits.slice(-4),
-      brand: digits.startsWith('4') ? 'visa' : 'mastercard',
-      holderName: holderName.trim(),
-    });
-    navigation.goBack();
   };
 
   return (
     <ProfileScreenShell
-      footer={<PrimaryButton label="Confirmar" onPress={handleConfirm} />}
+      footer={
+        <PrimaryButton
+          label="Confirmar"
+          onPress={handleConfirm}
+          disabled={!formValid || loading}
+        />
+      }
     >
       <ProfileHeaderBar title="Añadir tarjeta" onBack={() => navigation.goBack()} />
 
-      <BidUpTextField
-        placeholder="Número de tarjeta"
-        value={cardNumber}
-        onChangeText={setCardNumber}
-        keyboardType="numeric"
-      />
-
-      <View style={styles.row}>
-        <BidUpTextField
-          placeholder="Código de seguridad"
-          value={cvv}
-          onChangeText={setCvv}
-          containerStyle={styles.half}
-          keyboardType="numeric"
-          secureTextEntry
-          maxLength={4}
-        />
-        <BidUpTextField
-          placeholder="Expiración"
-          value={expiry}
-          onChangeText={setExpiry}
-          containerStyle={styles.half}
-          placeholderTextColor="#8E8E93"
-        />
-      </View>
-
-      <BidUpTextField
-        placeholder="Nombre en la tarjeta"
-        value={holderName}
-        onChangeText={setHolderName}
+      <CreditCardFields
+        cardNumber={cardNumber}
+        securityCode={securityCode}
+        expiration={expiration}
+        holderName={holderName}
+        onCardNumberChange={setCardNumber}
+        onSecurityCodeChange={setSecurityCode}
+        onExpirationChange={setExpiration}
+        onHolderNameChange={setHolderName}
+        touched={touched}
+        onBlur={handleBlur}
       />
     </ProfileScreenShell>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  half: {
-    flex: 1,
-  },
-});

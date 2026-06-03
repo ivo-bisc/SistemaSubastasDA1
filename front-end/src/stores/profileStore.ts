@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { MockCard, MockCheck } from '../data/mockProfile';
 import { userService } from '../services/userService';
-import { paymentService } from '../services/paymentService';
+import { paymentService, type MedioPagoRequest } from '../services/paymentService';
+import { detectCardBrand, onlyDigits } from '../utils/cardForm';
 
 interface ProfileStore {
   name: string;
@@ -20,6 +21,7 @@ interface ProfileStore {
   setPassword: (password: string) => void;
   updateAddress: (domicilioLegal: string) => Promise<void>;
   addCard: (card: Omit<MockCard, 'id'>) => void;
+  addCardViaApi: (data: MedioPagoRequest) => Promise<void>;
   addCheck: (check: Omit<MockCheck, 'id'>) => void;
 }
 
@@ -59,7 +61,7 @@ export const useProfileStore = create<ProfileStore>((set) => ({
           id: String(mp.id),
           last4: '****',
           brand: 'visa' as const,
-          holderName: mp.alias,
+          holderName: mp.alias ?? '',
         }));
 
       const checks: MockCheck[] = payments
@@ -100,6 +102,24 @@ export const useProfileStore = create<ProfileStore>((set) => ({
     set((s) => ({
       cards: [...s.cards, { ...card, id: nextId('card') }],
     })),
+
+  addCardViaApi: async (data) => {
+    const response = await paymentService.addPaymentMethod(data);
+    const mp = response.data;
+    const digits = onlyDigits(data.numeroTarjeta ?? '');
+
+    set((s) => ({
+      cards: [
+        ...s.cards,
+        {
+          id: String(mp.id),
+          last4: digits.slice(-4) || '****',
+          brand: detectCardBrand(digits),
+          holderName: data.titular ?? mp.alias ?? '',
+        },
+      ],
+    }));
+  },
   addCheck: (check) =>
     set((s) => ({
       checks: [...s.checks, { ...check, id: nextId('chk') }],

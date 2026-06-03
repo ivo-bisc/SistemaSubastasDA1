@@ -9,4 +9,5 @@ export { default as SecondaryButton } from './SecondaryButton';
 export { default as AuthLink } from './AuthLink';
 export { default as StepLabel } from './StepLabel';
 export { default as CheckboxRow } from './CheckboxRow';
+export { default as CreditCardFields } from './CreditCardFields';
 export { default as EmailSentIllustration } from './EmailSentIllustration';
