@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -59,6 +59,7 @@ export default function RegisterStep2Screen() {
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <AuthScreen>
       <BackButton onPress={() => navigation.goBack()} />
       <AuthTitle>Creá tu cuenta</AuthTitle>
@@ -191,57 +192,59 @@ export default function RegisterStep2Screen() {
         style={styles.button}
       />
 
-      {/* Tipo de documento modal */}
-      <Modal visible={showTipoModal} transparent animationType="slide">
-        <View style={modalStyles.backdrop}>
-          <View style={modalStyles.sheet}>
-            {['DNI', 'Pasaporte'].map((t) => (
-              <Pressable
-                key={t}
+    </AuthScreen>
+
+    {/* Tipo de documento modal — fuera del ScrollView para evitar problemas en Android */}
+    <Modal visible={showTipoModal} transparent animationType="slide">
+      <View style={modalStyles.backdrop}>
+        <View style={modalStyles.sheet}>
+          {['DNI', 'Pasaporte'].map((t) => (
+            <Pressable
+              key={t}
+              style={modalStyles.option}
+              onPress={() => {
+                setTipoDoc(t);
+                setShowTipoModal(false);
+                setTouched((s) => ({ ...s, tipoDoc: true }));
+              }}
+            >
+              <Text style={modalStyles.optionText}>{t}</Text>
+            </Pressable>
+          ))}
+          <Pressable onPress={() => setShowTipoModal(false)} style={modalStyles.cancel}>
+            <Text style={modalStyles.cancelText}>Cancelar</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+
+    {/* Países modal — fuera del ScrollView para evitar problemas en Android */}
+    <Modal visible={showPaisModal} transparent animationType="slide">
+      <View style={modalStyles.backdrop}>
+        <View style={[modalStyles.sheet, { maxHeight: '70%' }]}>
+          <FlatList
+            data={COUNTRIES}
+            keyExtractor={(i) => i}
+            renderItem={({ item }) => (
+              <TouchableOpacity
                 style={modalStyles.option}
                 onPress={() => {
-                  setTipoDoc(t);
-                  setShowTipoModal(false);
-                  setTouched((s) => ({ ...s, tipoDoc: true }));
+                  setPais(item);
+                  setShowPaisModal(false);
+                  setTouched((s) => ({ ...s, pais: true }));
                 }}
               >
-                <Text style={modalStyles.optionText}>{t}</Text>
-              </Pressable>
-            ))}
-            <Pressable onPress={() => setShowTipoModal(false)} style={modalStyles.cancel}>
-              <Text style={modalStyles.cancelText}>Cancelar</Text>
-            </Pressable>
-          </View>
+                <Text style={modalStyles.optionText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <Pressable onPress={() => setShowPaisModal(false)} style={modalStyles.cancel}>
+            <Text style={modalStyles.cancelText}>Cerrar</Text>
+          </Pressable>
         </View>
-      </Modal>
-
-      {/* Países modal */}
-      <Modal visible={showPaisModal} transparent animationType="slide">
-        <View style={modalStyles.backdrop}>
-          <View style={[modalStyles.sheet, { maxHeight: '70%' }]}>
-            <FlatList
-              data={COUNTRIES}
-              keyExtractor={(i) => i}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={modalStyles.option}
-                  onPress={() => {
-                    setPais(item);
-                    setShowPaisModal(false);
-                    setTouched((s) => ({ ...s, pais: true }));
-                  }}
-                >
-                  <Text style={modalStyles.optionText}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <Pressable onPress={() => setShowPaisModal(false)} style={modalStyles.cancel}>
-              <Text style={modalStyles.cancelText}>Cerrar</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-    </AuthScreen>
+      </View>
+    </Modal>
+    </View>
   );
 }
 

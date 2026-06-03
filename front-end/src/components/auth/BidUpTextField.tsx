@@ -20,7 +20,10 @@ export default function BidUpTextField({
   ...props
 }: Props) {
   return (
-    <View style={[styles.wrap, containerStyle]}>
+    <View
+      style={[styles.wrap, containerStyle]}
+      pointerEvents={props.editable === false ? 'none' : 'auto'}
+    >
       <TextInput
         style={[styles.input, style]}
         placeholderTextColor={placeholderTextColor}
