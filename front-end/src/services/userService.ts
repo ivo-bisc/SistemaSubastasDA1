@@ -14,6 +14,7 @@ export const userService = {
     firstName?: string;
     lastName?: string;
     phone?: string;
+    domicilioLegal?: string;
   }) => {
     // TODO: implementar
     return apiClient.put(Endpoints.USERS.UPDATE_PROFILE, data);

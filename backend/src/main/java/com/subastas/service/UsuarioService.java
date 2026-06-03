@@ -59,9 +59,10 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse actualizarPerfil(String email, ActualizarPerfilRequest request) {
         Usuario usuario = obtenerPorEmail(email);
-        if (request.getFirstName() != null) usuario.setNombre(request.getFirstName());
-        if (request.getLastName()  != null) usuario.setApellido(request.getLastName());
-        if (request.getPhone()     != null) usuario.setTelefono(request.getPhone());
+        if (request.getFirstName()      != null) usuario.setNombre(request.getFirstName());
+        if (request.getLastName()       != null) usuario.setApellido(request.getLastName());
+        if (request.getPhone()          != null) usuario.setTelefono(request.getPhone());
+        if (request.getDomicilioLegal() != null) usuario.setDomicilioLegal(request.getDomicilioLegal());
         usuarioRepository.save(usuario);
         return mapToResponse(usuario);
     }

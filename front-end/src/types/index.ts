@@ -195,7 +195,7 @@ export type ProfileStackParamList = {
   EditUsername: undefined;
   EditPassword: undefined;
   AddressList: undefined;
-  AddAddress: { addressId?: string } | undefined;
+  AddAddress: undefined;
   PaymentMethods: undefined;
   AddCard: undefined;
   AddCheck: undefined;

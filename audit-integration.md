@@ -349,15 +349,13 @@ Definidos en `SecurityConfig.java`:
 | **DataLoader: compra + chat de prueba** | `subasta3` CERRADA + `item3` VENDIDO + `compra1` (Juan) + 3 `MensajeChat` cargados al iniciar con BD vacía |
 | **`CATALOG.ITEMS` eliminado** | Constante removida de `endpoints.ts`; no existía en backend |
 | **`EXPO_PUBLIC_USE_MOCKS=false`** | Mocks desactivados en `.env` |
+| **`MOCK_ADDRESSES` eliminado** | `AddressListScreen` muestra `domicilioLegal` del usuario; `AddAddressScreen` edita vía `PUT /usuarios/perfil` con campo `domicilioLegal` agregado al backend |
 
 ---
 
-### ❌ / ⚠️ Pendiente
+### ⚠️ Pendiente
 
-| Área | Estado | Qué falta |
-|---|---|---|
-| **`ProfileScreen` — llamar `loadProfile()`** | ✅ Resuelto | `useEffect` llama a `loadProfile()` al montar; muestra `ActivityIndicator` mientras carga y texto de error si falla |
-| **`PATCH /compras/{id}/entrega`** | ⚠️ Pendiente | `PURCHASES.DELIVERY` marcado en `endpoints.ts`; sin servicio ni pantalla |
-| **`ChatListScreen`** | ✅ Resuelto | `GET /usuarios/compras` implementado en backend; `ChatListScreen` carga compras reales, muestra loading/error/vacío, navega a `ChatDetail` con `purchaseId` |
-| **`MOCK_ADDRESSES`** | ⚠️ Pendiente | `profileStore.ts` sigue usando `MOCK_ADDRESSES`; TODO comentado; bloqueado por falta de endpoint en backend |
-| **DataLoader: compra + chat** | ⚠️ Pendiente | Los datos de prueba (compra1 + 3 mensajes) solo se cargan si la BD está vacía al arrancar. Requiere truncate manual si ya había datos previos |
+| Área | Qué falta |
+|---|---|
+| **`PATCH /compras/{id}/entrega`** | `PURCHASES.DELIVERY` marcado en `endpoints.ts`; sin servicio ni pantalla en el frontend |
+| **DataLoader: truncate manual** | Los datos de prueba (compra1 + 3 mensajes) solo se cargan si la BD está vacía al arrancar; requiere truncate manual si ya había datos previos |

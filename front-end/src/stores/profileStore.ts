@@ -1,10 +1,5 @@
 import { create } from 'zustand';
-import {
-  MOCK_ADDRESSES,
-  MockAddress,
-  MockCard,
-  MockCheck,
-} from '../data/mockProfile';
+import { MockCard, MockCheck } from '../data/mockProfile';
 import { userService } from '../services/userService';
 import { paymentService } from '../services/paymentService';
 
@@ -14,8 +9,7 @@ interface ProfileStore {
   email: string;
   category: string;
   avatarColor: string;
-  // TODO: reemplazar cuando el backend exponga GET /usuarios/direcciones
-  addresses: MockAddress[];
+  address: string;
   cards: MockCard[];
   checks: MockCheck[];
   isLoading: boolean;
@@ -24,8 +18,7 @@ interface ProfileStore {
   loadProfile: () => Promise<void>;
   setUsername: (username: string) => void;
   setPassword: (password: string) => void;
-  addAddress: (address: Omit<MockAddress, 'id'>) => void;
-  updateAddress: (id: string, address: Omit<MockAddress, 'id'>) => void;
+  updateAddress: (domicilioLegal: string) => Promise<void>;
   addCard: (card: Omit<MockCard, 'id'>) => void;
   addCheck: (check: Omit<MockCheck, 'id'>) => void;
 }
@@ -43,7 +36,7 @@ export const useProfileStore = create<ProfileStore>((set) => ({
   email: '',
   category: '',
   avatarColor: '#FC9905',
-  addresses: [...MOCK_ADDRESSES],
+  address: '',
   cards: [],
   checks: [],
   isLoading: false,
@@ -85,6 +78,7 @@ export const useProfileStore = create<ProfileStore>((set) => ({
         username: u.firstName,
         email: u.email,
         category: u.category,
+        address: u.address ?? '',
         cards,
         checks,
         isLoading: false,
@@ -95,17 +89,13 @@ export const useProfileStore = create<ProfileStore>((set) => ({
   },
 
   setUsername: (username) => set({ username }),
-  setPassword: () => {
-    /* mock: sin backend */
+  setPassword: () => { /* mock: sin backend */ },
+
+  updateAddress: async (domicilioLegal) => {
+    await userService.updateProfile({ domicilioLegal });
+    set({ address: domicilioLegal });
   },
-  addAddress: (address) =>
-    set((s) => ({
-      addresses: [...s.addresses, { ...address, id: nextId('addr') }],
-    })),
-  updateAddress: (id, address) =>
-    set((s) => ({
-      addresses: s.addresses.map((a) => (a.id === id ? { ...address, id } : a)),
-    })),
+
   addCard: (card) =>
     set((s) => ({
       cards: [...s.cards, { ...card, id: nextId('card') }],
