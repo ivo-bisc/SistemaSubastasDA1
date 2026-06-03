@@ -35,6 +35,7 @@ export interface Auction {
 }
 
 export interface AuctionDetail extends Auction {
+  itemId: number;
   images: string[];
   category: string;
   seller: {
@@ -42,6 +43,30 @@ export interface AuctionDetail extends Auction {
     name: string;
   };
   totalBids: number;
+}
+
+// ── WebSocket STOMP messages ──────────────────────────────
+export interface BidUpdatedMessage {
+  tipo: 'BID_UPDATED';
+  itemId: number;
+  nuevaMejorOferta: number;
+  mejorPostorAlias: string;
+  pujaMinima: number;
+  pujaMaxima: number;
+  timestamp: string;
+}
+
+export interface BidConfirmedMessage {
+  tipo: 'BID_CONFIRMED';
+  pujaId: number;
+  monto: number;
+  timestamp: string;
+}
+
+export interface BidRejectedMessage {
+  tipo: 'BID_REJECTED';
+  motivo: string;
+  mensaje: string;
 }
 
 // ── Bid ──────────────────────────────────────────────────

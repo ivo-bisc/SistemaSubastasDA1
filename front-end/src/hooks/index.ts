@@ -1,5 +1,1 @@
-/**
- * Custom hooks — placeholder
- *
- * Agregar hooks reutilizables aquí (useDebounce, useForm, etc.)
- */
+export { useAuctionSocket } from './useAuctionSocket';

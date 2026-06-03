@@ -26,6 +26,7 @@ export const auctionService = {
 
     return {
       id: String(subasta.id),
+      itemId: Number(firstItem?.id ?? 0),
       title: subasta.title,
       description: subasta.description ?? '',
       imageUrl: firstItem?.images?.[0]?.url ?? '',

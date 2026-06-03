@@ -20,7 +20,9 @@ import {
   ConfirmBidModal,
 } from '../../components/auction';
 import { Colors, Fonts, FontSize } from '../../constants';
+import { useAuctionSocket } from '../../hooks/useAuctionSocket';
 import { auctionService } from '../../services';
+import { useProfileStore } from '../../stores/profileStore';
 import type { AuctionDetail } from '../../types';
 
 const IMAGE_HEIGHT = 280;
@@ -45,16 +47,37 @@ export default function AuctionDetailScreen() {
       .finally(() => setLoading(false));
   }, [auctionId]);
 
+  const cards = useProfileStore((s) => s.cards);
+  const { liveBid, confirmation, rejection, sendBid } = useAuctionSocket(auctionId ?? '');
+
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(0);
   const [customBidMode, setCustomBidMode] = useState(false);
   const [customBidValue, setCustomBidValue] = useState('');
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [pendingAmount, setPendingAmount] = useState(0);
+  const [bidError, setBidError] = useState<string | null>(null);
+  const [livePujaMinima, setLivePujaMinima] = useState<number | null>(null);
 
   // Animated values
   const descHeight = useRef(new Animated.Value(0)).current;
   const chevronRotation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!liveBid) return;
+    setAuction((prev) => (prev ? { ...prev, currentPrice: liveBid.nuevaMejorOferta } : prev));
+    setLivePujaMinima(liveBid.pujaMinima);
+  }, [liveBid]);
+
+  useEffect(() => {
+    if (!rejection) return;
+    setBidError(rejection.mensaje);
+  }, [rejection]);
+
+  useEffect(() => {
+    if (!confirmation) return;
+    setBidError(null);
+  }, [confirmation]);
 
   const toggleDescription = () => {
     const opening = !descriptionOpen;
@@ -83,7 +106,7 @@ export default function AuctionDetailScreen() {
     return Number.isFinite(parsed) ? parsed : 0;
   }, [customBidValue]);
 
-  const minBidAmount = auction?.currentPrice ?? 0;
+  const minBidAmount = livePujaMinima ?? auction?.currentPrice ?? 0;
   const isCustomBidValid = effectiveCustomAmount > minBidAmount;
 
   const handlePlaceBid = () => {
@@ -110,8 +133,18 @@ export default function AuctionDetailScreen() {
   };
 
   const handleConfirmBid = () => {
+    const card = cards[0];
+    if (!card) {
+      setBidError('Necesitás agregar un medio de pago antes de pujar.');
+      setConfirmVisible(false);
+      return;
+    }
+    sendBid({
+      itemId: auction!.itemId,
+      monto: pendingAmount,
+      medioPagoId: parseInt(card.id.replace(/\D/g, ''), 10),
+    });
     setConfirmVisible(false);
-    navigation.goBack();
   };
 
   if (loading) {
@@ -199,6 +232,12 @@ export default function AuctionDetailScreen() {
               </Text>
             </View>
           </View>
+
+          {bidError ? (
+            <View style={styles.bidErrorBanner}>
+              <Text style={styles.bidErrorText}>{bidError}</Text>
+            </View>
+          ) : null}
 
           {/* Large bottom spacer to prevent sticky bottom bar occlusion */}
           <View style={styles.bottomSpacer} />
@@ -364,6 +403,20 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 120, // Clean minimal padding so scroll finishes elegantly above the bar
+  },
+  bidErrorBanner: {
+    backgroundColor: '#FFF0F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF3B30',
+    marginHorizontal: 20,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 8,
+  },
+  bidErrorText: {
+    fontFamily: Fonts.sora,
+    fontSize: FontSize.sm,
+    color: '#FF3B30',
   },
   dimOverlay: {
     ...StyleSheet.absoluteFillObject,
