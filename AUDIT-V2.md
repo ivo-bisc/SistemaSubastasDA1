@@ -41,7 +41,7 @@ Credentials: true
 | `ALLOWED_ORIGINS` | lista con `null` | 🟡 Ver arriba |
 
 ### EXPO_PUBLIC_USE_MOCKS actual
-`false` en `.env`. La variable existe en todos los archivos de mock (`data/mockActivity.ts`, `data/mockProfile.ts`, `data/mockHomeCatalog.ts`) como `export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true'`, pero **ninguna pantalla la evalúa**. Los mocks de `MyBidsScreen`, `MyAuctionsScreen` y `LotDetailScreen` están activos incondicionalmente.
+`false` en `.env`. La variable existe en todos los archivos de mock (`data/mockActivity.ts`, `data/mockProfile.ts`, `data/mockHomeCatalog.ts`) como `export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true'`, pero **ninguna pantalla la evalúa**. Los mocks de `MyBidsScreen` y `MyAuctionsScreen` están activos incondicionalmente. `LotDetailScreen` fue conectado a la API real (Paso 7b).
 
 ---
 
@@ -140,7 +140,7 @@ Credentials: true
 |---|---|---|---|
 | `tokenEmail` | `'dev-bypass'` (hardcodeado) | `@NotBlank String` | 🔴 Dev bypass activo en código |
 | `email` | String | `@NotBlank @Email String` | ✅ |
-| `password` | mín 3 chars (validación frontend) | `@NotBlank @Size(min=8) String` | 🔴 **Mismatch**: frontend permite 3 chars, backend requiere mín 8 |
+| `password` | mín 8 chars (validación frontend) | `@NotBlank @Size(min=8) String` | ✅ Resuelto (Paso 1) |
 
 ### POST /usuarios/medios-pago (RegisterStep3Screen)
 | Campo | Frontend envía | Backend espera | ¿Match? |
@@ -165,8 +165,8 @@ Credentials: true
 
 ### GET /usuarios/medios-pago — Response
 Backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoLimite }`.  
-El `profileStore` mapea TARJETA_CREDITO → cards con campos `{ last4, brand, holderName }`.  
-**🔴 Mismatch**: el backend no retorna `last4`, `brand` ni `holderName` — esos campos no existen en `MedioPagoResponse`. El mapeo de `profileStore.loadProfile()` falla silenciosamente o produce cards con campos vacíos.
+`profileStore.loadProfile()` mapea → `{ id, alias, tipo, moneda, verificado }`.  
+**✅ Resuelto (Paso 2)**: los campos `last4`, `brand` y `holderName` ya no están en el mapeo de `loadProfile()`.
 
 ### GET /usuarios/compras — Response
 | Campo JSON backend | Frontend espera | ¿Match? |
@@ -225,9 +225,9 @@ El `profileStore` mapea TARJETA_CREDITO → cards con campos `{ last4, brand, ho
 ### Mocks activos sin flag condicional
 - `MyBidsScreen` — importa `MOCK_BIDS` directamente, nunca llama API. `USE_MOCKS` ignorado.
 - `MyAuctionsScreen` — importa `MOCK_AUCTIONS` directamente, nunca llama API. `USE_MOCKS` ignorado.
-- `LotDetailScreen` — usa `getLotById()` de `mockHomeCatalog`, nunca llama API. `USE_MOCKS` ignorado.
+- ~~`LotDetailScreen`~~ — ✅ Conectado a `auctionService.getLotDetail()` (Paso 7b).
 - `myAuctionsStore` — `addSubmission()` genera IDs con `Date.now()` sin llamar al backend.
-- `AddCardScreen` — agrega tarjeta al store local sin llamar `POST /usuarios/medios-pago`.
+- ~~`AddCardScreen`~~ — ✅ Conectado a `paymentService.addPaymentMethod()` + recarga `loadProfile()` (Paso 4).
 
 ---
 
@@ -257,7 +257,7 @@ El frontend tiene dos caminos para pujar: `bidService.placeBid()` (REST) y `useA
 |---|---|---|
 | `MyBidsScreen` | `metricsService` / `bidService` | Usa `MOCK_BIDS` hardcodeado |
 | `MyAuctionsScreen` | `consignService` / `myAuctionsStore` | Usa `MOCK_AUCTIONS` + store local |
-| `AddCardScreen` | `paymentService.addPaymentMethod()` | Solo guarda en store local |
+| ~~`AddCardScreen`~~ | `paymentService.addPaymentMethod()` | ✅ Resuelto (Paso 4) |
 | `UploadItemScreen` | `consignService.submitItem()` | Solo guarda en `myAuctionsStore` local |
 
 ### Stores no inicializados desde la API
@@ -266,8 +266,8 @@ El frontend tiene dos caminos para pujar: `bidService.placeBid()` (REST) y `useA
 - `myAuctionsStore` — genera datos locales con `Date.now()` sin backend.
 
 ### Flujos conectados en teoría pero con contrato roto
-- **ProfileScreen / `profileStore.loadProfile()`**: llama a `GET /usuarios/medios-pago` pero el mapeo a `MockCard { last4, brand, holderName }` usa campos que no existen en `MedioPagoResponse`. Las tarjetas del perfil se muestran con datos vacíos.
-- **RegisterStep2Screen**: `password` mínimo 3 caracteres en frontend, `@Size(min=8)` en backend → el registro falla con 400 para contraseñas de 3-7 caracteres.
+- ~~**ProfileScreen / `profileStore.loadProfile()`**~~: ✅ Resuelto (Paso 2) — mapeo usa los campos reales `{ id, alias, tipo, moneda, verificado }`.
+- ~~**RegisterStep2Screen** (password)~~: ✅ Resuelto (Paso 1) — ambos lados validan mínimo 8 caracteres.
 - **`authStore.logout()`**: no llama a `POST /auth/logout` → el token JWT sigue válido en el servidor hasta que expire (24 horas).
 
 ---
@@ -300,7 +300,7 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 ### Pantallas con errores silenciados o sin feedback visible
 | Pantalla | Situación | Problema |
 |---|---|---|
-| `ChatDetailScreen` — `sendMessage` | `.catch(() => {})` | 🔴 Error completamente silenciado; el usuario no sabe si el mensaje falló |
+| `ChatDetailScreen` — `sendMessage` | `setSendError()` + revierte mensaje | ✅ Resuelto (Paso 3) |
 | `ChatDetailScreen` — carga inicial | `catch` setea `loadError` | 🟡 Verificar que la UI renderiza el estado de error |
 | `AuctionDetailScreen` — bid | Error WS llega por `rejection` state | ✅ Se muestra `bidError` al usuario |
 | `HomeScreen` — `getAuctions()` | catch genérico | 🟡 Mensaje genérico; no diferencia timeout vs 401 vs 500 |
@@ -331,11 +331,8 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | `MyAuctionsScreen` | ❌ No necesita (usa mocks) | Sin API call |
 | `UploadItemScreen` | ❌ Sin loading al confirmar | 🟡 El usuario puede presionar doble submit |
 
-### profileStore.loadProfile() — posible race condition
-`loadProfile()` se llama en `ProfileScreen` dentro de `useEffect([], [])`.  
-Si el componente re-monta (navegación fuera y vuelta), se llama una segunda vez en paralelo sin guard.  
-No hay `if (get().isLoading) return;` al inicio del método — la última respuesta que llega gana y sobrescribe el estado.  
-**🟡 Race condition de baja probabilidad**: agregar `if (get().isLoading) return;` al inicio del método.
+### profileStore.loadProfile() — race condition ✅ Resuelto (Paso 10)
+`if (get().isLoading) return;` agregado al inicio del método. Si `ProfileScreen` re-monta, la segunda llamada aborta inmediatamente.
 
 ---
 
@@ -367,16 +364,16 @@ No hay `if (get().isLoading) return;` al inicio del método — la última respu
 |---|---|---|---|
 | Credenciales en `application.properties` | 🔴 Roto | Crítico | Eliminar defaults de DB_PASSWORD y JWT_SECRET; usar env vars obligatorias sin fallback |
 | `tokenEmail: 'dev-bypass'` en registro | 🔴 Roto | Crítico | El registro real requiere token de email válido; este hardcodeo rompe el flujo en producción |
-| Password mismatch: 3 chars (frontend) vs 8 chars (backend) | 🔴 Roto | Crítico | Alinear validación de contraseña en RegisterStep1Screen a mínimo 8 caracteres |
-| Mapeo `MedioPagoResponse` → `MockCard` | 🔴 Roto | Crítico | Backend no retorna `last4`/`brand`/`holderName`; las tarjetas en ProfileScreen se muestran vacías |
-| `chatService.sendMessage` silencia errores | 🔴 Roto | Crítico | Reemplazar `.catch(() => {})` con feedback visible al usuario |
-| Mocks incondicionales en MyBids/MyAuctions/LotDetail | 🟡 Funciona con datos falsos | Medio | Conectar a API real o implementar switch por `EXPO_PUBLIC_USE_MOCKS` |
+| Password mismatch: 3 chars (frontend) vs 8 chars (backend) | ✅ Resuelto (Paso 1) | Crítico | — |
+| Mapeo `MedioPagoResponse` → `MockCard` | ✅ Resuelto (Paso 2) | Crítico | — |
+| `chatService.sendMessage` silencia errores | ✅ Resuelto (Paso 3) | Crítico | — |
+| Mocks incondicionales en MyBids/MyAuctions | 🟡 Funciona con datos falsos | Medio | Conectar a API real o implementar switch por `EXPO_PUBLIC_USE_MOCKS`; LotDetail ✅ conectado (Paso 7b) |
 | `authStore.logout()` no invalida token en backend | 🟡 Funciona con riesgo | Medio | Llamar `POST /auth/logout` antes de limpiar estado local |
 | `/catalogo/items` no existe en backend | 🟡 Falla en runtime | Medio | `catalogService.getItems()` llama ruta inexistente; eliminar o corregir ruta |
 | Servicios enteros sin implementación ni uso | 🟡 Deuda técnica | Medio | Implementar o eliminar `catalogService`, `bidService`, `consignService`, `metricsService`, `purchaseService` |
-| `AddCardScreen` no llama API | 🟡 Funciona con datos falsos | Medio | Las tarjetas agregadas desde perfil no persisten en backend |
+| `AddCardScreen` no llama API | ✅ Resuelto (Paso 4) | Medio | — |
 | `UploadItemScreen` no llama `consignService` | 🟡 Funciona con datos falsos | Medio | Las consignaciones no llegan al backend |
-| Race condition en `profileStore.loadProfile()` | 🟢 Riesgo bajo | Menor | Agregar guard `if (get().isLoading) return;` al inicio del método |
+| Race condition en `profileStore.loadProfile()` | ✅ Resuelto (Paso 10) | Menor | — |
 | Interfaces TypeScript sin usar | 🟢 Limpieza | Menor | Eliminar `CatalogItem`, `CardPayment`, `CheckPayment`, `ChatConversation`, `PaymentMethod` de `types/` |
 | `bidService` duplica lógica de WebSocket | 🟢 Limpieza | Menor | Eliminar el servicio REST de pujas; mantener solo WebSocket |
 | `null` en `ALLOWED_ORIGINS` | 🟢 Riesgo bajo | Menor | Eliminar antes de producción |

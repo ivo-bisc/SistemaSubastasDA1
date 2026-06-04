@@ -1,7 +1,7 @@
 # Plan de Integración — Sistema de Subastas DA1
 **Basado en:** AUDIT-V2.md  
 **Fecha:** 2026-06-03  
-**Última actualización:** 2026-06-03  
+**Última actualización:** 2026-06-04  
 **Criterio de prioridad:** costo/beneficio académico — primero lo que rompe funcionalidad visible, último lo cosmético.
 
 ---
@@ -95,7 +95,7 @@
 
 ## Paso 4 — Conectar `AddCardScreen` a `POST /usuarios/medios-pago` ✅
 
-**Estado:** Completado. `AddCardScreen` llama a `addCardViaApi()` → `paymentService.addPaymentMethod()`. Manejo de error con `Alert` y estado `loading`.
+**Estado:** Completado (2026-06-04). `AddCardScreen` llama a `addCardViaApi()` → `paymentService.addPaymentMethod()`. Recarga `loadProfile()` tras el éxito. Manejo de error con `Alert` y estado `loading`.
 
 **Archivo:** `front-end/src/screens/profile/AddCardScreen.tsx`  
 **Problema:** al agregar una tarjeta desde el perfil, solo se guarda en el store local sin llamar al backend. Al recargar la app, la tarjeta desaparece.

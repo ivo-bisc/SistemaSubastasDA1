@@ -19,6 +19,7 @@ type Nav = StackNavigationProp<ProfileStackParamList, 'AddCard'>;
 export default function AddCardScreen() {
   const navigation = useNavigation<Nav>();
   const addCardViaApi = useProfileStore((s) => s.addCardViaApi);
+  const loadProfile = useProfileStore((s) => s.loadProfile);
 
   const [cardNumber, setCardNumber] = useState('');
   const [securityCode, setSecurityCode] = useState('');
@@ -43,6 +44,7 @@ export default function AddCardScreen() {
     setLoading(true);
     try {
       await addCardViaApi(buildCardMedioPagoRequest(cardNumber, holderName, expiration));
+      await loadProfile();
       navigation.goBack();
     } catch {
       Alert.alert('Tarjeta', 'No se pudo registrar la tarjeta. Intentá de nuevo.');
