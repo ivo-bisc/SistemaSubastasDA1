@@ -74,6 +74,7 @@ Credentials: true
 | `/usuarios/compras/{id}` | GET | `UsuarioController` | ⚠️ | `purchaseService.getPurchaseDetail()` implementado pero sin pantalla conectada |
 | `/usuarios/metricas` | GET | `UsuarioController` | ⚠️ | `metricsService.getStats()` tiene TODO, nunca llamado |
 | `/usuarios/participaciones` | GET | `UsuarioController` | ⚠️ | `metricsService.getParticipationHistory()` tiene TODO, nunca llamado |
+| `/usuarios/mis-pujas` | GET | `UsuarioController` | ✅ | Endpoint creado (Paso 5 backend); conectado vía `metricsService.getMyBids()` → `MyBidsScreen` |
 
 ### SUBASTAS
 | Endpoint frontend | Método | Backend | Estado | Notas |
@@ -219,11 +220,11 @@ Backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoL
 - `catalogService.ts` — 3 métodos TODO, nunca importado por ninguna pantalla o store
 - `bidService.ts` — 4 métodos (algunos TODO), nunca importado (WebSocket se usa en su lugar)
 - ~~`consignService.ts`~~ — ✅ `submitItem()` implementado y conectado (Paso 7); 4 métodos restantes sin pantalla
-- `metricsService.ts` — 4 métodos TODO, nunca importado
+- `metricsService.ts` — `getMyBids()` implementado y conectado a `MyBidsScreen` (Paso 5); 4 métodos restantes con TODO, sin caller
 - `purchaseService.ts` — 1 método implementado, nunca importado por ninguna pantalla
 
 ### Mocks activos sin flag condicional
-- `MyBidsScreen` — importa `MOCK_BIDS` directamente, nunca llama API. `USE_MOCKS` ignorado.
+- ~~`MyBidsScreen`~~ — ✅ Conectado a `metricsService.getMyBids()` → `GET /usuarios/mis-pujas` (Paso 5). Loading/error state. Mapeo: `CONFIRMADA→won`, `RECHAZADA→lost`.
 - `MyAuctionsScreen` — importa `MOCK_AUCTIONS` directamente, nunca llama API. `USE_MOCKS` ignorado.
 - ~~`LotDetailScreen`~~ — ✅ Conectado a `auctionService.getLotDetail()` (Paso 7b).
 - `myAuctionsStore` — `addSubmission()` genera IDs con `Date.now()` sin llamar al backend.
@@ -255,7 +256,7 @@ El frontend tiene dos caminos para pujar: `bidService.placeBid()` (REST) y `useA
 ### Pantallas con servicio disponible pero sin llamarlo
 | Pantalla | Servicio disponible | Estado real |
 |---|---|---|
-| `MyBidsScreen` | `metricsService` / `bidService` | Usa `MOCK_BIDS` hardcodeado |
+| ~~`MyBidsScreen`~~ | `metricsService.getMyBids()` | ✅ Resuelto (Paso 5) — API real, loading/error |
 | `MyAuctionsScreen` | `consignService` / `myAuctionsStore` | Usa `MOCK_AUCTIONS` + store local |
 | ~~`AddCardScreen`~~ | `paymentService.addPaymentMethod()` | ✅ Resuelto (Paso 4) |
 | ~~`UploadItemScreen`~~ | `consignService.submitItem()` | ✅ Resuelto (Paso 7) — llama API real, loading state, error visible |
@@ -367,10 +368,10 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | Password mismatch: 3 chars (frontend) vs 8 chars (backend) | ✅ Resuelto (Paso 1) | Crítico | — |
 | Mapeo `MedioPagoResponse` → `MockCard` | ✅ Resuelto (Paso 2) | Crítico | — |
 | `chatService.sendMessage` silencia errores | ✅ Resuelto (Paso 3) | Crítico | — |
-| Mocks incondicionales en MyBids/MyAuctions | 🟡 Funciona con datos falsos | Medio | Conectar a API real o implementar switch por `EXPO_PUBLIC_USE_MOCKS`; LotDetail ✅ conectado (Paso 7b) |
+| Mocks incondicionales en MyBids/MyAuctions | 🟡 Parcialmente resuelto | Medio | `MyBidsScreen` ✅ conectado (Paso 5); `MyAuctionsScreen` sigue con mock (Paso 6 pendiente) |
 | `authStore.logout()` no invalida token en backend | 🟡 Funciona con riesgo | Medio | Llamar `POST /auth/logout` antes de limpiar estado local |
 | `/catalogo/items` no existe en backend | 🟡 Falla en runtime | Medio | `catalogService.getItems()` llama ruta inexistente; eliminar o corregir ruta |
-| Servicios enteros sin implementación ni uso | 🟡 Deuda técnica | Medio | Implementar o eliminar `catalogService`, `bidService`, `consignService`, `metricsService`, `purchaseService` |
+| Servicios enteros sin implementación ni uso | 🟡 Deuda técnica | Medio | Implementar o eliminar `catalogService`, `bidService`, `purchaseService`; `consignService` ✅ (Paso 7); `metricsService` parcial ✅ (Paso 5) |
 | `AddCardScreen` no llama API | ✅ Resuelto (Paso 4) | Medio | — |
 | `UploadItemScreen` no llama `consignService` | ✅ Resuelto (Paso 7) | Medio | — |
 | Race condition en `profileStore.loadProfile()` | ✅ Resuelto (Paso 10) | Menor | — |

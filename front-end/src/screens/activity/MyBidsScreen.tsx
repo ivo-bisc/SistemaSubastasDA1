@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,9 @@ import {
   DropdownFilter,
   DropdownOption,
 } from '../../components/activity';
-import { MOCK_BIDS, MockBidItem } from '../../data/mockActivity';
+import { MockBidItem } from '../../data/mockActivity';
+import { metricsService } from '../../services';
+import { formatRelativeDate } from '../../utils/format';
 
 const FILTER_OPTIONS: DropdownOption[] = [
   { value: 'all', label: 'Todas Mis Pujas' },
@@ -29,8 +31,31 @@ export default function MyBidsScreen() {
   const logout = useAuthStore((s) => s.logout);
 
   const [filter, setFilter] = useState('all');
+  const [bids, setBids] = useState<MockBidItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredBids = MOCK_BIDS.filter((bid) => {
+  useEffect(() => {
+    setLoading(true);
+    metricsService
+      .getMyBids()
+      .then((res) => {
+        const mapped: MockBidItem[] = (res.data ?? []).map((p: any) => ({
+          id: String(p.subastaId),
+          title: p.itemDescripcion,
+          imageUrl: '',
+          timeRemaining: formatRelativeDate(p.timestamp),
+          currentPrice: `$${Number(p.monto).toLocaleString('es-AR')}`,
+          myBid: `$${Number(p.monto).toLocaleString('es-AR')}`,
+          status: p.estado === 'CONFIRMADA' ? 'won' : 'lost',
+        }));
+        setBids(mapped);
+      })
+      .catch(() => setError('No se pudieron cargar las pujas.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredBids = bids.filter((bid) => {
     if (filter === 'all') return true;
     if (filter === 'lost') return bid.status === 'lost';
     if (filter === 'won') return bid.status === 'won';
@@ -80,6 +105,18 @@ export default function MyBidsScreen() {
         />
       </ActivityToolbar>
 
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color={Colors.accent}
+          style={{ marginTop: 48 }}
+        />
+      ) : error ? (
+        <View style={styles.emptyCard}>
+          <Ionicons name="alert-circle-outline" size={40} color={Colors.cardTime} />
+          <Text style={styles.emptyText}>{error}</Text>
+        </View>
+      ) : (
       <FlatList
         data={filteredBids}
         keyExtractor={(item) => item.id}
@@ -93,6 +130,7 @@ export default function MyBidsScreen() {
           </View>
         }
       />
+      )}
     </SafeAreaView>
   );
 }

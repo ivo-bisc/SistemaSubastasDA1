@@ -46,4 +46,7 @@ public interface PujaRepository extends JpaRepository<Puja, Long> {
     @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Puja p WHERE p.subasta = :subasta AND p.usuario = :usuario")
     BigDecimal sumMontoBySubastaAndUsuario(@Param("subasta") Subasta subasta, @Param("usuario") Usuario usuario);
 
+    @Query("SELECT p FROM Puja p JOIN FETCH p.item JOIN FETCH p.subasta WHERE p.usuario = :usuario ORDER BY p.timestamp DESC")
+    List<Puja> findByUsuarioOrderByTimestampDesc(@Param("usuario") Usuario usuario);
+
 }

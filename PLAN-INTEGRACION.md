@@ -10,8 +10,8 @@
 
 | Estado | Pasos |
 |--------|-------|
-| ✅ **Completados** | 1, 2, 3, 4, 7, 7b, 7c, 10 |
-| ⏳ **Pendientes** | 5, 6, 8, 9, 11 |
+| ✅ **Completados** | 1, 2, 3, 4, 5, 7, 7b, 7c, 10 |
+| ⏳ **Pendientes** | 6, 8, 9, 11 |
 
 **Fase 1 (fixes críticos): terminada.**
 
@@ -25,7 +25,7 @@
 | 2 | Fix mapeo `MedioPagoResponse` en `profileStore` | 🔴 Crítico | ~30 min | 2 | ✅ |
 | 3 | Fix silencio de errores en `chatService.sendMessage` | 🔴 Crítico | ~10 min | 3 | ✅ |
 | 4 | Conectar `AddCardScreen` a `POST /usuarios/medios-pago` | 🟡 Medio | ~45 min | 4 | ✅ |
-| 5 | Conectar `MyBidsScreen` a API real | 🟡 Medio | ~1 h | 5 | ⏳ |
+| 5 | Conectar `MyBidsScreen` a API real | 🟡 Medio | ~1 h | 5 | ✅ |
 | 6 | Conectar `MyAuctionsScreen` a API real | 🟡 Medio | ~1 h | 6 | ⏳ |
 | 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 | ✅ |
 | 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b | ✅ |

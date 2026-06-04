@@ -7,6 +7,7 @@ import com.subastas.model.dto.request.ActualizarPerfilRequest;
 import com.subastas.model.dto.request.MedioPagoRequest;
 import com.subastas.model.dto.response.MedioPagoResponse;
 import com.subastas.model.dto.response.MetricasResponse;
+import com.subastas.model.dto.response.MiPujaResponse;
 import com.subastas.model.dto.response.ParticipacionHistorialResponse;
 import com.subastas.model.dto.response.UsuarioResponse;
 import com.subastas.model.entity.MedioPago;
@@ -227,6 +228,20 @@ public class UsuarioService {
         }
 
         return respuestas;
+    }
+
+    public List<MiPujaResponse> obtenerMisPujas(String email) {
+        Usuario usuario = obtenerPorEmail(email);
+        return pujaRepository.findByUsuarioOrderByTimestampDesc(usuario).stream()
+                .map(p -> MiPujaResponse.builder()
+                        .pujaId(p.getId())
+                        .itemDescripcion(p.getItem().getDescripcion())
+                        .monto(p.getMonto())
+                        .estado(p.getEstado())
+                        .subastaId(p.getSubasta().getId())
+                        .timestamp(p.getTimestamp())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private MedioPagoResponse mapMedioPagoToResponse(MedioPago mp) {

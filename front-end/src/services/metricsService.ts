@@ -5,6 +5,10 @@ import { Endpoints } from '../constants';
  * Servicio de métricas y multas
  */
 export const metricsService = {
+  getMyBids: async () => {
+    return apiClient.get(Endpoints.METRICS.MY_BIDS);
+  },
+
   getStats: async () => {
     // TODO: implementar
     return apiClient.get(Endpoints.METRICS.STATS);

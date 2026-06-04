@@ -6,6 +6,7 @@ import com.subastas.model.dto.request.PagarMultaRequest;
 import com.subastas.model.dto.response.CompraResponse;
 import com.subastas.model.dto.response.MedioPagoResponse;
 import com.subastas.model.dto.response.MetricasResponse;
+import com.subastas.model.dto.response.MiPujaResponse;
 import com.subastas.model.dto.response.MultaResponse;
 import com.subastas.model.dto.response.ParticipacionHistorialResponse;
 import com.subastas.model.dto.response.UsuarioResponse;
@@ -105,6 +106,12 @@ public class UsuarioController {
     public ResponseEntity<MetricasResponse> obtenerMetricas(
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(usuarioService.obtenerMetricas(userDetails.getUsername()));
+    }
+
+    @GetMapping("/mis-pujas")
+    public ResponseEntity<List<MiPujaResponse>> obtenerMisPujas(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(usuarioService.obtenerMisPujas(userDetails.getUsername()));
     }
 
     @GetMapping("/participaciones")

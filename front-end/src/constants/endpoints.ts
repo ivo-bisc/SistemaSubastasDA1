@@ -72,5 +72,6 @@ export const Endpoints = {
     PARTICIPATION_HISTORY: '/usuarios/participaciones',
     FINES: '/usuarios/multas',
     PAY_FINE: (id: string) => `/usuarios/multas/${id}/pagar`,
+    MY_BIDS: '/usuarios/mis-pujas',
   },
 } as const;

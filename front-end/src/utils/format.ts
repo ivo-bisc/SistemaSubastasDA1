@@ -43,6 +43,16 @@ export function formatTimeRemaining(
   return `${minutes}m`;
 }
 
+export function formatRelativeDate(isoString: string): string {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 60) return `hace ${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days}d`;
+}
+
 export function getInitials(name: string): string {
   return name
     .split(' ')
