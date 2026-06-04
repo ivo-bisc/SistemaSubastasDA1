@@ -59,6 +59,7 @@ export const Endpoints = {
 
   // ── Consignment ────────────────────────────────────────
   CONSIGNMENT: {
+    LIST: '/consignaciones',
     SUBMIT_ITEM: '/consignaciones',
     ACCEPT_CONDITIONS: (id: string) => `/consignaciones/${id}/aceptar-condiciones`,
     REJECT_CONDITIONS: (id: string) => `/consignaciones/${id}/rechazar-condiciones`,

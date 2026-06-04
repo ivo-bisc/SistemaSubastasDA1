@@ -40,6 +40,10 @@ export const consignService = {
     });
   },
 
+  getConsignaciones: async () => {
+    return apiClient.get(Endpoints.CONSIGNMENT.LIST);
+  },
+
   acceptConditions: async (id: string) => {
     return apiClient.post(Endpoints.CONSIGNMENT.ACCEPT_CONDITIONS(id));
   },

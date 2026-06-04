@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Fonts, FontSize } from '../../constants';
-import { useAuthStore, useMyAuctionsStore } from '../../stores';
+import { useAuthStore } from '../../stores';
 import HomeHeader from '../../components/home/HomeHeader';
 import ConsignPromoBanner from '../../components/home/ConsignPromoBanner';
 import {
@@ -17,8 +17,10 @@ import {
   DropdownFilter,
   DropdownOption,
 } from '../../components/activity';
-import { MOCK_AUCTIONS, MockAuctionItem } from '../../data/mockActivity';
+import { MockAuctionItem } from '../../data/mockActivity';
 import type { MyAuctionsStackParamList } from '../../types';
+import { consignService } from '../../services';
+import { formatRelativeDate } from '../../utils/format';
 
 const FILTER_OPTIONS: DropdownOption[] = [
   { value: 'all', label: 'Todas mis Subastas' },
@@ -41,20 +43,59 @@ function getModerationBadge(
   return 'pending';
 }
 
+function parseTitulo(datosAdicionales: string, descripcion: string): string {
+  try {
+    const datos = JSON.parse(datosAdicionales);
+    return datos.nombre || descripcion;
+  } catch {
+    return descripcion;
+  }
+}
+
 export default function MyAuctionsScreen() {
   const navigation = useNavigation<Nav>();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
-  const userSubmissions = useMyAuctionsStore((s) => s.submissions);
 
   const [filter, setFilter] = useState('all');
+  const [auctions, setAuctions] = useState<MockAuctionItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const allAuctions = useMemo(
-    () => [...userSubmissions, ...MOCK_AUCTIONS],
-    [userSubmissions]
-  );
+  useEffect(() => {
+    setLoading(true);
+    consignService
+      .getConsignaciones()
+      .then((res) => {
+        const estadoMap: Record<string, { mod: MockAuctionItem['moderationStatus']; status: MockAuctionItem['status'] }> = {
+          PENDIENTE_REVISION: { mod: 'pending',              status: 'soon'     },
+          ACEPTADA:           { mod: 'approved_pending_lot', status: 'soon'     },
+          EN_SUBASTA:         { mod: 'published',            status: 'soon'     },
+          RECHAZADA:          { mod: 'rejected',             status: 'canceled' },
+          VENDIDA:            { mod: 'published',            status: 'finished' },
+          DEVUELTA:           { mod: 'rejected',             status: 'canceled' },
+        };
+        const mapped: MockAuctionItem[] = (res.data ?? []).map((c: any) => {
+          const e = estadoMap[c.estado] ?? { mod: 'pending', status: 'soon' };
+          const precio = c.valorBase ?? c.precioSugerido;
+          return {
+            id: String(c.consignacionId),
+            title: parseTitulo(c.datosAdicionales, c.descripcion),
+            imageUrl: c.fotosUrls?.[0] ?? '',
+            timeRemaining: c.fechaSubasta ? formatRelativeDate(c.fechaSubasta) : '—',
+            currentPrice: precio ? `$${Number(precio).toLocaleString('es-AR')}` : '—',
+            status: e.status,
+            moderationStatus: e.mod,
+            rejectionReason: c.motivoRechazo ?? undefined,
+          };
+        });
+        setAuctions(mapped);
+      })
+      .catch(() => setError('No se pudieron cargar las subastas.'))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const filteredAuctions = allAuctions.filter((auction) => {
+  const filteredAuctions = auctions.filter((auction) => {
     if (filter === 'all') return true;
     if (filter === 'pending') return auction.moderationStatus === 'pending';
     if (filter === 'approved_pending_lot') {
@@ -128,19 +169,32 @@ export default function MyAuctionsScreen() {
         />
       </ActivityToolbar>
 
-      <FlatList
-        data={filteredAuctions}
-        keyExtractor={(item) => item.id}
-        renderItem={renderAuctionItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyCard}>
-            <Ionicons name="albums-outline" size={40} color={Colors.cardTime} />
-            <Text style={styles.emptyText}>No tenés subastas en esta categoría.</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color={Colors.accent}
+          style={{ marginTop: 48 }}
+        />
+      ) : error ? (
+        <View style={styles.emptyCard}>
+          <Ionicons name="alert-circle-outline" size={40} color={Colors.cardTime} />
+          <Text style={styles.emptyText}>{error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredAuctions}
+          keyExtractor={(item) => item.id}
+          renderItem={renderAuctionItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyCard}>
+              <Ionicons name="albums-outline" size={40} color={Colors.cardTime} />
+              <Text style={styles.emptyText}>No tenés subastas en esta categoría.</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }

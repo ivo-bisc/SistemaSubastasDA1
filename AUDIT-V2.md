@@ -105,6 +105,7 @@ Credentials: true
 ### CONSIGNACIONES
 | Endpoint frontend | Método | Backend | Estado | Notas |
 |---|---|---|---|---|
+| `/consignaciones` | GET | `ConsignacionController` | ✅ | Conectado vía `consignService.getConsignaciones()` → `MyAuctionsScreen` (Paso 6). Mapeo de EstadoConsignacion a moderationStatus/status |
 | `/consignaciones` | POST | `ConsignacionController` | ✅ | Conectado vía `consignService.submitItem()` → `UploadItemScreen` (Paso 7). Fotos opcionales en backend; upload real pendiente |
 | `/consignaciones/{id}/aceptar-condiciones` | POST | `ConsignacionController` | ⚠️ | `consignService.acceptConditions()` marcado TODO, nunca llamado |
 | `/consignaciones/{id}/rechazar-condiciones` | POST | `ConsignacionController` | ⚠️ | `consignService.rejectConditions()` marcado TODO, nunca llamado |
@@ -225,7 +226,7 @@ Backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoL
 
 ### Mocks activos sin flag condicional
 - ~~`MyBidsScreen`~~ — ✅ Conectado a `metricsService.getMyBids()` → `GET /usuarios/mis-pujas` (Paso 5). Loading/error state. Mapeo: `CONFIRMADA→won`, `RECHAZADA→lost`.
-- `MyAuctionsScreen` — importa `MOCK_AUCTIONS` directamente, nunca llama API. `USE_MOCKS` ignorado.
+- ~~`MyAuctionsScreen`~~ — ✅ Conectado a `consignService.getConsignaciones()` → `GET /consignaciones` (Paso 6). Loading/error state. Mapeo EstadoConsignacion → moderationStatus/status.
 - ~~`LotDetailScreen`~~ — ✅ Conectado a `auctionService.getLotDetail()` (Paso 7b).
 - `myAuctionsStore` — `addSubmission()` genera IDs con `Date.now()` sin llamar al backend.
 - ~~`AddCardScreen`~~ — ✅ Conectado a `paymentService.addPaymentMethod()` + recarga `loadProfile()` (Paso 4).
@@ -257,7 +258,7 @@ El frontend tiene dos caminos para pujar: `bidService.placeBid()` (REST) y `useA
 | Pantalla | Servicio disponible | Estado real |
 |---|---|---|
 | ~~`MyBidsScreen`~~ | `metricsService.getMyBids()` | ✅ Resuelto (Paso 5) — API real, loading/error |
-| `MyAuctionsScreen` | `consignService` / `myAuctionsStore` | Usa `MOCK_AUCTIONS` + store local |
+| ~~`MyAuctionsScreen`~~ | `consignService.getConsignaciones()` | ✅ Resuelto (Paso 6) — API real, loading/error |
 | ~~`AddCardScreen`~~ | `paymentService.addPaymentMethod()` | ✅ Resuelto (Paso 4) |
 | ~~`UploadItemScreen`~~ | `consignService.submitItem()` | ✅ Resuelto (Paso 7) — llama API real, loading state, error visible |
 
@@ -328,9 +329,9 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | `ChatListScreen` | ✅ (`isLoading` state) | Verificar que error state es visible |
 | `AddAddressScreen` | ✅ (`saving` state) | Botón deshabilitado durante guardado |
 | `RegisterStep2/3Screen` | ✅ | Botón deshabilitado durante submit |
-| `MyBidsScreen` | ❌ No necesita (usa mocks) | Sin API call |
-| `MyAuctionsScreen` | ❌ No necesita (usa mocks) | Sin API call |
-| `UploadItemScreen` | ❌ Sin loading al confirmar | 🟡 El usuario puede presionar doble submit |
+| `MyBidsScreen` | ✅ | Conectado API real (Paso 5) — loading y error diferenciados |
+| `MyAuctionsScreen` | ✅ | Conectado API real (Paso 6) — loading y error diferenciados |
+| `UploadItemScreen` | ✅ | Loading state en botón confirmar (Paso 7) |
 
 ### profileStore.loadProfile() — race condition ✅ Resuelto (Paso 10)
 `if (get().isLoading) return;` agregado al inicio del método. Si `ProfileScreen` re-monta, la segunda llamada aborta inmediatamente.
@@ -368,7 +369,7 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | Password mismatch: 3 chars (frontend) vs 8 chars (backend) | ✅ Resuelto (Paso 1) | Crítico | — |
 | Mapeo `MedioPagoResponse` → `MockCard` | ✅ Resuelto (Paso 2) | Crítico | — |
 | `chatService.sendMessage` silencia errores | ✅ Resuelto (Paso 3) | Crítico | — |
-| Mocks incondicionales en MyBids/MyAuctions | 🟡 Parcialmente resuelto | Medio | `MyBidsScreen` ✅ conectado (Paso 5); `MyAuctionsScreen` sigue con mock (Paso 6 pendiente) |
+| Mocks incondicionales en MyBids/MyAuctions | ✅ Resuelto | Medio | `MyBidsScreen` ✅ (Paso 5); `MyAuctionsScreen` ✅ (Paso 6) — ambos conectados a API real |
 | `authStore.logout()` no invalida token en backend | 🟡 Funciona con riesgo | Medio | Llamar `POST /auth/logout` antes de limpiar estado local |
 | `/catalogo/items` no existe en backend | 🟡 Falla en runtime | Medio | `catalogService.getItems()` llama ruta inexistente; eliminar o corregir ruta |
 | Servicios enteros sin implementación ni uso | 🟡 Deuda técnica | Medio | Implementar o eliminar `catalogService`, `bidService`, `purchaseService`; `consignService` ✅ (Paso 7); `metricsService` parcial ✅ (Paso 5) |

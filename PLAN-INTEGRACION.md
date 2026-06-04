@@ -10,8 +10,8 @@
 
 | Estado | Pasos |
 |--------|-------|
-| ✅ **Completados** | 1, 2, 3, 4, 5, 7, 7b, 7c, 10 |
-| ⏳ **Pendientes** | 6, 8, 9, 11 |
+| ✅ **Completados** | 1, 2, 3, 4, 5, 6, 7, 7b, 7c, 10 |
+| ⏳ **Pendientes** | 8, 9, 11 |
 
 **Fase 1 (fixes críticos): terminada.**
 
@@ -26,7 +26,7 @@
 | 3 | Fix silencio de errores en `chatService.sendMessage` | 🔴 Crítico | ~10 min | 3 | ✅ |
 | 4 | Conectar `AddCardScreen` a `POST /usuarios/medios-pago` | 🟡 Medio | ~45 min | 4 | ✅ |
 | 5 | Conectar `MyBidsScreen` a API real | 🟡 Medio | ~1 h | 5 | ✅ |
-| 6 | Conectar `MyAuctionsScreen` a API real | 🟡 Medio | ~1 h | 6 | ⏳ |
+| 6 | Conectar `MyAuctionsScreen` a API real | 🟡 Medio | ~1 h | 6 | ✅ |
 | 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 | ✅ |
 | 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b | ✅ |
 | 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c | ✅ |
@@ -132,16 +132,11 @@
 
 ---
 
-## Paso 6 — Conectar `MyAuctionsScreen` a API real
+## Paso 6 — Conectar `MyAuctionsScreen` a API real ✅
 
-**Archivo:** `front-end/src/screens/activity/MyAuctionsScreen.tsx`  
-**Problema:** usa `MOCK_AUCTIONS` hardcodeado. Las consignaciones enviadas desde `UploadItemScreen` tampoco llegan al backend.
+**Estado:** Completado (2026-06-04). `MyAuctionsScreen` llama a `consignService.getConsignaciones()` → `GET /consignaciones`. Mapeo de `EstadoConsignacion` a `moderationStatus`/`status`. Loading state, error card, `parseTitulo()` parsea `datosAdicionales` JSON con fallback a `descripcion`.
 
-**Qué hacer:**
-1. Revisar qué retorna `GET /usuarios/participaciones` — si incluye subastas en las que participó el usuario como consignante.
-2. Si hay un endpoint adecuado: implementar el servicio y conectarlo.
-3. Si no hay endpoint: igual que el paso anterior, envolver el mock con `USE_MOCKS` para dejar la puerta abierta.
-4. Agregar loading state.
+**Archivos:** `front-end/src/screens/activity/MyAuctionsScreen.tsx`, `front-end/src/services/consignService.ts`, `front-end/src/constants/endpoints.ts`
 
 ---
 
@@ -301,8 +296,8 @@ Para cada uno de estos servicios, elegir: **implementar** o **eliminar**.
 ✅ Paso 7b (1.5 h)   — LotDetailScreen + getLotDetail
 ✅ Paso 7c (15 min)  — disconnectFromAuction al salir de subasta
 ✅ Paso 7  (1 h)     — UploadItemScreen → consignaciones
-⏳ Paso 5  (1 h)     — MyBidsScreen (USE_MOCKS o endpoint nuevo)
-⏳ Paso 6  (1 h)     — MyAuctionsScreen
+✅ Paso 5  (1 h)     — MyBidsScreen (endpoint nuevo + mapeo)
+✅ Paso 6  (1 h)     — MyAuctionsScreen
 ⏳ Paso 11 (1 h)     — limpieza final
 ```
 
