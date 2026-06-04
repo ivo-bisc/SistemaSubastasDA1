@@ -10,8 +10,8 @@
 
 | Estado | Pasos |
 |--------|-------|
-| ✅ **Completados** | 1, 2, 3, 4, 7b, 10 |
-| ⏳ **Pendientes** | 5, 6, 7, 7c, 8, 9, 11 |
+| ✅ **Completados** | 1, 2, 3, 4, 7, 7b, 7c, 10 |
+| ⏳ **Pendientes** | 5, 6, 8, 9, 11 |
 
 **Fase 1 (fixes críticos): terminada.**
 
@@ -27,9 +27,9 @@
 | 4 | Conectar `AddCardScreen` a `POST /usuarios/medios-pago` | 🟡 Medio | ~45 min | 4 | ✅ |
 | 5 | Conectar `MyBidsScreen` a API real | 🟡 Medio | ~1 h | 5 | ⏳ |
 | 6 | Conectar `MyAuctionsScreen` a API real | 🟡 Medio | ~1 h | 6 | ⏳ |
-| 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 | ⏳ |
+| 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 | ✅ |
 | 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b | ✅ |
-| 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c | ⏳ |
+| 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c | ✅ |
 | 8 | Credenciales: sacar defaults de `application.properties` | 🔴 Crítico | ~20 min | 8 | ⏳ |
 | 9 | Eliminar `tokenEmail: 'dev-bypass'` | 🔴 Crítico | ~30 min | 9 | ⏳ |
 | 10 | Race condition en `profileStore.loadProfile()` | 🟢 Menor | ~5 min | 10 | ✅ |
@@ -299,8 +299,8 @@ Para cada uno de estos servicios, elegir: **implementar** o **eliminar**.
 ✅ Paso 2  (30 min)  — mapeo tarjetas
 ✅ Paso 4  (45 min)  — AddCardScreen → API
 ✅ Paso 7b (1.5 h)   — LotDetailScreen + getLotDetail
-⏳ Paso 7c (15 min)  — disconnectFromAuction al salir de subasta  ← siguiente rápido
-⏳ Paso 7  (1 h)     — UploadItemScreen → consignaciones
+✅ Paso 7c (15 min)  — disconnectFromAuction al salir de subasta
+✅ Paso 7  (1 h)     — UploadItemScreen → consignaciones
 ⏳ Paso 5  (1 h)     — MyBidsScreen (USE_MOCKS o endpoint nuevo)
 ⏳ Paso 6  (1 h)     — MyAuctionsScreen
 ⏳ Paso 11 (1 h)     — limpieza final

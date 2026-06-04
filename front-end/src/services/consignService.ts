@@ -1,34 +1,58 @@
 import apiClient from './apiClient';
 import { Endpoints } from '../constants';
+import { useProfileStore } from '../stores/profileStore';
 
-/**
- * Servicio de consignación de ítems
- */
 export const consignService = {
-  submitItem: async (data: FormData) => {
-    // TODO: implementar
-    return apiClient.post(Endpoints.CONSIGNMENT.SUBMIT_ITEM, data, {
+  submitItem: async (params: {
+    name: string;
+    category: string | null;
+    description: string;
+    condition: string | null;
+    currency: string | null;
+    suggestedPrice: string;
+    aceptaPertenencia: boolean;
+  }) => {
+    const cards = useProfileStore.getState().cards;
+    const firstCard = cards[0];
+    if (!firstCard) {
+      throw new Error('SIN_MEDIO_PAGO');
+    }
+
+    const form = new FormData();
+    form.append('descripcion', params.description);
+    form.append('acepta_pertenencia', String(params.aceptaPertenencia));
+    form.append('cuenta_destino_id', firstCard.id);
+    if (params.suggestedPrice) {
+      form.append('precio_sugerido', params.suggestedPrice);
+    }
+    form.append(
+      'datos_adicionales',
+      JSON.stringify({
+        nombre: params.name,
+        categoria: params.category,
+        condicion: params.condition,
+        moneda: params.currency,
+      })
+    );
+
+    return apiClient.post(Endpoints.CONSIGNMENT.SUBMIT_ITEM, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
   acceptConditions: async (id: string) => {
-    // TODO: implementar
     return apiClient.post(Endpoints.CONSIGNMENT.ACCEPT_CONDITIONS(id));
   },
 
   rejectConditions: async (id: string) => {
-    // TODO: implementar
     return apiClient.post(Endpoints.CONSIGNMENT.REJECT_CONDITIONS(id));
   },
 
   getItemLocation: async (id: string) => {
-    // TODO: implementar
     return apiClient.get(Endpoints.CONSIGNMENT.ITEM_LOCATION(id));
   },
 
   getInsurancePolicy: async (id: string) => {
-    // TODO: implementar
     return apiClient.get(Endpoints.CONSIGNMENT.INSURANCE_POLICY(id));
   },
 };

@@ -47,7 +47,7 @@ public class ConsignacionController {
             @RequestParam("acepta_pertenencia") boolean aceptaPertenencia,
             @RequestParam("cuenta_destino_id") Long cuentaDestinoId,
             @RequestParam(value = "precio_sugerido", required = false) java.math.BigDecimal precioSugerido,
-            @RequestPart("fotos") List<MultipartFile> fotos) {
+            @RequestPart(value = "fotos", required = false) List<MultipartFile> fotos) {
 
         Usuario usuario = usuarioService.obtenerPorEmail(userDetails.getUsername());
         ConsignacionResponse response = consignacionService.crear(

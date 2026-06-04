@@ -92,7 +92,6 @@ export const auctionService = {
   },
 
   disconnectFromAuction: async (id: string) => {
-    // TODO: implementar
     return apiClient.post(Endpoints.AUCTIONS.DISCONNECT(id));
   },
 };

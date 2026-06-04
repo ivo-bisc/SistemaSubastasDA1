@@ -61,20 +61,22 @@ public class ConsignacionService {
                     "Debés declarar que el bien te pertenece");
         }
 
-        if (fotos == null || fotos.size() < 6 || fotos.size() > 20) {
+        if (fotos != null && (fotos.size() < 6 || fotos.size() > 20)) {
             throw new BusinessException(ErrorCodes.FOTOS_INSUFICIENTES,
                     "Debés subir entre 6 y 20 fotos del bien");
         }
 
-        for (MultipartFile foto : fotos) {
-            String contentType = foto.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                throw new BusinessException(ErrorCodes.ARCHIVO_INVALIDO,
-                        "Solo se permiten imágenes (JPEG, PNG, GIF, WebP)");
-            }
-            if (foto.getSize() > 5_242_880L) {
-                throw new BusinessException(ErrorCodes.ARCHIVO_MUY_GRANDE,
-                        "Cada foto no debe superar 5 MB");
+        if (fotos != null) {
+            for (MultipartFile foto : fotos) {
+                String contentType = foto.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    throw new BusinessException(ErrorCodes.ARCHIVO_INVALIDO,
+                            "Solo se permiten imágenes (JPEG, PNG, GIF, WebP)");
+                }
+                if (foto.getSize() > 5_242_880L) {
+                    throw new BusinessException(ErrorCodes.ARCHIVO_MUY_GRANDE,
+                            "Cada foto no debe superar 5 MB");
+                }
             }
         }
 
@@ -95,24 +97,26 @@ public class ConsignacionService {
 
         // Guardar fotos con nombre UUID para evitar path traversal
         List<FotoConsignacion> fotosEntidad = new ArrayList<>();
-        for (int i = 0; i < fotos.size(); i++) {
-            MultipartFile foto = fotos.get(i);
-            String nombreArchivo = FileUtil.uuidFilename(foto);
-            String urlRelativa = uploadsBasePath + "/consignaciones/" + consignacion.getId() + "/" + nombreArchivo;
-            try {
-                Path destino = Paths.get(urlRelativa);
-                Files.createDirectories(destino.getParent());
-                foto.transferTo(destino.toFile());
-            } catch (IOException e) {
-                throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
-                        "Error al guardar foto de consignación: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        if (fotos != null) {
+            for (int i = 0; i < fotos.size(); i++) {
+                MultipartFile foto = fotos.get(i);
+                String nombreArchivo = FileUtil.uuidFilename(foto);
+                String urlRelativa = uploadsBasePath + "/consignaciones/" + consignacion.getId() + "/" + nombreArchivo;
+                try {
+                    Path destino = Paths.get(urlRelativa);
+                    Files.createDirectories(destino.getParent());
+                    foto.transferTo(destino.toFile());
+                } catch (IOException e) {
+                    throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
+                            "Error al guardar foto de consignación: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+                FotoConsignacion fotoConsignacion = FotoConsignacion.builder()
+                        .url(urlRelativa)
+                        .orden(i + 1)
+                        .consignacion(consignacion)
+                        .build();
+                fotosEntidad.add(fotoConsignacion);
             }
-            FotoConsignacion fotoConsignacion = FotoConsignacion.builder()
-                    .url(urlRelativa)
-                    .orden(i + 1)
-                    .consignacion(consignacion)
-                    .build();
-            fotosEntidad.add(fotoConsignacion);
         }
         consignacion.setFotos(fotosEntidad);
         consignacion = consignacionRepository.save(consignacion);

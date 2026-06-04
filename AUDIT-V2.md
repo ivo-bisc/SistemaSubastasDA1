@@ -82,7 +82,7 @@ Credentials: true
 | `/subastas/{id}` | GET | `SubastaController` | ✅ | Conectado vía `auctionService.getAuctionDetail()` |
 | `/subastas/{id}/catalogo` | GET | `CatalogoController` | ✅ | Conectado vía `auctionService.getAuctionDetail()` (Promise.all) |
 | `/subastas/{id}/conectar` | POST | `SubastaController` | ✅ | Conectado vía `auctionService.connectToAuction()` → `AuctionDetailScreen` |
-| `/subastas/{id}/desconectar` | POST | `SubastaController` | ⚠️ | `auctionService.disconnectFromAuction()` marcado TODO, nunca llamado |
+| `/subastas/{id}/desconectar` | POST | `SubastaController` | ✅ | Conectado vía cleanup de `useEffect` en `AuctionDetailScreen` (Paso 7c) |
 | `/subastas/{id}/pujas/estado` | GET | `SubastaController` | ⚠️ | `bidService.getCurrentBid()` marcado TODO; la pantalla usa WebSocket en su lugar |
 | `/subastas/{id}/pujas` | POST | `SubastaController` | ⚠️ | `bidService.placeBid()` implementado pero `AuctionDetailScreen` usa WebSocket, no REST |
 | `/subastas/{id}/pujas/historial` | GET | `SubastaController` | ⚠️ | `bidService.getBidHistory()` marcado TODO, nunca llamado |
@@ -104,7 +104,7 @@ Credentials: true
 ### CONSIGNACIONES
 | Endpoint frontend | Método | Backend | Estado | Notas |
 |---|---|---|---|---|
-| `/consignaciones` | POST | `ConsignacionController` | ⚠️ | `consignService.submitItem()` marcado TODO; `UploadItemScreen` usa solo store local |
+| `/consignaciones` | POST | `ConsignacionController` | ✅ | Conectado vía `consignService.submitItem()` → `UploadItemScreen` (Paso 7). Fotos opcionales en backend; upload real pendiente |
 | `/consignaciones/{id}/aceptar-condiciones` | POST | `ConsignacionController` | ⚠️ | `consignService.acceptConditions()` marcado TODO, nunca llamado |
 | `/consignaciones/{id}/rechazar-condiciones` | POST | `ConsignacionController` | ⚠️ | `consignService.rejectConditions()` marcado TODO, nunca llamado |
 | `/consignaciones/{id}/ubicacion` | GET | `ConsignacionController` | ⚠️ | `consignService.getItemLocation()` marcado TODO, nunca llamado |
@@ -218,7 +218,7 @@ Backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoL
 ### Servicios enteros sin ningún caller en pantallas
 - `catalogService.ts` — 3 métodos TODO, nunca importado por ninguna pantalla o store
 - `bidService.ts` — 4 métodos (algunos TODO), nunca importado (WebSocket se usa en su lugar)
-- `consignService.ts` — 5 métodos TODO, nunca importado (`UploadItemScreen` usa solo store local)
+- ~~`consignService.ts`~~ — ✅ `submitItem()` implementado y conectado (Paso 7); 4 métodos restantes sin pantalla
 - `metricsService.ts` — 4 métodos TODO, nunca importado
 - `purchaseService.ts` — 1 método implementado, nunca importado por ninguna pantalla
 
@@ -258,7 +258,7 @@ El frontend tiene dos caminos para pujar: `bidService.placeBid()` (REST) y `useA
 | `MyBidsScreen` | `metricsService` / `bidService` | Usa `MOCK_BIDS` hardcodeado |
 | `MyAuctionsScreen` | `consignService` / `myAuctionsStore` | Usa `MOCK_AUCTIONS` + store local |
 | ~~`AddCardScreen`~~ | `paymentService.addPaymentMethod()` | ✅ Resuelto (Paso 4) |
-| `UploadItemScreen` | `consignService.submitItem()` | Solo guarda en `myAuctionsStore` local |
+| ~~`UploadItemScreen`~~ | `consignService.submitItem()` | ✅ Resuelto (Paso 7) — llama API real, loading state, error visible |
 
 ### Stores no inicializados desde la API
 - `auctionStore` — solo tiene setters; las pantallas llaman directamente a `auctionService` y manejan estado localmente sin persistir en el store.
@@ -372,7 +372,7 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | `/catalogo/items` no existe en backend | 🟡 Falla en runtime | Medio | `catalogService.getItems()` llama ruta inexistente; eliminar o corregir ruta |
 | Servicios enteros sin implementación ni uso | 🟡 Deuda técnica | Medio | Implementar o eliminar `catalogService`, `bidService`, `consignService`, `metricsService`, `purchaseService` |
 | `AddCardScreen` no llama API | ✅ Resuelto (Paso 4) | Medio | — |
-| `UploadItemScreen` no llama `consignService` | 🟡 Funciona con datos falsos | Medio | Las consignaciones no llegan al backend |
+| `UploadItemScreen` no llama `consignService` | ✅ Resuelto (Paso 7) | Medio | — |
 | Race condition en `profileStore.loadProfile()` | ✅ Resuelto (Paso 10) | Menor | — |
 | Interfaces TypeScript sin usar | 🟢 Limpieza | Menor | Eliminar `CatalogItem`, `CardPayment`, `CheckPayment`, `ChatConversation`, `PaymentMethod` de `types/` |
 | `bidService` duplica lógica de WebSocket | 🟢 Limpieza | Menor | Eliminar el servicio REST de pujas; mantener solo WebSocket |

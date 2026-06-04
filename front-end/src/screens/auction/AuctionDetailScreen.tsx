@@ -48,6 +48,13 @@ export default function AuctionDetailScreen() {
       .finally(() => setLoading(false));
   }, [auctionId]);
 
+  useEffect(() => {
+    if (!auctionId) return;
+    return () => {
+      auctionService.disconnectFromAuction(auctionId).catch(() => {});
+    };
+  }, [auctionId]);
+
   const cards = useProfileStore((s) => s.cards);
   const { liveBid, confirmation, rejection, sendBid } = useAuctionSocket(auctionId ?? '');
 

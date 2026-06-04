@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -15,7 +15,7 @@ import {
   createEmptyPhotoSlots,
 } from '../../components/consignment';
 import { Colors, Fonts, FontSize } from '../../constants';
-import { useMyAuctionsStore } from '../../stores';
+import { consignService } from '../../services';
 import type { HomeStackParamList, MyAuctionsStackParamList } from '../../types';
 
 type UploadRoute = RouteProp<
@@ -57,7 +57,6 @@ function formatPrice(amount: string, currency: string | null) {
 export default function UploadItemScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<UploadRoute>();
-  const addSubmission = useMyAuctionsStore((s) => s.addSubmission);
   const returnTo = route.params?.returnTo ?? 'home';
 
   const [name, setName] = useState('');
@@ -67,9 +66,11 @@ export default function UploadItemScreen() {
   const [currency, setCurrency] = useState<string | null>(null);
   const [suggestedPrice, setSuggestedPrice] = useState('');
   const [photos, setPhotos] = useState(createEmptyPhotoSlots);
+  const [aceptaPertenencia, setAceptaPertenencia] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     const photoCount = photos.filter(Boolean).length;
 
     setSubmitAttempted(true);
@@ -81,19 +82,33 @@ export default function UploadItemScreen() {
       !condition ||
       !currency ||
       !suggestedPrice.trim() ||
-      photoCount < MIN_CONSIGNMENT_PHOTOS
+      photoCount < MIN_CONSIGNMENT_PHOTOS ||
+      !aceptaPertenencia
     ) {
       return;
     }
 
-    addSubmission({
-      title: name.trim(),
-      imageUrl: '',
-      currentPrice: formatPrice(suggestedPrice.trim(), currency),
-      status: 'soon',
-    });
-
-    navigation.navigate('ItemUploaded', { returnTo });
+    setLoading(true);
+    try {
+      await consignService.submitItem({
+        name: name.trim(),
+        category,
+        description: description.trim(),
+        condition,
+        currency,
+        suggestedPrice,
+        aceptaPertenencia,
+      });
+      navigation.navigate('ItemUploaded', { returnTo });
+    } catch (err: any) {
+      if (err?.message === 'SIN_MEDIO_PAGO') {
+        Alert.alert('Sin medio de pago', 'Necesitás agregar un medio de pago antes de consignar.');
+      } else {
+        Alert.alert('Error', 'No se pudo enviar la consignación. Intentá de nuevo.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }, [
     navigation,
     name,
@@ -103,7 +118,7 @@ export default function UploadItemScreen() {
     currency,
     suggestedPrice,
     photos,
-    addSubmission,
+    aceptaPertenencia,
     returnTo,
   ]);
 
@@ -118,11 +133,12 @@ export default function UploadItemScreen() {
   const hasMissingCurrency = !currency;
   const hasMissingPrice = !suggestedPrice.trim();
   const hasMissingPhotos = photos.filter(Boolean).length < MIN_CONSIGNMENT_PHOTOS;
+  const hasMissingPertenencia = !aceptaPertenencia;
   const showErrors = submitAttempted;
 
   const footer = useMemo(
-    () => <PrimaryButton label="Confirmar" onPress={handleConfirm} />,
-    [handleConfirm]
+    () => <PrimaryButton label="Confirmar" onPress={handleConfirm} loading={loading} />,
+    [handleConfirm, loading]
   );
 
   return (
@@ -193,6 +209,22 @@ export default function UploadItemScreen() {
         <Text style={styles.commission}>
           Se cobrará una comisión del {COMMISSION_PERCENT}% del valor final.
         </Text>
+        <Pressable
+          style={styles.checkboxRow}
+          onPress={() => setAceptaPertenencia((v) => !v)}
+        >
+          <View style={[styles.checkbox, aceptaPertenencia && styles.checkboxChecked]}>
+            {aceptaPertenencia ? (
+              <Ionicons name="checkmark" size={14} color={Colors.white} />
+            ) : null}
+          </View>
+          <Text style={styles.checkboxLabel}>
+            Declaro que este artículo es de mi propiedad.
+          </Text>
+        </Pressable>
+        {showErrors && hasMissingPertenencia ? (
+          <Text style={styles.fieldError}>Debés declarar que el artículo te pertenece.</Text>
+        ) : null}
       </View>
 
       <View style={styles.photosCard}>
@@ -268,5 +300,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  checkboxLabel: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.sm,
+    color: Colors.textPrimary,
+    flex: 1,
   },
 });
