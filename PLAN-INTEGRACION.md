@@ -10,8 +10,8 @@
 
 | Estado | Pasos |
 |--------|-------|
-| ✅ **Completados** | 1, 2, 3, 4, 5, 6, 7, 7b, 7c, 10 |
-| ⏳ **Pendientes** | 8, 9, 11 |
+| ✅ **Completados** | 1, 2, 3, 4, 5, 6, 7, 7b, 7c, 9, 10, 11 |
+| ⏳ **Pendientes** | 8 |
 
 **Fase 1 (fixes críticos): terminada.**
 
@@ -31,7 +31,7 @@
 | 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b | ✅ |
 | 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c | ✅ |
 | 8 | Credenciales: sacar defaults de `application.properties` | 🔴 Crítico | ~20 min | 8 | ⏳ |
-| 9 | Eliminar `tokenEmail: 'dev-bypass'` | 🔴 Crítico | ~30 min | 9 | ⏳ |
+| 9 | Eliminar `tokenEmail: 'dev-bypass'` | 🔴 Crítico | ~30 min | 9 | ✅ |
 | 10 | Race condition en `profileStore.loadProfile()` | 🟢 Menor | ~5 min | 10 | ✅ |
 | 11 | Limpieza: servicios muertos, tipos sin usar, `bidService` | 🟢 Menor | ~1 h | 11 | ⏳ |
 
@@ -256,7 +256,9 @@ El mock usa IDs string (`'cat-1'`, `'cat-2'`). El backend usa IDs Long. Para que
 
 ---
 
-## Paso 11 — Limpieza de código muerto
+## Paso 11 — Limpieza de código muerto ✅
+
+**Estado:** Completado (2026-06-04). Eliminados: `CatalogItem`, `PaymentMethod`, `CardPayment`, `CheckPayment`, `ChatConversation` de `types/index.ts`; `types/catalog.ts`; `bidService.ts`; `catalogService.ts`; `purchaseService.ts`; grupos `BIDS` y `CATALOG` de `endpoints.ts`; métodos TODO de `metricsService.ts`; función `formatPrice` de `UploadItemScreen.tsx`.
 
 Solo hacer esto una vez que los pasos anteriores estén completos y el proyecto funcione.
 
@@ -298,7 +300,7 @@ Para cada uno de estos servicios, elegir: **implementar** o **eliminar**.
 ✅ Paso 7  (1 h)     — UploadItemScreen → consignaciones
 ✅ Paso 5  (1 h)     — MyBidsScreen (endpoint nuevo + mapeo)
 ✅ Paso 6  (1 h)     — MyAuctionsScreen
-⏳ Paso 11 (1 h)     — limpieza final
+✅ Paso 11 (1 h)     — limpieza final
 ```
 
 **Completado:** ~3 h (pasos 1–4, 7b, 10).  

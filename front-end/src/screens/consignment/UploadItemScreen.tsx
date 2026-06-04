@@ -49,11 +49,6 @@ const CURRENCY_OPTIONS = [
 
 const COMMISSION_PERCENT = 8;
 
-function formatPrice(amount: string, currency: string | null) {
-  const prefix = currency === 'usd' ? 'US$' : '$';
-  return `${prefix}${amount}`;
-}
-
 export default function UploadItemScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<UploadRoute>();

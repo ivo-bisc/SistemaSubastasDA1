@@ -19,12 +19,6 @@ export const Endpoints = {
     UPDATE_PROFILE: '/usuarios/perfil',
   },
 
-  // ── Catalog ────────────────────────────────────────────
-  CATALOG: {
-    ITEM_DETAIL: (id: string) => `/items/${id}`,
-    ITEM_IMAGES: (id: string) => `/items/${id}/imagenes`,
-  },
-
   // ── Auctions ───────────────────────────────────────────
   AUCTIONS: {
     LIST: '/subastas',
@@ -32,13 +26,6 @@ export const Endpoints = {
     CATALOG: (id: string) => `/subastas/${id}/catalogo`,
     CONNECT: (id: string) => `/subastas/${id}/conectar`,
     DISCONNECT: (id: string) => `/subastas/${id}/desconectar`,
-  },
-
-  // ── Bids ───────────────────────────────────────────────
-  BIDS: {
-    CURRENT: (auctionId: string) => `/subastas/${auctionId}/pujas/estado`,
-    PLACE: (auctionId: string) => `/subastas/${auctionId}/pujas`,
-    HISTORY: (auctionId: string) => `/subastas/${auctionId}/pujas/historial`,
   },
 
   // ── Purchases ──────────────────────────────────────────

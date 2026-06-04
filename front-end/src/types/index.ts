@@ -78,37 +78,6 @@ export interface Bid {
   createdAt: string;
 }
 
-// ── Catalog ──────────────────────────────────────────────
-export interface CatalogItem {
-  id: string;
-  title: string;
-  description: string;
-  images: string[];
-  category: string;
-  estimatedValue: number;
-}
-
-// ── Payment Methods ──────────────────────────────────────
-export interface PaymentMethod {
-  id: string;
-  type: 'card' | 'bank_account' | 'check';
-  label: string;
-  lastFourDigits?: string;
-}
-
-export interface CardPayment {
-  cardNumber: string;
-  cardHolder: string;
-  expirationDate: string;
-  cvv: string;
-}
-
-export interface CheckPayment {
-  bankName: string;
-  checkNumber: string;
-  amount: number;
-}
-
 // ── Address ──────────────────────────────────────────────
 export interface Address {
   id: string;
@@ -156,14 +125,6 @@ export interface Fine {
 }
 
 // ── Chat ─────────────────────────────────────────────────
-export interface ChatConversation {
-  id: string;
-  participantName: string;
-  lastMessage: string;
-  lastMessageDate: string;
-  unreadCount: number;
-}
-
 export interface ChatMessage {
   id: string;
   conversationId: string;

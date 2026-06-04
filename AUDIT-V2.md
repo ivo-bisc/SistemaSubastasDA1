@@ -71,7 +71,7 @@ Credentials: true
 | `/usuarios/multas` | GET | `UsuarioController` | ⚠️ | `metricsService.getFines()` tiene TODO, nunca llamado |
 | `/usuarios/multas/{id}/pagar` | POST | `UsuarioController` | ⚠️ | `metricsService.payFine()` tiene TODO, nunca llamado |
 | `/usuarios/compras` | GET | `UsuarioController` | ✅ | Conectado vía `chatService.getCompras()` → `ChatListScreen` |
-| `/usuarios/compras/{id}` | GET | `UsuarioController` | ⚠️ | `purchaseService.getPurchaseDetail()` implementado pero sin pantalla conectada |
+| `/usuarios/compras/{id}` | GET | `UsuarioController` | — | `purchaseService` eliminado (Paso 11c); sin pantalla conectada |
 | `/usuarios/metricas` | GET | `UsuarioController` | ⚠️ | `metricsService.getStats()` tiene TODO, nunca llamado |
 | `/usuarios/participaciones` | GET | `UsuarioController` | ⚠️ | `metricsService.getParticipationHistory()` tiene TODO, nunca llamado |
 | `/usuarios/mis-pujas` | GET | `UsuarioController` | ✅ | Endpoint creado (Paso 5 backend); conectado vía `metricsService.getMyBids()` → `MyBidsScreen` |
@@ -84,16 +84,16 @@ Credentials: true
 | `/subastas/{id}/catalogo` | GET | `CatalogoController` | ✅ | Conectado vía `auctionService.getAuctionDetail()` (Promise.all) |
 | `/subastas/{id}/conectar` | POST | `SubastaController` | ✅ | Conectado vía `auctionService.connectToAuction()` → `AuctionDetailScreen` |
 | `/subastas/{id}/desconectar` | POST | `SubastaController` | ✅ | Conectado vía cleanup de `useEffect` en `AuctionDetailScreen` (Paso 7c) |
-| `/subastas/{id}/pujas/estado` | GET | `SubastaController` | ⚠️ | `bidService.getCurrentBid()` marcado TODO; la pantalla usa WebSocket en su lugar |
-| `/subastas/{id}/pujas` | POST | `SubastaController` | ⚠️ | `bidService.placeBid()` implementado pero `AuctionDetailScreen` usa WebSocket, no REST |
-| `/subastas/{id}/pujas/historial` | GET | `SubastaController` | ⚠️ | `bidService.getBidHistory()` marcado TODO, nunca llamado |
+| `/subastas/{id}/pujas/estado` | GET | `SubastaController` | — | `bidService` eliminado (Paso 11b); pujas via WebSocket |
+| `/subastas/{id}/pujas` | POST | `SubastaController` | ✅ | WebSocket (`useAuctionSocket.sendBid()`); REST eliminado |
+| `/subastas/{id}/pujas/historial` | GET | `SubastaController` | — | `bidService` eliminado (Paso 11b); sin pantalla |
 
 ### ITEMS / CATÁLOGO
 | Endpoint frontend | Método | Backend | Estado | Notas |
 |---|---|---|---|---|
-| `/items/{id}` | GET | `CatalogoController` | ⚠️ | `catalogService.getItemDetail()` marcado TODO, nunca llamado |
-| `/items/{id}/imagenes` | GET | `CatalogoController` | ⚠️ | `catalogService.getItemImages()` marcado TODO, nunca llamado |
-| `/catalogo/items` | GET | — | ❌ | `catalogService.getItems()` usa esta ruta que **no existe en el backend** |
+| `/items/{id}` | GET | `CatalogoController` | — | `catalogService` eliminado (Paso 11c); sin pantalla conectada |
+| `/items/{id}/imagenes` | GET | `CatalogoController` | — | `catalogService` eliminado (Paso 11c); sin pantalla conectada |
+| `/catalogo/items` | GET | — | — | Ruta inexistente en backend; `catalogService` eliminado (Paso 11c) |
 
 ### COMPRAS / CHAT
 | Endpoint frontend | Método | Backend | Estado | Notas |
@@ -218,11 +218,11 @@ Backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoL
 | `CATALOG.ITEM_IMAGES(id)` | `GET /items/{id}/imagenes` | Definida, servicio con TODO |
 
 ### Servicios enteros sin ningún caller en pantallas
-- `catalogService.ts` — 3 métodos TODO, nunca importado por ninguna pantalla o store
-- `bidService.ts` — 4 métodos (algunos TODO), nunca importado (WebSocket se usa en su lugar)
-- ~~`consignService.ts`~~ — ✅ `submitItem()` implementado y conectado (Paso 7); 4 métodos restantes sin pantalla
-- `metricsService.ts` — `getMyBids()` implementado y conectado a `MyBidsScreen` (Paso 5); 4 métodos restantes con TODO, sin caller
-- `purchaseService.ts` — 1 método implementado, nunca importado por ninguna pantalla
+- ~~`catalogService.ts`~~ — ✅ Eliminado (Paso 11c)
+- ~~`bidService.ts`~~ — ✅ Eliminado (Paso 11b); pujas via WebSocket
+- ~~`consignService.ts`~~ — ✅ `submitItem()` y `getConsignaciones()` conectados (Pasos 7 y 6); 4 métodos restantes conservados para uso futuro
+- `metricsService.ts` — `getMyBids()` conectado a `MyBidsScreen` (Paso 5); métodos TODO eliminados (Paso 11c)
+- ~~`purchaseService.ts`~~ — ✅ Eliminado (Paso 11c)
 
 ### Mocks activos sin flag condicional
 - ~~`MyBidsScreen`~~ — ✅ Conectado a `metricsService.getMyBids()` → `GET /usuarios/mis-pujas` (Paso 5). Loading/error state. Mapeo: `CONFIRMADA→won`, `RECHAZADA→lost`.
@@ -237,18 +237,11 @@ Backend retorna `MedioPagoResponse { id, tipo, alias, moneda, verificado, montoL
 
 ### Interfaces TypeScript definidas y nunca importadas
 Ubicación: `front-end/src/types/index.ts` y `front-end/src/types/catalog.ts`
-- `CatalogItem` — nunca importada; `MockBidItem` se usa en su lugar
-- `CardPayment` — nunca importada; `MockCard` se usa en su lugar
-- `CheckPayment` — nunca importada; `MockCheck` se usa en su lugar
-- `ChatConversation` — nunca importada
-- `PaymentMethod` — interfaz genérica, nunca importada; mocks locales se usan en su lugar
-- `CatalogCardItem`, `CatalogCategory` — en `catalog.ts`, nunca importadas
+- ~~`CatalogItem`, `CardPayment`, `CheckPayment`, `ChatConversation`, `PaymentMethod`~~ — ✅ Eliminadas de `types/index.ts` (Paso 11a)
+- ~~`CatalogCardItem`, `CatalogCategory`~~ — ✅ Eliminadas; `types/catalog.ts` eliminado (Paso 11a)
 
 ### Servicios esqueleto sin implementación real
-`catalogService`, `bidService`, `consignService`, `metricsService` y `purchaseService` tienen cuerpos con TODO o implementaciones que nadie llama — son código de andamiaje sin valor actual.
-
-### Duplicación de lógica de puja
-El frontend tiene dos caminos para pujar: `bidService.placeBid()` (REST) y `useAuctionSocket.sendBid()` (WebSocket). Solo el segundo está conectado. `bidService` es código duplicado que confunde el modelo de integración.
+~~`catalogService`, `bidService`, `purchaseService`~~ — ✅ Eliminados (Paso 11). `metricsService` reducido a `getMyBids()` (Paso 11c). `consignService` conservado con métodos conectados.
 
 ---
 
@@ -371,13 +364,13 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | `chatService.sendMessage` silencia errores | ✅ Resuelto (Paso 3) | Crítico | — |
 | Mocks incondicionales en MyBids/MyAuctions | ✅ Resuelto | Medio | `MyBidsScreen` ✅ (Paso 5); `MyAuctionsScreen` ✅ (Paso 6) — ambos conectados a API real |
 | `authStore.logout()` no invalida token en backend | 🟡 Funciona con riesgo | Medio | Llamar `POST /auth/logout` antes de limpiar estado local |
-| `/catalogo/items` no existe en backend | 🟡 Falla en runtime | Medio | `catalogService.getItems()` llama ruta inexistente; eliminar o corregir ruta |
-| Servicios enteros sin implementación ni uso | 🟡 Deuda técnica | Medio | Implementar o eliminar `catalogService`, `bidService`, `purchaseService`; `consignService` ✅ (Paso 7); `metricsService` parcial ✅ (Paso 5) |
+| `/catalogo/items` no existe en backend | ✅ Resuelto | Medio | `catalogService` eliminado (Paso 11c) |
+| Servicios enteros sin implementación ni uso | ✅ Resuelto | Medio | `catalogService`, `bidService`, `purchaseService` eliminados (Paso 11); `metricsService` reducido; `consignService` conectado |
 | `AddCardScreen` no llama API | ✅ Resuelto (Paso 4) | Medio | — |
 | `UploadItemScreen` no llama `consignService` | ✅ Resuelto (Paso 7) | Medio | — |
 | Race condition en `profileStore.loadProfile()` | ✅ Resuelto (Paso 10) | Menor | — |
-| Interfaces TypeScript sin usar | 🟢 Limpieza | Menor | Eliminar `CatalogItem`, `CardPayment`, `CheckPayment`, `ChatConversation`, `PaymentMethod` de `types/` |
-| `bidService` duplica lógica de WebSocket | 🟢 Limpieza | Menor | Eliminar el servicio REST de pujas; mantener solo WebSocket |
+| Interfaces TypeScript sin usar | ✅ Resuelto | Menor | Eliminadas de `types/index.ts` y `types/catalog.ts` (Paso 11a) |
+| `bidService` duplica lógica de WebSocket | ✅ Resuelto | Menor | `bidService` eliminado (Paso 11b); solo WebSocket activo |
 | `null` en `ALLOWED_ORIGINS` | 🟢 Riesgo bajo | Menor | Eliminar antes de producción |
 | `show-sql=true` y `level=DEBUG` en producción | 🟢 Configuración | Menor | Crear `application-prod.properties` con valores apropiados |
 | Swagger UI sin autenticación | 🟢 Exposición de API | Menor | Proteger con auth básica o deshabilitar en producción |

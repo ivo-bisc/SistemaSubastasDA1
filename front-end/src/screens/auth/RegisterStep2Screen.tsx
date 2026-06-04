@@ -26,6 +26,10 @@ import type { AuthStackParamList } from '../../types';
 
 type Nav = StackNavigationProp<AuthStackParamList, 'RegisterStep2'>;
 
+// Bypass de desarrollo: el backend acepta este valor para saltear la verificación de email
+// (no hay servidor de emails configurado en el proyecto)
+const EMAIL_VERIFY_BYPASS = 'dev-bypass';
+
 export default function RegisterStep2Screen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
@@ -163,7 +167,7 @@ export default function RegisterStep2Screen() {
             await authService.registerStep1(form);
 
             const paso2Res = await authService.registerStep2({
-              tokenEmail: 'dev-bypass',
+              tokenEmail: EMAIL_VERIFY_BYPASS,
               email: params.email,
               password: params.password,
             });
