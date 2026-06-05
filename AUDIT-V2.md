@@ -339,7 +339,7 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | `application.properties` — `DB_PASSWORD` | `8Z\|TmuL6k17V` como valor default commiteado al repo | 🔴 Crítico |
 | `application.properties` — `JWT_SECRET` | `mi-clave-secreta-de-desarrollo-local-12345` como valor default commiteado | 🔴 Crítico |
 | `application.properties` (comentario Azure SQL) | `password=${DB_PASSWORD:A12345678#}` — otro default en código | 🟡 Medio |
-| `RegisterStep2Screen` | `tokenEmail: 'dev-bypass'` hardcodeado — bypass de verificación de email activo | 🔴 Crítico |
+| `RegisterStep2Screen` | `EMAIL_VERIFY_BYPASS = 'dev-bypass'` — bypass documentado (Paso 9); intencional por falta de servidor de emails | ✅ Documentado |
 
 ### .gitignore
 - `front-end/.env` está en `.gitignore` ✅
@@ -358,7 +358,7 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 | Área | Estado | Severidad | Acción requerida |
 |---|---|---|---|
 | Credenciales en `application.properties` | 🔴 Roto | Crítico | Eliminar defaults de DB_PASSWORD y JWT_SECRET; usar env vars obligatorias sin fallback |
-| `tokenEmail: 'dev-bypass'` en registro | 🔴 Roto | Crítico | El registro real requiere token de email válido; este hardcodeo rompe el flujo en producción |
+| `tokenEmail: 'dev-bypass'` en registro | ✅ Documentado (Paso 9) | Crítico | Bypass intencional — sin servidor de emails en el proyecto. Extraído a constante `EMAIL_VERIFY_BYPASS` con comentario explicativo en `RegisterStep2Screen.tsx` |
 | Password mismatch: 3 chars (frontend) vs 8 chars (backend) | ✅ Resuelto (Paso 1) | Crítico | — |
 | Mapeo `MedioPagoResponse` → `MockCard` | ✅ Resuelto (Paso 2) | Crítico | — |
 | `chatService.sendMessage` silencia errores | ✅ Resuelto (Paso 3) | Crítico | — |
