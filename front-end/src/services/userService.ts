@@ -6,7 +6,6 @@ import { Endpoints } from '../constants';
  */
 export const userService = {
   getProfile: async () => {
-    // TODO: implementar
     return apiClient.get(Endpoints.USERS.PROFILE);
   },
 
@@ -16,7 +15,6 @@ export const userService = {
     phone?: string;
     domicilioLegal?: string;
   }) => {
-    // TODO: implementar
     return apiClient.put(Endpoints.USERS.UPDATE_PROFILE, data);
   },
 };

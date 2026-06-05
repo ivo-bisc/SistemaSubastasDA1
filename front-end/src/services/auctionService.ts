@@ -33,7 +33,6 @@ const statusMap: Record<string, Auction['status']> = {
 
 export const auctionService = {
   getAuctions: async () => {
-    // TODO: implementar
     return apiClient.get(Endpoints.AUCTIONS.LIST);
   },
 

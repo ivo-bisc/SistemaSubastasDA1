@@ -6,12 +6,10 @@ import { Endpoints } from '../constants';
  */
 export const authService = {
   login: async (email: string, password: string) => {
-    // TODO: implementar
     return apiClient.post(Endpoints.AUTH.LOGIN, { email, password });
   },
 
   logout: async () => {
-    // TODO: implementar
     return apiClient.post(Endpoints.AUTH.LOGOUT);
   },
 
