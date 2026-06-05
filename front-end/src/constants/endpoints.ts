@@ -26,6 +26,7 @@ export const Endpoints = {
     CATALOG: (id: string) => `/subastas/${id}/catalogo`,
     CONNECT: (id: string) => `/subastas/${id}/conectar`,
     DISCONNECT: (id: string) => `/subastas/${id}/desconectar`,
+    BID_HISTORY: (id: string) => `/subastas/${id}/pujas/historial`,
   },
 
   // ── Purchases ──────────────────────────────────────────

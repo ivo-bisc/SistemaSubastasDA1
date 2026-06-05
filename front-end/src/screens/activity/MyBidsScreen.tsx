@@ -41,13 +41,14 @@ export default function MyBidsScreen() {
       .getMyBids()
       .then((res) => {
         const mapped: MockBidItem[] = (res.data ?? []).map((p: any) => ({
-          id: String(p.subastaId),
+          id: String(p.pujaId),
+          auctionId: String(p.subastaId),
           title: p.itemDescripcion,
           imageUrl: '',
           timeRemaining: formatRelativeDate(p.timestamp),
           currentPrice: `$${Number(p.monto).toLocaleString('es-AR')}`,
           myBid: `$${Number(p.monto).toLocaleString('es-AR')}`,
-          status: p.estado === 'CONFIRMADA' ? 'won' : 'lost',
+          status: p.estado === 'RECHAZADA' ? 'lost' : 'winning',
         }));
         setBids(mapped);
       })
@@ -83,7 +84,7 @@ export default function MyBidsScreen() {
       primaryPrice={item.currentPrice}
       secondaryPrice={`Tu Puja: ${item.myBid}`}
       badgeType={item.status}
-      onPress={() => handleItemPress(item.id)}
+      onPress={() => handleItemPress(item.auctionId)}
     />
   );
 

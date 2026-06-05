@@ -25,16 +25,18 @@ SistemaSubastasDA1/
 
 ## Backend
 
-### 1. Configurar variables de entorno
+### 1. Configurar credenciales locales
 
-Copiá el archivo de ejemplo y completá los valores:
+Copiá el archivo de ejemplo y completá tus secretos (no van en `application.properties`):
 
 ```bash
-cp backend/src/main/resources/application.properties.example \
-   backend/src/main/resources/application.properties
+cp backend/src/main/resources/application-local.properties.example \
+   backend/src/main/resources/application-local.properties
 ```
 
-Editá `application.properties` con tus credenciales de MySQL. Las variables que podés sobreescribir con variables de entorno del sistema operativo son:
+Editá `application-local.properties` con tu contraseña de MySQL y `jwt.secret`. Detalle en [`backend/README.md`](backend/README.md).
+
+También podés usar variables de entorno del sistema operativo:
 
 | Variable de entorno | Descripción | Ejemplo |
 |---------------------|-------------|---------|
@@ -120,8 +122,9 @@ Escaneá el QR con Expo Go o presioná `a` (Android) / `i` (iOS) para abrir el e
 |----------|-----------|---------------|-------------|
 | `DB_URL` | No | URL MySQL local | URL JDBC de conexión |
 | `DB_USERNAME` | No | `root` | Usuario de la base de datos |
-| `DB_PASSWORD` | **Sí** | _(vacío)_ | Contraseña de la base de datos |
-| `JWT_SECRET` | No | clave de dev | Clave para firmar tokens JWT |
+| `DB_PASSWORD` | **Sí** | _(sin default)_ | Contraseña de la base de datos |
+| `JWT_SECRET` | **Sí** | _(sin default)_ | Clave para firmar tokens JWT |
+| `SPRING_PROFILES_ACTIVE` | No | `local` | Perfil Spring (`local` dev, `prod` producción) |
 | `ALLOWED_ORIGINS` | No | orígenes dev | Orígenes CORS permitidos |
 | `UPLOADS_PATH` | No | `uploads` | Directorio de archivos subidos |
 

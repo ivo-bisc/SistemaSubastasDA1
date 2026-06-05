@@ -93,6 +93,7 @@ export default function UploadItemScreen() {
         currency,
         suggestedPrice,
         aceptaPertenencia,
+        photos: photos.filter((uri): uri is string => Boolean(uri)),
       });
       navigation.navigate('ItemUploaded', { returnTo });
     } catch (err: any) {

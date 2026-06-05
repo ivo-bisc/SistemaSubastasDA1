@@ -11,17 +11,18 @@ export const consignService = {
     currency: string | null;
     suggestedPrice: string;
     aceptaPertenencia: boolean;
+    photos: string[];
   }) => {
-    const cards = useProfileStore.getState().cards;
-    const firstCard = cards[0];
-    if (!firstCard) {
+    const { paymentMethods } = useProfileStore.getState();
+    const medioPago = paymentMethods.find((m) => m.verificado) ?? paymentMethods[0];
+    if (!medioPago) {
       throw new Error('SIN_MEDIO_PAGO');
     }
 
     const form = new FormData();
     form.append('descripcion', params.description);
     form.append('acepta_pertenencia', String(params.aceptaPertenencia));
-    form.append('cuenta_destino_id', firstCard.id);
+    form.append('cuenta_destino_id', medioPago.id);
     if (params.suggestedPrice) {
       form.append('precio_sugerido', params.suggestedPrice);
     }
@@ -34,6 +35,14 @@ export const consignService = {
         moneda: params.currency,
       })
     );
+
+    params.photos.forEach((uri, index) => {
+      form.append('fotos', {
+        uri,
+        name: `foto-${index + 1}.jpg`,
+        type: 'image/jpeg',
+      } as any);
+    });
 
     return apiClient.post(Endpoints.CONSIGNMENT.SUBMIT_ITEM, form, {
       headers: { 'Content-Type': 'multipart/form-data' },

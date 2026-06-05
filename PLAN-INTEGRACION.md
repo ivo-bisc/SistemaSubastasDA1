@@ -10,8 +10,8 @@
 
 | Estado | Pasos |
 |--------|-------|
-| ✅ **Completados** | 1, 2, 3, 4, 5, 6, 7, 7b, 7c, 9, 10, 11 |
-| ⏳ **Pendientes** | 8 |
+| ✅ **Completados** | 1, 2, 3, 4, 5, 6, 7, 7b, 7c, 8, 9, 10, 11 |
+| ⏳ **Pendientes** | — |
 
 **Fase 1 (fixes críticos): terminada.**
 
@@ -30,10 +30,10 @@
 | 7 | Conectar `UploadItemScreen` a `consignService` | 🟡 Medio | ~1 h | 7 | ✅ |
 | 7b | Conectar `LotDetailScreen` a `GET /subastas/{id}` + catálogo | 🟡 Medio | ~1.5 h | 7b | ✅ |
 | 7c | Llamar `disconnectFromAuction()` al salir de `AuctionDetailScreen` | 🟡 Medio | ~15 min | 7c | ✅ |
-| 8 | Credenciales: sacar defaults de `application.properties` | 🔴 Crítico | ~20 min | 8 | ⏳ |
+| 8 | Credenciales: sacar defaults de `application.properties` | 🔴 Crítico | ~20 min | 8 | ✅ |
 | 9 | Eliminar `tokenEmail: 'dev-bypass'` | 🔴 Crítico | ~30 min | 9 | ✅ |
 | 10 | Race condition en `profileStore.loadProfile()` | 🟢 Menor | ~5 min | 10 | ✅ |
-| 11 | Limpieza: servicios muertos, tipos sin usar, `bidService` | 🟢 Menor | ~1 h | 11 | ⏳ |
+| 11 | Limpieza: servicios muertos, tipos sin usar, `bidService` | 🟢 Menor | ~1 h | 11 | ✅ |
 
 ---
 
@@ -203,7 +203,9 @@ El mock usa IDs string (`'cat-1'`, `'cat-2'`). El backend usa IDs Long. Para que
 
 ---
 
-## Paso 8 — Sacar credenciales de `application.properties`
+## Paso 8 — Sacar credenciales de `application.properties` ✅
+
+**Estado:** Completado (2026-06-05). Secretos movidos a `application-local.properties` (gitignored) + plantilla `.example`. `application.properties` sin defaults de `DB_PASSWORD` ni `JWT_SECRET`.
 
 **Archivo:** `backend/src/main/resources/application.properties`  
 **Problema:** `DB_PASSWORD` y `JWT_SECRET` tienen valores reales/débiles como defaults commiteados al repo.

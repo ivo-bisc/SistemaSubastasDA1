@@ -127,4 +127,4 @@ Si el componente se desmonta durante la conexión inicial (antes de que `onConne
 
 | ⚠️ | Paso | Estado |
 |---|---|---|
-| Credenciales hardcodeadas en `application.properties` (`DB_PASSWORD`, `JWT_SECRET`) | Paso 8 | ⏳ Pendiente |
+| Credenciales hardcodeadas en `application.properties` (`DB_PASSWORD`, `JWT_SECRET`) | Paso 8 | ✅ Resuelto (2026-06-05) |

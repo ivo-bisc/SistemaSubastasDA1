@@ -2,8 +2,11 @@ import apiClient from './apiClient';
 import { Endpoints } from '../constants';
 import { Auction, AuctionDetail } from '../types';
 import { CatalogCardItem, CatalogCategory } from '../types/catalog';
-import { formatTimeRemaining } from '../utils/format';
+import type { AuctionBidEntry } from '../data/mockAuctionDetail';
+import { formatRelativeDate, formatTimeRemaining } from '../utils/format';
 import { resolveImageUrl } from '../utils/media';
+
+const BID_AVATAR_COLORS = ['#E57373', '#64B5F6', '#81C784', '#FFB74D', '#BA68C8', '#7B68EE'];
 
 function formatItemPrice(value: number | null | undefined): string {
   if (value == null) return 'Consultar';
@@ -94,5 +97,17 @@ export const auctionService = {
 
   disconnectFromAuction: async (id: string) => {
     return apiClient.post(Endpoints.AUCTIONS.DISCONNECT(id));
+  },
+
+  getBidHistory: async (subastaId: string, itemId?: number): Promise<AuctionBidEntry[]> => {
+    const params = itemId != null ? { itemId } : undefined;
+    const res = await apiClient.get(Endpoints.AUCTIONS.BID_HISTORY(subastaId), { params });
+    return (res.data ?? []).map((p: any, index: number) => ({
+      id: String(p.id ?? p.pujaId),
+      bidderName: p.bidderAlias ?? 'Anónimo',
+      timeAgo: formatRelativeDate(p.createdAt),
+      amount: Number(p.amount ?? p.monto),
+      avatarColor: BID_AVATAR_COLORS[index % BID_AVATAR_COLORS.length],
+    }));
   },
 };

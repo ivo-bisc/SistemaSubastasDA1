@@ -7,9 +7,10 @@ import { formatCurrency, getInitials } from '../../utils/format';
 type Props = {
   bid: AuctionBidEntry;
   variant?: 'light' | 'dark';
+  currency?: string;
 };
 
-export default function BidHistoryRow({ bid, variant = 'light' }: Props) {
+export default function BidHistoryRow({ bid, variant = 'light', currency = 'ARS' }: Props) {
   const isLight = variant === 'light';
 
   return (
@@ -22,7 +23,7 @@ export default function BidHistoryRow({ bid, variant = 'light' }: Props) {
         <Text style={[styles.time, isLight && styles.timeLight]}>{bid.timeAgo}</Text>
       </View>
       <Text style={[styles.amount, isLight && styles.amountLight]}>
-        {formatCurrency(bid.amount, 'USD', true)}
+        {formatCurrency(bid.amount, currency, true)}
       </Text>
     </View>
   );

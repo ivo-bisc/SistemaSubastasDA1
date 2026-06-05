@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors, Fonts, FontSize, Layout } from '../../constants';
 
 export const MIN_CONSIGNMENT_PHOTOS = 6;
@@ -22,9 +23,6 @@ type Props = {
   onChange: (photos: (string | null)[]) => void;
 };
 
-const DEMO_PHOTO =
-  'https://images.unsplash.com/photo-1614728263952-84ea256f9679?w=200&q=80';
-
 export default function PhotoUploadGrid({ photos, onChange }: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const slotSize = useMemo(() => {
@@ -34,11 +32,15 @@ export default function PhotoUploadGrid({ photos, onChange }: Props) {
 
   const filledCount = photos.filter(Boolean).length;
 
-  const addNextPhoto = () => {
-    const index = photos.findIndex((p) => !p);
-    if (index === -1) return;
+  const pickPhoto = async (index?: number) => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] });
+    if (result.canceled || !result.assets[0]?.uri) return;
+
+    const uri = result.assets[0].uri;
     const next = [...photos];
-    next[index] = DEMO_PHOTO;
+    const targetIndex = index ?? next.findIndex((p) => !p);
+    if (targetIndex === -1) return;
+    next[targetIndex] = uri;
     onChange(next);
   };
 
@@ -52,7 +54,7 @@ export default function PhotoUploadGrid({ photos, onChange }: Props) {
     <View style={styles.wrap}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Adjunta fotos del artículo</Text>
-        <Pressable onPress={addNextPhoto} hitSlop={8} style={styles.uploadBtn}>
+        <Pressable onPress={() => pickPhoto()} hitSlop={8} style={styles.uploadBtn}>
           <Ionicons name="cloud-upload-outline" size={22} color={Colors.accent} />
         </Pressable>
       </View>
@@ -71,7 +73,7 @@ export default function PhotoUploadGrid({ photos, onChange }: Props) {
               { width: slotSize, height: slotSize },
               pressed && styles.slotPressed,
             ]}
-            onPress={() => (uri ? removePhoto(index) : addNextPhoto())}
+            onPress={() => (uri ? removePhoto(index) : pickPhoto(index))}
           >
             {uri ? (
               <View style={styles.slotFill}>

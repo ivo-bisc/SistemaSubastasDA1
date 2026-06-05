@@ -9,6 +9,7 @@ import { useProfileStore } from '../../stores';
 import { paymentService } from '../../services/paymentService';
 import type { MockCard } from '../../data/mockProfile';
 import type { ProfileStackParamList } from '../../types';
+import { confirmAction } from '../../utils/confirm';
 
 type Nav = StackNavigationProp<ProfileStackParamList, 'PaymentMethods'>;
 
@@ -32,31 +33,24 @@ export default function PaymentMethodsScreen() {
   const loadProfile = useProfileStore((s) => s.loadProfile);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDelete = (card: MockCard) => {
-    Alert.alert(
+  const handleDelete = async (card: MockCard) => {
+    const confirmed = await confirmAction(
       '¿Eliminar este medio de pago?',
-      `${formatCardLabel(card)}`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingId(card.id);
-            removeCard(card.id);
-            try {
-              await paymentService.deletePaymentMethod(card.id);
-              await loadProfile();
-            } catch {
-              Alert.alert('Error', 'No se pudo eliminar el medio de pago. Intentá de nuevo.');
-              await loadProfile();
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ]
+      formatCardLabel(card)
     );
+    if (!confirmed) return;
+
+    setDeletingId(card.id);
+    removeCard(card.id);
+    try {
+      await paymentService.deletePaymentMethod(card.id);
+      await loadProfile();
+    } catch {
+      Alert.alert('Error', 'No se pudo eliminar el medio de pago. Intentá de nuevo.');
+      await loadProfile();
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (

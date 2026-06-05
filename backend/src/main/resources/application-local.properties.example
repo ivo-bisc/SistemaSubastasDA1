@@ -1,0 +1,6 @@
+# Plantilla de credenciales locales — copiar a application-local.properties
+# cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties
+# NUNCA commitear application-local.properties
+
+spring.datasource.password=TU_PASSWORD_MYSQL
+jwt.secret=clave-secreta-desarrollo-minimo-32-caracteres

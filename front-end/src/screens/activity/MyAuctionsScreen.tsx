@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import { MockAuctionItem } from '../../data/mockActivity';
 import type { MyAuctionsStackParamList } from '../../types';
 import { consignService } from '../../services';
 import { formatRelativeDate } from '../../utils/format';
+import { resolveImageUrl } from '../../utils/media';
 
 const FILTER_OPTIONS: DropdownOption[] = [
   { value: 'all', label: 'Todas mis Subastas' },
@@ -62,7 +63,7 @@ export default function MyAuctionsScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadAuctions = useCallback(() => {
     setLoading(true);
     consignService
       .getConsignaciones()
@@ -81,7 +82,7 @@ export default function MyAuctionsScreen() {
           return {
             id: String(c.consignacionId),
             title: parseTitulo(c.datosAdicionales, c.descripcion),
-            imageUrl: c.fotosUrls?.[0] ?? '',
+            imageUrl: resolveImageUrl(c.fotosUrls?.[0]),
             timeRemaining: c.fechaSubasta ? formatRelativeDate(c.fechaSubasta) : '—',
             currentPrice: precio ? `$${Number(precio).toLocaleString('es-AR')}` : '—',
             status: e.status,
@@ -90,10 +91,17 @@ export default function MyAuctionsScreen() {
           };
         });
         setAuctions(mapped);
+        setError(null);
       })
       .catch(() => setError('No se pudieron cargar las subastas.'))
       .finally(() => setLoading(false));
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAuctions();
+    }, [loadAuctions])
+  );
 
   const filteredAuctions = auctions.filter((auction) => {
     if (filter === 'all') return true;

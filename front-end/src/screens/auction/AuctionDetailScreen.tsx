@@ -17,6 +17,7 @@ import {
   AuctionImageHeader,
   AuctionProductInfo,
   AuctionStatsCards,
+  BidHistoryRow,
   ConfirmBidModal,
 } from '../../components/auction';
 import { Colors, Fonts, FontSize } from '../../constants';
@@ -26,6 +27,7 @@ import { auctionService } from '../../services';
 import { useProfileStore } from '../../stores/profileStore';
 import type { AuctionDetail } from '../../types';
 import type { PaymentMethod } from '../../stores/profileStore';
+import type { AuctionBidEntry } from '../../data/mockAuctionDetail';
 
 const IMAGE_HEIGHT = 280;
 const DESCRIPTION_MAX_HEIGHT = 400;
@@ -36,6 +38,7 @@ export default function AuctionDetailScreen() {
   const auctionId: string | undefined = route.params?.auctionId;
 
   const [auction, setAuction] = useState<AuctionDetail | null>(null);
+  const [bidHistory, setBidHistory] = useState<AuctionBidEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -48,6 +51,18 @@ export default function AuctionDetailScreen() {
       .catch(() => setFetchError('No se pudo cargar la subasta.'))
       .finally(() => setLoading(false));
   }, [auctionId]);
+
+  const loadBidHistory = (subastaId: string, itemId?: number) => {
+    auctionService
+      .getBidHistory(subastaId, itemId)
+      .then(setBidHistory)
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!auctionId || !auction?.itemId) return;
+    loadBidHistory(auctionId, auction.itemId);
+  }, [auctionId, auction?.itemId]);
 
   useEffect(() => {
     if (!auctionId) return;
@@ -103,13 +118,13 @@ export default function AuctionDetailScreen() {
   const chevronRotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!liveBid) return;
+    if (!liveBid || !auctionId || !auction?.itemId) return;
     setAuction((prev) => (prev ? { ...prev, currentPrice: liveBid.nuevaMejorOferta } : prev));
     setLivePujaMinima(liveBid.pujaMinima);
-    // Si la nueva mejor oferta no coincide con la que yo confirmé, alguien más ganó el liderazgo
     setLeadingAmount((prev) =>
       prev !== null && liveBid.nuevaMejorOferta !== prev ? null : prev
     );
+    loadBidHistory(auctionId, auction.itemId);
   }, [liveBid]);
 
   useEffect(() => {
@@ -118,9 +133,10 @@ export default function AuctionDetailScreen() {
   }, [rejection]);
 
   useEffect(() => {
-    if (!confirmation) return;
+    if (!confirmation || !auctionId || !auction?.itemId) return;
     setBidError(null);
     setLeadingAmount(confirmation.monto);
+    loadBidHistory(auctionId, auction.itemId);
   }, [confirmation]);
 
   const toggleDescription = () => {
@@ -288,9 +304,17 @@ export default function AuctionDetailScreen() {
                 <Text style={styles.liveTitle}>Subasta en vivo</Text>
               </View>
               <Text style={styles.offerCount}>
-                {auction.totalBids} Ofertas
+                {bidHistory.length} Ofertas
               </Text>
             </View>
+
+            {bidHistory.length === 0 ? (
+              <Text style={styles.emptyBids}>Todavía no hay ofertas.</Text>
+            ) : (
+              bidHistory.map((bid) => (
+                <BidHistoryRow key={bid.id} bid={bid} variant="light" currency={auction.currency} />
+              ))
+            )}
           </View>
 
           {bidError ? (
@@ -461,6 +485,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.sora,
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
+  },
+  emptyBids: {
+    fontFamily: Fonts.sora,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    paddingVertical: 8,
   },
   bottomSpacer: {
     height: 120, // Clean minimal padding so scroll finishes elegantly above the bar

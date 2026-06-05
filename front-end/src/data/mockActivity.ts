@@ -6,6 +6,7 @@ export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
 
 export interface MockBidItem {
   id: string;
+  auctionId: string;
   title: string;
   imageUrl: string;
   timeRemaining: string;

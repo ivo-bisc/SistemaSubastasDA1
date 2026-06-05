@@ -1,7 +1,7 @@
 # ============================================================
-# application.properties.example
-# Copiá este archivo a application.properties y completá los valores.
-# NUNCA commitees application.properties con credenciales reales.
+# LEGACY — preferí el flujo con perfil local:
+#   cp application-local.properties.example application-local.properties
+# Ver backend/README.md
 # ============================================================
 
 spring.application.name=subastas-api

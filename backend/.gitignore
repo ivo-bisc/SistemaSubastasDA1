@@ -19,6 +19,7 @@ build/
 # Local env files
 .env
 .env*.local
+src/main/resources/application-local.properties
 
 # Editor
 .vscode/
