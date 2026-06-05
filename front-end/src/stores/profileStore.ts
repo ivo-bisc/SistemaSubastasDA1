@@ -3,6 +3,8 @@ import { MockCard, MockCheck } from '../data/mockProfile';
 import { userService } from '../services/userService';
 import { paymentService, type MedioPagoRequest } from '../services/paymentService';
 import { detectCardBrand, onlyDigits } from '../utils/cardForm';
+import { useAuthStore } from './authStore';
+import type { User } from '../types';
 
 export interface PaymentMethod {
   id: string;
@@ -32,6 +34,7 @@ interface ProfileStore {
   addCard: (card: Omit<MockCard, 'id'>) => void;
   addCardViaApi: (data: MedioPagoRequest) => Promise<void>;
   addCheck: (check: Omit<MockCheck, 'id'>) => void;
+  removeCard: (id: string) => void;
 }
 
 let idCounter = 100;
@@ -96,6 +99,14 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         verificado: mp.verificado === true,
       }));
 
+      const statusMap: Record<string, User['status']> = {
+        APROBADO: 'approved',
+        PENDIENTE_VERIFICACION: 'pending',
+        BLOQUEADO: 'rejected',
+      };
+      const translatedStatus = statusMap[u.status] ?? 'pending';
+      useAuthStore.getState().updateUserStatus(translatedStatus);
+
       set({
         name: `${u.firstName} ${u.lastName}`,
         username: u.firstName,
@@ -149,5 +160,11 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   addCheck: (check) =>
     set((s) => ({
       checks: [...s.checks, { ...check, id: nextId('chk') }],
+    })),
+
+  removeCard: (id) =>
+    set((s) => ({
+      cards: s.cards.filter((c) => c.id !== id),
+      paymentMethods: s.paymentMethods.filter((m) => m.id !== id),
     })),
 }));

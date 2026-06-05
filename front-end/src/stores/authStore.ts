@@ -10,6 +10,7 @@ interface AuthStore {
   login: (user: User, token: string) => void;
   logout: () => void;
   setGuest: () => void;
+  updateUserStatus: (status: User['status']) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -41,4 +42,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       isGuest: true,
       isAuthenticated: false,
     }),
+
+  updateUserStatus: (status) =>
+    set((s) => s.user ? { user: { ...s.user, status } } : {}),
 }));

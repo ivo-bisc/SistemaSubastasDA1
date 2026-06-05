@@ -18,6 +18,7 @@ type Nav = StackNavigationProp<ProfileStackParamList, 'ProfileMain'>;
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const logout = useAuthStore((s) => s.logout);
+  const userStatus = useAuthStore((s) => s.user?.status);
   const { name, email, category, avatarColor, isLoading, error, loadProfile } = useProfileStore();
 
   useEffect(() => {
@@ -65,6 +66,11 @@ export default function ProfileScreen() {
     <ProfileScreenShell>
       {error !== null && (
         <Text style={styles.errorText}>{error}</Text>
+      )}
+      {userStatus === 'rejected' && (
+        <View style={styles.blockedBanner}>
+          <Text style={styles.blockedText}>Tu cuenta está suspendida. Contactá a soporte para más información.</Text>
+        </View>
       )}
       <View style={styles.hero}>
         <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
@@ -182,6 +188,19 @@ const styles = StyleSheet.create({
     color: Colors.error,
     textAlign: 'center',
     marginBottom: 12,
+  },
+  blockedBanner: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  blockedText: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.md,
+    color: '#B91C1C',
+    textAlign: 'center',
   },
   logoutWrap: {
     alignItems: 'center',

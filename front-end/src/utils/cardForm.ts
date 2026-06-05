@@ -102,7 +102,7 @@ export function buildCardMedioPagoRequest(
     moneda,
     numeroTarjeta: digits,
     titular,
-    vencimiento: expiration,
+    vencimiento: `${expiration.slice(0, 3)}${expiration.slice(5)}`,
     tipoTarjeta: inferTipoTarjeta(digits),
   };
 }
