@@ -4,6 +4,14 @@ import { userService } from '../services/userService';
 import { paymentService, type MedioPagoRequest } from '../services/paymentService';
 import { detectCardBrand, onlyDigits } from '../utils/cardForm';
 
+export interface PaymentMethod {
+  id: string;
+  alias: string;
+  tipo: string;
+  moneda: string;
+  verificado: boolean;
+}
+
 interface ProfileStore {
   name: string;
   username: string;
@@ -13,6 +21,7 @@ interface ProfileStore {
   address: string;
   cards: MockCard[];
   checks: MockCheck[];
+  paymentMethods: PaymentMethod[];
   isLoading: boolean;
   error: string | null;
 
@@ -41,6 +50,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   address: '',
   cards: [],
   checks: [],
+  paymentMethods: [],
   isLoading: false,
   error: null,
 
@@ -78,6 +88,14 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
           drawer: '',
         }));
 
+      const allPaymentMethods: PaymentMethod[] = payments.map((mp) => ({
+        id: String(mp.id),
+        alias: mp.alias ?? '',
+        tipo: mp.tipo ?? '',
+        moneda: mp.moneda ?? '',
+        verificado: mp.verificado === true,
+      }));
+
       set({
         name: `${u.firstName} ${u.lastName}`,
         username: u.firstName,
@@ -86,6 +104,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         address: u.address ?? '',
         cards,
         checks,
+        paymentMethods: allPaymentMethods,
         isLoading: false,
       });
     } catch (e: any) {

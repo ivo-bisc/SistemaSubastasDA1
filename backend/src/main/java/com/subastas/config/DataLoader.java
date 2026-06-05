@@ -35,6 +35,7 @@ public class DataLoader implements CommandLineRunner {
     private final ConsignacionRepository consignacionRepository;
     private final CompraRepository compraRepository;
     private final MensajeChatRepository mensajeChatRepository;
+    private final PujaRepository pujaRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -185,6 +186,38 @@ public class DataLoader implements CommandLineRunner {
                 .build();
         itemRepository.save(item2);
 
+        // Pujas históricas en subasta1 / item1 — estado inicial para probar WebSocket
+        // precioBase = 50.000 → min/max por puja: +500 / +10.000 sobre la mejor oferta anterior
+        Puja puja1 = Puja.builder()
+                .monto(new BigDecimal("51000.00"))
+                .timestamp(LocalDateTime.now().minusMinutes(30))
+                .usuario(postor1)
+                .item(item1)
+                .subasta(subasta1)
+                .medioPago(mp1)
+                .build();
+        pujaRepository.save(puja1);
+
+        Puja puja2 = Puja.builder()
+                .monto(new BigDecimal("55000.00"))
+                .timestamp(LocalDateTime.now().minusMinutes(20))
+                .usuario(postor2)
+                .item(item1)
+                .subasta(subasta1)
+                .medioPago(mp2)
+                .build();
+        pujaRepository.save(puja2);
+
+        Puja puja3 = Puja.builder()
+                .monto(new BigDecimal("58000.00"))
+                .timestamp(LocalDateTime.now().minusMinutes(10))
+                .usuario(postor1)
+                .item(item1)
+                .subasta(subasta1)
+                .medioPago(mp1)
+                .build();
+        pujaRepository.save(puja3);
+
         // Subasta próxima
         Subasta subasta2 = Subasta.builder()
                 .titulo("Subasta Especial USD - Colección Internacional")
@@ -334,7 +367,7 @@ public class DataLoader implements CommandLineRunner {
                 .leido(false)
                 .build());
 
-        log.info("Datos de prueba cargados: 2 usuarios, 2 medios de pago, 3 subastas, 3 ítems, 2 consignaciones, 1 compra, 3 mensajes de chat");
+        log.info("Datos de prueba cargados: 2 usuarios, 2 medios de pago, 3 subastas, 3 ítems, 3 pujas, 2 consignaciones, 1 compra, 3 mensajes de chat");
         log.debug("Login de prueba: juan@test.com / password123 (PLATA)");
         log.debug("Login de prueba: maria@test.com / password123 (ORO)");
         log.debug("Compra de prueba: juan@test.com ganó item3 (P-003) — compraId = 1");

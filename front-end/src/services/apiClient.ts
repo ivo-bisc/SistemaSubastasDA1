@@ -41,8 +41,11 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado o inválido → forzar logout
-      useAuthStore.getState().logout();
+      // Solo forzar logout si había un token activo (sesión expirada)
+      // Los guests no tienen token, así que no corresponde hacer logout
+      if (useAuthStore.getState().token) {
+        useAuthStore.getState().logout();
+      }
     }
     return Promise.reject(error);
   }

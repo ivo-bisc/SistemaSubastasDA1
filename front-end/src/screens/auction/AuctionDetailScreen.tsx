@@ -25,6 +25,7 @@ import { useTimeRemaining } from '../../hooks/useTimeRemaining';
 import { auctionService } from '../../services';
 import { useProfileStore } from '../../stores/profileStore';
 import type { AuctionDetail } from '../../types';
+import type { PaymentMethod } from '../../stores/profileStore';
 
 const IMAGE_HEIGHT = 280;
 const DESCRIPTION_MAX_HEIGHT = 400;
@@ -56,6 +57,35 @@ export default function AuctionDetailScreen() {
   }, [auctionId]);
 
   const cards = useProfileStore((s) => s.cards);
+  const paymentMethods = useProfileStore((s) => s.paymentMethods);
+  const loadProfile = useProfileStore((s) => s.loadProfile);
+
+  // Cargar medios de pago si aún no están disponibles
+  useEffect(() => {
+    if (paymentMethods.length === 0) {
+      loadProfile();
+    }
+  }, []);
+
+  // Conectar a la subasta en cuanto tengamos el detalle y un medio de pago compatible
+  useEffect(() => {
+    if (!auctionId || !auction || paymentMethods.length === 0) return;
+
+    const medioPago = paymentMethods.find(
+      (mp: PaymentMethod) => mp.verificado && mp.moneda === auction.currency
+    );
+    if (!medioPago) return;
+
+    auctionService
+      .connectToAuction(auctionId, parseInt(medioPago.id, 10))
+      .catch((err: any) => {
+        // 409 = ya conectado a esta subasta, ignorar
+        if (err?.response?.status !== 409) {
+          console.warn('[AuctionDetail] connect error:', err?.response?.data);
+        }
+      });
+  }, [auctionId, auction, paymentMethods]);
+
   const { liveBid, confirmation, rejection, sendBid } = useAuctionSocket(auctionId ?? '');
 
   const [descriptionOpen, setDescriptionOpen] = useState(false);
@@ -142,16 +172,21 @@ export default function AuctionDetailScreen() {
   };
 
   const handleConfirmBid = () => {
-    const card = cards[0];
-    if (!card) {
-      setBidError('Necesitás agregar un medio de pago antes de pujar.');
+    // Priorizar el medio de pago que coincide con la moneda de la subasta
+    const medioPago =
+      paymentMethods.find(
+        (mp: PaymentMethod) => mp.verificado && mp.moneda === auction?.currency
+      ) ?? (cards[0] ? cards[0] : null);
+
+    if (!medioPago) {
+      setBidError('Necesitás agregar un medio de pago verificado para pujar.');
       setConfirmVisible(false);
       return;
     }
     sendBid({
       itemId: auction!.itemId,
       monto: pendingAmount,
-      medioPagoId: parseInt(card.id.replace(/\D/g, ''), 10),
+      medioPagoId: parseInt(medioPago.id.replace(/\D/g, ''), 10),
     });
     setConfirmVisible(false);
   };

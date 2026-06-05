@@ -42,13 +42,19 @@ export default function HomeScreen() {
   const showPrice = isAuthenticated;
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setAuctions([]);
+      setError(null);
+      return;
+    }
     setLoading(true);
+    setError(null);
     auctionService
       .getAuctions()
       .then((res) => setAuctions(res.data ?? []))
       .catch(() => setError('No se pudieron cargar las subastas.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60000);

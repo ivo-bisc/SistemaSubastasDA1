@@ -79,6 +79,7 @@ export const auctionService = {
       images: (firstItem?.images?.map((img: any) => resolveImageUrl(img.url)) ?? [])
         .filter(Boolean),
       category: subasta.category ?? '',
+      currency: subasta.currency ?? 'ARS',
       seller: subasta.rematador
         ? { id: String(subasta.rematador.id), name: `${subasta.rematador.firstName} ${subasta.rematador.lastName}` }
         : { id: '', name: '' },

@@ -38,6 +38,7 @@ export interface AuctionDetail extends Auction {
   itemId: number;
   images: string[];
   category: string;
+  currency: string;
   seller: {
     id: string;
     name: string;
