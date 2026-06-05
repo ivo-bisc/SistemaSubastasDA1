@@ -1,13 +1,25 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 
-const DEFAULT_URL =
-  Platform.OS === 'web'
-    ? 'http://localhost:8080/api/v1'
-    : 'http://10.0.2.2:8080/api/v1';
+function resolveBaseUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  if (Platform.OS === 'web') return 'http://localhost:8080/api/v1';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
+  // En dev nativo (emulador o celu físico), Metro incluye la IP real del host
+  // en la URL del bundle. La extraemos para apuntar al backend en el mismo host.
+  if (__DEV__) {
+    const scriptURL: string | undefined = NativeModules.SourceCode?.scriptURL;
+    if (scriptURL) {
+      const host = scriptURL.split('//')[1]?.split(':')[0];
+      if (host) return `http://${host}:8080/api/v1`;
+    }
+  }
+
+  return 'http://10.0.2.2:8080/api/v1';
+}
+
+const BASE_URL = resolveBaseUrl();
 
 /**
  * Cliente Axios centralizado para BidUp

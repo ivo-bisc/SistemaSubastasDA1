@@ -110,6 +110,11 @@ public class PujaService {
                     "El ítem no está en subasta activa", HttpStatus.BAD_REQUEST);
         }
 
+        if (item.getMejorPostor() != null && item.getMejorPostor().getId().equals(usuario.getId())) {
+            throw new BusinessException(ErrorCodes.YA_ES_MEJOR_POSTOR,
+                    "Ya sos el mejor postor de este ítem", HttpStatus.CONFLICT);
+        }
+
         MedioPago medioPago = medioPagoRepository.findByIdAndUsuario(request.getMedioPagoId(), usuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Medio de pago", request.getMedioPagoId()));
 
@@ -135,7 +140,8 @@ public class PujaService {
         if (pujaMinima != null && pujaMaxima != null &&
                 (request.getMonto().compareTo(pujaMinima) < 0 || request.getMonto().compareTo(pujaMaxima) > 0)) {
             throw new BusinessException(ErrorCodes.MONTO_FUERA_DE_RANGO,
-                    String.format("El monto debe estar entre %s y %s", pujaMinima, pujaMaxima));
+                    String.format(java.util.Locale.forLanguageTag("es-AR"),
+                            "El monto debe estar entre %,.2f y %,.2f", pujaMinima, pujaMaxima));
         }
 
         Puja puja = Puja.builder()

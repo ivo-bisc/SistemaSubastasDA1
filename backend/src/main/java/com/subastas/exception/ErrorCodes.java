@@ -31,4 +31,5 @@ public final class ErrorCodes {
     public static final String MONEDA_NO_COINCIDE         = "MONEDA_NO_COINCIDE";
     public static final String ARCHIVO_INVALIDO           = "ARCHIVO_INVALIDO";
     public static final String ARCHIVO_MUY_GRANDE         = "ARCHIVO_MUY_GRANDE";
+    public static final String YA_ES_MEJOR_POSTOR         = "YA_ES_MEJOR_POSTOR";
 }

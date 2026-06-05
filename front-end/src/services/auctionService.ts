@@ -75,6 +75,7 @@ export const auctionService = {
       endDate: subasta.endDate ?? '',
       startingPrice: firstItem?.startingPrice ?? 0,
       currentPrice: firstItem?.currentPrice ?? 0,
+      minimumBid: firstItem?.minimumBid ?? 0,
       status: statusMap[subasta.status] ?? 'upcoming',
       images: (firstItem?.images?.map((img: any) => resolveImageUrl(img.url)) ?? [])
         .filter(Boolean),

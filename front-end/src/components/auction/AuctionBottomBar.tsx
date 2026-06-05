@@ -18,6 +18,7 @@ type Props = {
   currency: string;
   minBidAmount: number;
   isCustomBidValid: boolean;
+  isLeading: boolean;
   onSelectQuickBid: (amount: number) => void;
   onToggleCustomBid: () => void;
   onCustomBidChange: (value: string) => void;
@@ -34,6 +35,7 @@ export default function AuctionBottomBar({
   currency,
   minBidAmount,
   isCustomBidValid,
+  isLeading,
   onSelectQuickBid,
   onToggleCustomBid,
   onCustomBidChange,
@@ -77,6 +79,17 @@ export default function AuctionBottomBar({
           >
             <Ionicons name="close" size={22} color={Colors.black} />
           </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  if (isLeading) {
+    return (
+      <View style={styles.wrap}>
+        <View style={styles.leadingBanner}>
+          <Ionicons name="checkmark-circle" size={20} color="#2A7D4F" style={{ marginRight: 8 }} />
+          <Text style={styles.leadingText}>Sos el mejor postor — esperá que alguien más puje</Text>
         </View>
       </View>
     );
@@ -227,5 +240,19 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.92,
+  },
+  leadingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EAF7EF',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  leadingText: {
+    flex: 1,
+    fontFamily: Fonts.soraBold,
+    fontSize: FontSize.sm,
+    color: '#2A7D4F',
   },
 });

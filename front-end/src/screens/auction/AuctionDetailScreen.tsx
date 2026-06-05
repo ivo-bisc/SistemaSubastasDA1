@@ -96,6 +96,7 @@ export default function AuctionDetailScreen() {
   const [pendingAmount, setPendingAmount] = useState(0);
   const [bidError, setBidError] = useState<string | null>(null);
   const [livePujaMinima, setLivePujaMinima] = useState<number | null>(null);
+  const [leadingAmount, setLeadingAmount] = useState<number | null>(null);
 
   // Animated values
   const descHeight = useRef(new Animated.Value(0)).current;
@@ -105,6 +106,10 @@ export default function AuctionDetailScreen() {
     if (!liveBid) return;
     setAuction((prev) => (prev ? { ...prev, currentPrice: liveBid.nuevaMejorOferta } : prev));
     setLivePujaMinima(liveBid.pujaMinima);
+    // Si la nueva mejor oferta no coincide con la que yo confirmé, alguien más ganó el liderazgo
+    setLeadingAmount((prev) =>
+      prev !== null && liveBid.nuevaMejorOferta !== prev ? null : prev
+    );
   }, [liveBid]);
 
   useEffect(() => {
@@ -115,6 +120,7 @@ export default function AuctionDetailScreen() {
   useEffect(() => {
     if (!confirmation) return;
     setBidError(null);
+    setLeadingAmount(confirmation.monto);
   }, [confirmation]);
 
   const toggleDescription = () => {
@@ -144,9 +150,19 @@ export default function AuctionDetailScreen() {
     return Number.isFinite(parsed) ? parsed : 0;
   }, [customBidValue]);
 
-  const minBidAmount = livePujaMinima ?? auction?.currentPrice ?? 0;
+  const minBidAmount = livePujaMinima ?? auction?.minimumBid ?? 0;
   const timeRemaining = useTimeRemaining(auction?.endDate, 1000, { variant: 'detailed' });
   const isCustomBidValid = effectiveCustomAmount > minBidAmount;
+  const isLeading =
+    leadingAmount !== null &&
+    (auction?.currentPrice ?? 0) === leadingAmount;
+
+  // Inicializar el monto seleccionado al mínimo en cuanto esté disponible
+  useEffect(() => {
+    if (minBidAmount > 0 && selectedAmount === 0) {
+      setSelectedAmount(minBidAmount);
+    }
+  }, [minBidAmount]);
 
   const handlePlaceBid = () => {
     setPendingAmount(selectedAmount);
@@ -301,6 +317,7 @@ export default function AuctionDetailScreen() {
             currency="ARS"
             minBidAmount={minBidAmount}
             isCustomBidValid={isCustomBidValid}
+            isLeading={isLeading}
             onSelectQuickBid={setSelectedAmount}
             onToggleCustomBid={handleOpenCustomBid}
             onCustomBidChange={handleCustomBidChange}
