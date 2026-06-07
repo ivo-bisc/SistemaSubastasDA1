@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { Colors, Fonts, FontSize } from '../../constants';
 import { useAuthStore } from '../../stores';
 import HomeHeader from '../../components/home/HomeHeader';
 import ConsignPromoBanner from '../../components/home/ConsignPromoBanner';
+import PrimaryButton from '../../components/auth/PrimaryButton';
 import {
   ActivityItemCard,
   ActivityBadgeType,
@@ -53,15 +54,40 @@ function parseTitulo(datosAdicionales: string, descripcion: string): string {
   }
 }
 
+interface ConsignmentItem extends MockAuctionItem {
+  valorBase?: number;
+  comisiones?: number;
+  subastaId?: string;
+  fechaSubasta?: string;
+}
+
+function formatAmount(value?: number): string {
+  if (value === undefined || value === null) return '—';
+  return `$${Number(value).toLocaleString('es-AR')}`;
+}
+
+function formatDate(isoString?: string): string {
+  if (!isoString) return '—';
+  return new Date(isoString).toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 export default function MyAuctionsScreen() {
   const navigation = useNavigation<Nav>();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
 
   const [filter, setFilter] = useState('all');
-  const [auctions, setAuctions] = useState<MockAuctionItem[]>([]);
+  const [auctions, setAuctions] = useState<ConsignmentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [selectedItem, setSelectedItem] = useState<ConsignmentItem | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<'accept' | 'reject' | null>(null);
 
   const loadAuctions = useCallback(() => {
     setLoading(true);
@@ -76,7 +102,7 @@ export default function MyAuctionsScreen() {
           VENDIDA:            { mod: 'published',            status: 'finished' },
           DEVUELTA:           { mod: 'rejected',             status: 'canceled' },
         };
-        const mapped: MockAuctionItem[] = (res.data ?? []).map((c: any) => {
+        const mapped: ConsignmentItem[] = (res.data ?? []).map((c: any) => {
           const e = estadoMap[c.estado] ?? { mod: 'pending', status: 'soon' };
           const precio = c.valorBase ?? c.precioSugerido;
           return {
@@ -88,6 +114,10 @@ export default function MyAuctionsScreen() {
             status: e.status,
             moderationStatus: e.mod,
             rejectionReason: c.motivoRechazo ?? undefined,
+            valorBase: c.valorBase,
+            comisiones: c.comisiones,
+            subastaId: c.subastaId !== undefined && c.subastaId !== null ? String(c.subastaId) : undefined,
+            fechaSubasta: c.fechaSubasta,
           };
         });
         setAuctions(mapped);
@@ -127,16 +157,65 @@ export default function MyAuctionsScreen() {
     navigation.navigate('UploadItem', { returnTo: 'myAuctions' });
   };
 
-  const handleItemPress = (auction: MockAuctionItem) => {
-    if (auction.moderationStatus !== 'published') {
+  const handleItemPress = (auction: ConsignmentItem) => {
+    if (auction.moderationStatus === 'approved_pending_lot') {
+      setSelectedItem(auction);
+      setShowModal(true);
+      return;
+    }
+    if (auction.moderationStatus !== 'published' || !auction.subastaId) {
       return;
     }
     navigation.getParent()?.getParent()?.navigate('AuctionDetail', {
-      auctionId: auction.id,
+      auctionId: auction.subastaId,
     });
   };
 
-  const renderAuctionItem = ({ item }: { item: MockAuctionItem }) => (
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedItem(null);
+  };
+
+  const handleAcceptConditions = () => {
+    if (!selectedItem) return;
+    setActionLoading('accept');
+    consignService
+      .acceptConditions(selectedItem.id)
+      .then(() => {
+        closeModal();
+        loadAuctions();
+      })
+      .catch(() => Alert.alert('Error', 'No se pudieron aceptar las condiciones. Probá de nuevo.'))
+      .finally(() => setActionLoading(null));
+  };
+
+  const handleRejectConditions = () => {
+    if (!selectedItem) return;
+    Alert.alert(
+      'Rechazar condiciones',
+      'El bien será devuelto con un cargo. ¿Querés continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Rechazar',
+          style: 'destructive',
+          onPress: () => {
+            setActionLoading('reject');
+            consignService
+              .rejectConditions(selectedItem.id)
+              .then(() => {
+                closeModal();
+                loadAuctions();
+              })
+              .catch(() => Alert.alert('Error', 'No se pudieron rechazar las condiciones. Probá de nuevo.'))
+              .finally(() => setActionLoading(null));
+          },
+        },
+      ]
+    );
+  };
+
+  const renderAuctionItem = ({ item }: { item: ConsignmentItem }) => (
     <ActivityItemCard
       title={item.title}
       imageUrl={item.imageUrl}
@@ -203,6 +282,44 @@ export default function MyAuctionsScreen() {
           }
         />
       )}
+
+      <Modal visible={showModal} transparent animationType="fade" onRequestClose={closeModal}>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.sheet}>
+            <Text style={modalStyles.title}>{selectedItem?.title}</Text>
+
+            <View style={modalStyles.row}>
+              <Text style={modalStyles.label}>Valor base</Text>
+              <Text style={modalStyles.value}>{formatAmount(selectedItem?.valorBase)}</Text>
+            </View>
+            <View style={modalStyles.row}>
+              <Text style={modalStyles.label}>Comisión</Text>
+              <Text style={modalStyles.value}>{formatAmount(selectedItem?.comisiones)}</Text>
+            </View>
+            <View style={modalStyles.row}>
+              <Text style={modalStyles.label}>Fecha estimada de subasta</Text>
+              <Text style={modalStyles.value}>{formatDate(selectedItem?.fechaSubasta)}</Text>
+            </View>
+
+            <View style={modalStyles.actions}>
+              <PrimaryButton
+                label="Rechazar condiciones"
+                onPress={handleRejectConditions}
+                loading={actionLoading === 'reject'}
+                disabled={actionLoading !== null}
+                style={modalStyles.rejectBtn}
+              />
+              <PrimaryButton
+                label="Aceptar condiciones"
+                onPress={handleAcceptConditions}
+                loading={actionLoading === 'accept'}
+                disabled={actionLoading !== null}
+                style={modalStyles.acceptBtn}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -236,5 +353,52 @@ const styles = StyleSheet.create({
     color: Colors.cardTime,
     marginTop: 12,
     textAlign: 'center',
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  sheet: {
+    width: '100%',
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 12,
+  },
+  title: {
+    fontFamily: Fonts.title,
+    fontSize: FontSize.lg,
+    color: Colors.textPrimary,
+    marginBottom: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  label: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.base,
+    color: Colors.textSecondary,
+  },
+  value: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.base,
+    color: Colors.textPrimary,
+  },
+  actions: {
+    marginTop: 12,
+    gap: 10,
+  },
+  rejectBtn: {
+    backgroundColor: Colors.error,
+  },
+  acceptBtn: {
+    backgroundColor: Colors.accent,
   },
 });
