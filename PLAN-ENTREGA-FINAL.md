@@ -42,25 +42,15 @@ Evaluación del ESTADO-TP.md determinó que el happy path funciona, pero hay flu
 ---
 
 ## TAREA 3 — Aceptar/rechazar condiciones de consignación
-**Complejidad: Media | Modal dentro de pantalla existente**
+**Estado: ✅ YA IMPLEMENTADA — verificado en código, no hacer nada**
 
-**Estado actual:**
-- `ConsignacionResponse` devuelve `valorBase`, `comisiones`, `subastaId`, `fechaSubasta` cuando estado es ACEPTADA ✅
-- `consignService.acceptConditions(id)` y `rejectConditions(id)`: implementados sin TODOs ✅
-- `MyAuctionsScreen` tiene `onPress` en cada ítem pero solo navega si `moderationStatus === 'published'`; para `approved_pending_lot` retorna sin acción ❌
-- El mapping en `MyAuctionsScreen` no incluye `valorBase`, `comisiones`, `subastaId`, `fechaSubasta` ❌
+Al revisar el código (no solo lo que decía el plan original) se encontró que todo el "Qué hacer" ya está hecho en `MyAuctionsScreen.tsx`:
+- `handleItemPress` (línea 160-163) abre el modal cuando `moderationStatus === 'approved_pending_lot'`
+- El mapping (líneas 117-120) ya incluye `valorBase`, `comisiones`, `subastaId`, `fechaSubasta`
+- `handleAcceptConditions`/`handleRejectConditions` (líneas 178-216) llaman a `consignService.acceptConditions`/`rejectConditions`, con `Alert` de confirmación al rechazar, `actionLoading` para el estado de carga, recarga de lista y cierre de modal
+- El modal (líneas 286-322) muestra título, valorBase, comisiones, fecha de subasta y los botones "Aceptar"/"Rechazar"
 
-**Qué hacer:**
-1. `MyAuctionsScreen.tsx`: extender el mapeo de consignaciones para incluir `valorBase`, `comisiones`, `subastaId`, `fechaSubasta` en el objeto local
-2. Agregar estado `selectedItem` y `showModal` en `MyAuctionsScreen`
-3. En `handleItemPress`, cuando `moderationStatus === 'approved_pending_lot'` (estado ACEPTADA), abrir modal en vez de retornar sin acción
-4. Modal: muestra título del ítem, valorBase, comisiones, fecha de subasta estimada + botones "Aceptar condiciones" / "Rechazar condiciones"
-5. En Aceptar: llama `consignService.acceptConditions(id)` → recarga lista → cierra modal
-6. En Rechazar: `Alert` de confirmación ("El bien será devuelto con un cargo") → llama `rejectConditions(id)` → recarga lista → cierra modal
-7. Loading state en botones durante la llamada
-
-**Archivos:**
-- `front-end/src/screens/activity/MyAuctionsScreen.tsx`
+Lo único que falta para que esto funcione end-to-end es **TAREA 9**: hasta que el backend arme el lote y vincule `subastaAsignada`, `subastaId` llega `null` y el flujo de "ítem publicado" no se puede abrir — pero el modal de condiciones en sí (que es lo que pedía esta tarea) ya está completo.
 
 ---
 
@@ -182,9 +172,18 @@ Es decir: **falta todo el proceso de "armar el lote"** — crear la `Subasta`/`I
    - Crear una `Subasta` nueva por cada consignación aceptada (recomendado — simple, evita lógica de "buscar subasta compatible")
    - Alternativa (mencionada en `context.md` pero más compleja): agrupar varios ítems del mismo dueño en una subasta "colección"
 
-4. **Datos obligatorios a completar con valores mock:**
-   - `Subasta`: `titulo`, `moneda` (Consignacion no tiene moneda → default `ARS`), `rematador` (asignar uno existente), `ubicacion`, `fechaInicio`/`fechaFin`
-   - `Item`: `descripcion`, `precioBase = valorBase`, `estado = EN_SUBASTA`, `duenioActual`, fotos (migrar `FotoConsignacion` → `ImagenItem`), `poliza`/`ubicacionFisica` desde `consignacion.getPoliza()`/`getDeposito()`
+4. **Datos a completar — varios YA están disponibles y no son mock puro (revisar antes de inventar valores):**
+   - `Subasta.titulo`: el front manda `nombre` (nombre del artículo) dentro de `datos_adicionales` JSON — usable directo como título, no hace falta inventarlo
+   - `Subasta.moneda`: el front SÍ pide moneda en `UploadItemScreen` y la manda dentro del JSON `datos_adicionales` como `{ moneda: ... }`, pero `Consignacion` solo guarda ese JSON crudo en `datosAdicionales` sin parsear — hay que parsear el JSON para extraer `moneda`, con `ARS` como fallback si falta o el parseo falla
+   - `Subasta.rematador`: sí hace falta elegir uno existente — usar el mismo patrón que `CatalogSeedService` (`rematadorRepository.findAll().stream().findFirst()...`)
+   - `Subasta.ubicacion`: no hay un campo de ubicación directo en `Consignacion`/`Usuario`/`datosAdicionales`; se podría tomar `consignacion.getDeposito().getDireccion()` si ya existe depósito asignado (ver bloqueador abajo), si no, valor por defecto
+   - `Subasta.fechaInicio`/`fechaFin`: no hay dato real — se generan por math de fechas (ej. `now()` + N días), igual que en `CatalogSeedService`, no son "mock a inventar" sino defaults razonables
+   - `Item.descripcion`: **YA EXISTE** — `Consignacion.descripcion` es el campo de descripción que cargó el usuario (el form tiene "Nombre del artículo" y "Descripción" como campos separados); no hace falta mock
+   - `Item.precioBase = valorBase`: directo desde `Consignacion.valorBase`, sin mock
+   - `Item.estado = EN_SUBASTA`: enum fijo, sin mock
+   - `Item.duenioActual`: **YA EXISTE** — se puede armar desde `consignacion.getUsuario().getNombre()` + `getApellido()`; no hace falta mock genérico
+   - `Item.fotos`: migrar `FotoConsignacion` (`url`, `orden`) → `ImagenItem` (`url`, `orden`, `descripcion`) — mapeo directo
+   - `Item.poliza`/`ubicacionFisica`: el patrón correcto es `consignacion.getPoliza()`/`getDeposito()` (ya usado en `ConsignacionService` para `UbicacionResponse`), **pero ojo**: `Poliza`/`Deposito` nunca se asignan a la `Consignacion` en `crear()` ni en `MockRevisionConsignacionService` — están siempre `null`. Esto es un bloqueador adicional: hay que poblarlos antes (o crear defaults) para que esta parte funcione
 
 5. **Vincular:** `consignacion.setSubastaAsignada(subasta)` y guardar — recién ahí `ConsignacionResponse.subastaId`/`fechaSubasta` llegan con datos reales.
 
@@ -200,15 +199,15 @@ Es decir: **falta todo el proceso de "armar el lote"** — crear la `Subasta`/`I
 
 ```
 ✅ TAREA 1  — Credenciales (completada)
+✅ TAREA 3  — Condiciones consignación (ya implementada, verificado en código)
 ✅ TAREA 6  — Historial de pujas (completada)
    TAREA 2  — Multas (habilita TAREA 7)
    TAREA 7  — Error multa (depende de TAREA 2)
-   TAREA 3  — Condiciones consignación (UI front ✅, navegación corregida ✅)
-   TAREA 9  — Asignación de lote/subasta (backend) — gap descubierto en TAREA 3, decisión pendiente
+   TAREA 9  — Asignación de lote/subasta (backend) — gap descubierto al verificar TAREA 3, decisión pendiente
    TAREA 4  — Entrega en chat
 ```
 
-TAREA 5 y TAREA 8: no hay nada que hacer.
+TAREA 3, 5 y 8: no hay nada que hacer.
 
 ---
 
@@ -218,7 +217,7 @@ TAREA 5 y TAREA 8: no hay nada que hacer.
 |---|---|
 | 1 ✅ | Levantar backend sin env vars → falla al arrancar ✅ |
 | 2 | Perfil → fila "Multas" visible si hay pendientes → pantalla lista multas → botón Pagar funciona |
-| 3 | Consignar ítem → esperar mock 3s → MyAuctions muestra ACEPTADA → tap abre modal con valorBase/comisiones → Aceptar actualiza estado |
+| 3 ✅ | Consignar ítem → esperar mock 3s → MyAuctions muestra ACEPTADA → tap abre modal con valorBase/comisiones → Aceptar actualiza estado ✅ |
 | 4 | Ganar un ítem → ir a chat → card de entrega visible → seleccionar opción → card desaparece, queda chip informativo |
 | 6 ✅ | Abrir subasta activa → historial de pujas visible → pujar → nueva puja aparece al tope ✅ |
 | 7 | Tener multa pendiente → intentar pujar → Alert con botón "Ver multas" → navega a FinesScreen |
