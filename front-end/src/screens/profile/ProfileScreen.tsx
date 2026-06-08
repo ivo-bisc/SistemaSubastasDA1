@@ -97,6 +97,10 @@ export default function ProfileScreen() {
         onPress={() => navigation.navigate('PaymentMethods')}
       />
       <ProfileMenuRow
+        label="Multas pendientes"
+        onPress={() => navigation.navigate('Fines')}
+      />
+      <ProfileMenuRow
         label="Categoría"
         value={category}
         showChevron={false}

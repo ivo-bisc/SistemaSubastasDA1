@@ -13,31 +13,18 @@ Evaluación del ESTADO-TP.md determinó que el happy path funciona, pero hay flu
 ---
 
 ## TAREA 2 — Pantalla de multas
-**Complejidad: Media | 1 pantalla nueva + 2 archivos existentes**
+**Estado: ✅ COMPLETADA**
 
-**Estado actual:**
-- Backend: `GET /usuarios/multas` y `POST /usuarios/multas/{id}/pagar` implementados ✅
-- `MultaResponse`: multaId, monto, motivo, fechaGeneracion, fechaLimitePago, estado, puedeParticiparNuevamente
-- `METRICS.FINES` y `METRICS.PAY_FINE(id)` ya están en `endpoints.ts` ✅
-- `metricsService.ts` NO tiene `getFines()` ni `payFine()`
-- ProfileScreen no tiene fila de navegación a multas
+Implementado tal como lo definía el plan, con un ajuste y un fix adicional encontrado durante la verificación:
 
-**Qué hacer:**
-1. `metricsService.ts`: agregar `getFines()` → `apiClient.get(Endpoints.METRICS.FINES)` y `payFine(id, medioPagoId)` → `apiClient.post(Endpoints.METRICS.PAY_FINE(id), { medioPagoId })`
-2. Crear `front-end/src/screens/profile/FinesScreen.tsx`:
-   - Llama `metricsService.getFines()` al montar
-   - Lista multas con monto, motivo, fecha límite, estado
-   - Por cada multa PENDIENTE: botón "Pagar" que abre `Alert` con selector de medio de pago (cards del profileStore) → llama `payFine()`
-   - Loading state + error state
-3. `ProfileScreen.tsx`: agregar `ProfileMenuRow` "Multas pendientes" solo visible si `pendingFines > 0`, navega a `'Fines'`
-4. Agregar `FinesScreen` al `ProfileStack` (navigator + ParamList)
+- `metricsService.ts`: `getFines()` → `GET /usuarios/multas` y `payFine(id, medioPagoId)` → `POST /usuarios/multas/{id}/pagar`
+- `FinesScreen.tsx` (nueva): lista multas (monto, motivo, fecha límite, estado con badge), loading/error states, botón "Pagar" por multa `PENDIENTE`
+- `ProfileScreen.tsx`: fila `ProfileMenuRow` "Multas pendientes" → navega a `'Fines'`. **Ajuste:** se muestra siempre (no condicionada a `pendingFines > 0`, porque ese campo no existe en `profileStore` — el backend expone `multasPendientes` pero el store no lo mapea; se decidió no tocar el store para esto)
+- `ProfileStack.tsx` + `types/index.ts` + `screens/profile/index.ts`: ruta `Fines` registrada
 
-**Archivos:**
-- `front-end/src/services/metricsService.ts`
-- `front-end/src/screens/profile/FinesScreen.tsx` (nuevo)
-- `front-end/src/screens/profile/ProfileScreen.tsx`
-- `front-end/src/navigation/ProfileStack.tsx`
-- `front-end/src/types/index.ts` (agregar `Fines` a `ProfileStackParamList`)
+**Fix encontrado en QA:** el plan proponía resolver el selector de medio de pago con `Alert.alert`, pero **`Alert.alert` no funciona en web** (no-op silencioso — la app corre con soporte web vía `app.json`, y el código ya tenía el workaround `utils/confirm.ts` con `window.confirm` para este mismo problema en otro lado). Se reemplazó por un `Modal` propio con lista de tarjetas seleccionables (mismo patrón que el modal de logout en `ProfileScreen`), funcional en mobile y web. También se agregó un helper `notify()` (equivalente a `confirmAction` pero para alertas informativas) para los mensajes "Sin medio de pago" / "No se pudo procesar el pago".
+
+**Datos de prueba creados:** usuario `carlos@test.com` / `password123` con una multa `PENDIENTE` de $20.000 y dos tarjetas verificadas, para poder probar el flujo de pago end-to-end.
 
 ---
 
@@ -97,34 +84,11 @@ Lo único que falta para que esto funcione end-to-end es **TAREA 9**: hasta que 
 ---
 
 ## TAREA 7 — Error accionable cuando hay multa pendiente
-**Complejidad: Baja | 1 archivo, lógica condicional**
-**Depende de: TAREA 2 (necesita la ruta 'Fines' en ProfileStack)**
+**Estado: ✅ COMPLETADA**
 
-**Estado actual:**
-- Backend envía `BID_REJECTED` con `motivo: "MULTA_PENDIENTE"` y mensaje descriptivo ✅
-- `useAuctionSocket` devuelve `rejection` con `motivo` y `mensaje` ✅
-- `AuctionDetailScreen` usa solo `rejection.mensaje` en el banner; `rejection.motivo` se ignora
+En `AuctionDetailScreen.tsx`, el `useEffect` que maneja `rejection` ahora distingue por `motivo`: si es `MULTA_PENDIENTE` abre un modal informativo ("Multa pendiente" / "Tenés multas pendientes. Debés pagarlas antes de pujar.") con botones "Cerrar" y "Ver multas" (este último navega a `Profile → Fines`, la ruta agregada en TAREA 2); para el resto de los motivos se mantiene el banner inline (`setBidError`) sin cambios.
 
-**Qué hacer:**
-
-En `AuctionDetailScreen.tsx`, en el `useEffect` que maneja `rejection`, distinguir por motivo:
-
-```ts
-if (rejection.motivo === 'MULTA_PENDIENTE') {
-  Alert.alert(
-    'Multa pendiente',
-    'Tenés multas pendientes. Debés pagarlas antes de pujar.',
-    [
-      { text: 'Cerrar', style: 'cancel' },
-      { text: 'Ver multas', onPress: () => navigation.navigate('Profile', { screen: 'Fines' }) },
-    ]
-  );
-} else {
-  setBidError(rejection.mensaje);
-}
-```
-
-Usar `Alert` para MULTA_PENDIENTE (fuerza atención y da acción concreta), mantener el banner inline para otros errores (monto fuera de rango, etc.).
+**Ajuste sobre el plan:** la especificación original usaba `Alert.alert` para este caso, pero por el mismo problema detectado en TAREA 2 (`Alert.alert` es un no-op silencioso en web), se implementó como un `Modal` propio (mismo patrón que `ConfirmBidModal`), con estado `fineModalVisible` y estilos `fineModalStyles`. Así el flujo funciona igual en mobile y en web.
 
 **Archivos:**
 - `front-end/src/screens/auction/AuctionDetailScreen.tsx`
@@ -201,8 +165,8 @@ Es decir: **falta todo el proceso de "armar el lote"** — crear la `Subasta`/`I
 ✅ TAREA 1  — Credenciales (completada)
 ✅ TAREA 3  — Condiciones consignación (ya implementada, verificado en código)
 ✅ TAREA 6  — Historial de pujas (completada)
-   TAREA 2  — Multas (habilita TAREA 7)
-   TAREA 7  — Error multa (depende de TAREA 2)
+✅ TAREA 2  — Multas (completada, habilitó TAREA 7)
+✅ TAREA 7  — Error multa (completada)
    TAREA 9  — Asignación de lote/subasta (backend) — gap descubierto al verificar TAREA 3, decisión pendiente
    TAREA 4  — Entrega en chat
 ```
@@ -216,9 +180,9 @@ TAREA 3, 5 y 8: no hay nada que hacer.
 | Tarea | Cómo verificar |
 |---|---|
 | 1 ✅ | Levantar backend sin env vars → falla al arrancar ✅ |
-| 2 | Perfil → fila "Multas" visible si hay pendientes → pantalla lista multas → botón Pagar funciona |
+| 2 ✅ | Perfil → fila "Multas pendientes" → pantalla lista multas → botón Pagar abre modal de tarjetas → pago se procesa y la multa pasa a PAGADA ✅ (probado con `carlos@test.com`) |
 | 3 ✅ | Consignar ítem → esperar mock 3s → MyAuctions muestra ACEPTADA → tap abre modal con valorBase/comisiones → Aceptar actualiza estado ✅ |
 | 4 | Ganar un ítem → ir a chat → card de entrega visible → seleccionar opción → card desaparece, queda chip informativo |
 | 6 ✅ | Abrir subasta activa → historial de pujas visible → pujar → nueva puja aparece al tope ✅ |
-| 7 | Tener multa pendiente → intentar pujar → Alert con botón "Ver multas" → navega a FinesScreen |
+| 7 ✅ | Tener multa pendiente → intentar pujar → modal "Multa pendiente" con botón "Ver multas" → navega a FinesScreen ✅ |
 | 9 | Aceptar condiciones de una consignación → `subastaId` deja de ser `null` → MyAuctions navega a la subasta correcta (no a una al azar) |

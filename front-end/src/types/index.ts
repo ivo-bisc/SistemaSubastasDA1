@@ -162,6 +162,7 @@ export type ProfileStackParamList = {
   PaymentMethods: undefined;
   AddCard: undefined;
   AddCheck: undefined;
+  Fines: undefined;
 };
 
 export type AuthStackParamList = {

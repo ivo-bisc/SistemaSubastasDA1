@@ -10,6 +10,7 @@ import {
   PaymentMethodsScreen,
   AddCardScreen,
   AddCheckScreen,
+  FinesScreen,
 } from '../screens/profile';
 
 const Stack = createStackNavigator<ProfileStackParamList>();
@@ -25,6 +26,7 @@ export default function ProfileStack() {
       <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
       <Stack.Screen name="AddCard" component={AddCardScreen} />
       <Stack.Screen name="AddCheck" component={AddCheckScreen} />
+      <Stack.Screen name="Fines" component={FinesScreen} />
     </Stack.Navigator>
   );
 }

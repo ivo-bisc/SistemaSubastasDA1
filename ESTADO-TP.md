@@ -1,6 +1,6 @@
 # Estado del TP — Evaluación para DA1
-**Fecha:** 2026-06-06  
-**Fuente:** AUDIT-V2.md, AUDIT-V3.md, AUDIT-GAPS.md, PLAN-INTEGRACION.md, context.md, endpoints.md, auditoria-backend.md, SIMPLIFICACIONES.md
+**Fecha:** 2026-06-06 (actualizado 2026-06-07 tras completar TAREA 2, 3, 6 y 7 de PLAN-ENTREGA-FINAL.md)  
+**Fuente:** AUDIT-V2.md, AUDIT-V3.md, AUDIT-GAPS.md, PLAN-INTEGRACION.md, context.md, endpoints.md, auditoria-backend.md, SIMPLIFICACIONES.md, PLAN-ENTREGA-FINAL.md
 
 ---
 
@@ -12,23 +12,24 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 - **Registro** — 2 pasos completos (con dev-bypass documentado para el token de email; funcional en la práctica)
 - **Ver subastas** — HomeScreen → GET /subastas → lista real, filtrada por categoría del usuario
 - **Ver detalle de subasta + catálogo** — LotDetailScreen → GET /subastas/{id} + GET /subastas/{id}/catalogo
-- **Pujar en tiempo real** — AuctionDetailScreen → conectar, WebSocket STOMP, BID_UPDATED/CONFIRMED/REJECTED, bloqueo si ya sos el mejor postor, AUCTION_CLOSED, historial de pujas en vivo
+- **Pujar en tiempo real** — AuctionDetailScreen → conectar, WebSocket STOMP, BID_UPDATED/CONFIRMED/REJECTED, bloqueo si ya sos el mejor postor, AUCTION_CLOSED, historial de pujas (vivo + `GET /subastas/{id}/pujas` al montar, vía `BidHistoryRow`)
+- **Error accionable por multa pendiente al pujar** — si el rechazo de la puja viene con `motivo: "MULTA_PENDIENTE"`, se muestra un modal explicando la causa con botón "Ver multas" que navega directo a la pantalla de multas
 - **Perfil de usuario** — GET /usuarios/perfil, status bloqueado detectado, edición de dirección
 - **Medios de pago** — agregar (RegisterStep3 + AddCardScreen) y eliminar (PaymentMethodsScreen), todo conectado a la API real
 - **Consignar un ítem** — UploadItemScreen → POST /consignaciones → aparece en MyAuctionsScreen
 - **Ver mis consignaciones** — MyAuctionsScreen → GET /consignaciones con estados mapeados
+- **Aceptar/rechazar condiciones de consignación** — MyAuctionsScreen abre un modal con valorBase/comisiones/fecha de subasta cuando el ítem queda `approved_pending_lot`; "Aceptar"/"Rechazar" llaman a `consignService.acceptConditions/rejectConditions` (ver nota sobre TAREA 9 en §2: el siguiente paso del ciclo, abrir el lote ya publicado, está bloqueado porque el backend nunca asigna `subastaAsignada`)
 - **Ver mis pujas** — MyBidsScreen → GET /usuarios/mis-pujas con estados ganada/perdida
+- **Multas: listar y pagar** — FinesScreen lista las multas (monto, motivo, estado, fecha límite) vía `GET /usuarios/multas`; el botón "Pagar" abre un selector de medio de pago y llama `POST /usuarios/multas/{id}/pagar`; accesible desde Perfil → "Multas pendientes"
 - **Chat** — ChatListScreen (compras) → ChatDetailScreen (GET/POST mensajes) — ambos extremos conectados
 
 ---
 
 ## 2. Flujos parcialmente implementados (backend y frontend, pero con gaps)
 
-- **Consignación post-aceptación** — el backend procesa automáticamente (mock 3s: PENDIENTE→ACEPTADA con valorBase y comisiones). `consignService.acceptConditions()` y `rejectConditions()` están implementados. Pero `MyAuctionsScreen` no tiene modal para mostrar las condiciones ni permite al usuario aceptar o rechazar. El flujo queda colgado después de la aceptación automática del mock.
+- **Consignación post-aceptación → publicación del lote** — el modal de aceptar/rechazar condiciones ya funciona (ver §1), pero el paso siguiente del ciclo está roto del lado del backend: `aceptarCondiciones()` solo cambia el estado a `EN_SUBASTA` y nunca llama `consignacion.setSubastaAsignada(...)`. Por lo tanto `subastaId` llega `null` para siempre y un ítem consignado jamás puede abrirse como "publicado" desde `MyAuctionsScreen` (el front ya fue corregido para no navegar con un id incorrecto, pero no tiene a dónde navegar). Documentado como **TAREA 9** en `PLAN-ENTREGA-FINAL.md` — falta decidir e implementar el armado del lote/subasta en el backend.
 
 - **Chat de entrega** — los mensajes van y vienen. Pero `PATCH /compras/{id}/entrega` (confirmar si el ganador quiere envío a domicilio o retiro personal) no tiene pantalla ni servicio conectado. El endpoint está definido en `endpoints.ts` como constante muerta.
-
-- **Multas** — el backend las genera correctamente cuando corresponde (10% del valor ofertado). El perfil muestra `pendingFines` del response. Pero no hay pantalla para listar las multas ni para pagarlas. Un usuario con multa no puede pujar (el backend lo rechaza), pero la app no le explica por qué ni le da forma de resolverlo.
 
 - **Fotos en consignación** — la UI de `UploadItemScreen` tiene selector de fotos. La consigna exige mínimo 6. El backend dice "fotos opcionales". Se puede enviar una consignación sin fotos y el backend la acepta. Eso no cumple la especificación.
 
@@ -38,15 +39,15 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 | Flujo | Backend | Frontend |
 |---|---|---|
-| Aceptar condiciones de consignación | ✅ existe | ❌ no hay pantalla |
-| Rechazar condiciones de consignación | ✅ existe | ❌ no hay pantalla |
+| Aceptar condiciones de consignación | ✅ existe | ✅ existe (modal en MyAuctionsScreen) — bloqueado end-to-end por TAREA 9 (`subastaId` siempre `null`) |
+| Rechazar condiciones de consignación | ✅ existe | ✅ existe (mismo modal, con confirmación) |
 | Ver ubicación del bien consignado | ❌ eliminado (SIMPLIFICACIONES §6) | ❌ no hay pantalla |
 | Ver póliza de seguro del bien | ❌ eliminado (SIMPLIFICACIONES §6) | ❌ no hay pantalla |
-| Pagar multas | ✅ existe | ❌ no hay pantalla |
+| Pagar multas | ✅ existe | ✅ existe (FinesScreen, probado end-to-end) |
 | Confirmar modalidad de entrega (chat) | ✅ existe | ❌ no hay pantalla |
 | Métricas del usuario | ❌ eliminado (SIMPLIFICACIONES §6) | ❌ no hay pantalla |
 | Historial de participaciones | ❌ eliminado (SIMPLIFICACIONES §6) | ❌ no hay pantalla |
-| Historial de pujas de una subasta | ✅ existe | ❌ no hay pantalla |
+| Historial de pujas de una subasta | ✅ existe | ✅ existe (`BidHistoryRow` en AuctionDetailScreen) |
 | Detalle de ítem individual | ✅ existe | ❌ catalogService eliminado |
 | Detalle de compra individual | ✅ existe | ❌ purchaseService eliminado |
 
@@ -56,11 +57,11 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 ### Crítico para el flujo de negocio
 
-1. **Pantalla de condiciones de consignación** — el usuario sube un ítem, la empresa responde con valor base + comisiones, el usuario tiene que poder aceptar o rechazar. Sin esto el ciclo de consignación no cierra. Las pantallas no existen; el backend sí.
+1. ~~**Pantalla de condiciones de consignación**~~ — ✅ Resuelto en frontend (modal en `MyAuctionsScreen` para aceptar/rechazar, ver §1). Lo que queda pendiente es de backend, no de pantalla: **TAREA 9** — `aceptarCondiciones()` nunca asigna `subastaAsignada`, así que `subastaId` llega `null` y el ítem aceptado nunca se puede abrir como lote publicado. Sin esto, el ciclo de consignación sigue sin cerrar end-to-end aunque la pantalla ya exista.
 
-2. **Pantalla de multas** — la consigna dice explícitamente que el usuario ve sus multas y las paga. Sin esto, un usuario bloqueado por multa no tiene forma de salir de ese estado desde la app.
+2. ~~**Pantalla de multas**~~ — ✅ Resuelto: `FinesScreen` lista las multas y permite pagarlas con un medio de pago existente; accesible desde Perfil. Probado end-to-end con un usuario de prueba (`carlos@test.com`).
 
-3. **Confirmar modalidad de entrega en chat** — el chat existe, pero la función principal del chat según la consigna (coordinar `ENVIO_DOMICILIO` vs `RETIRO_PERSONAL`) no tiene acción conectada.
+3. **Confirmar modalidad de entrega en chat** — el chat existe, pero la función principal del chat según la consigna (coordinar `ENVIO_DOMICILIO` vs `RETIRO_PERSONAL`) no tiene acción conectada. (Pendiente — TAREA 4 del plan.)
 
 ### Definido en spec pero eliminado del backend
 
@@ -79,8 +80,7 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 ### Lo encuentra seguro
 
-- **Consignación sin cerrar** — sube un ítem, ve que aparece en MyAuctions como "aceptada", intenta aceptar las condiciones y no hay ningún botón ni pantalla. Es el flujo de negocio central del módulo de consignación.
-- **No puede pagar multas** — si se genera una multa, la app no la muestra ni deja pagarla. El usuario queda bloqueado para pujar sin explicación útil.
+- **Consignación que nunca llega a "publicada"** — sube un ítem, lo acepta desde el modal de condiciones (que ya funciona), pero el ítem nunca puede abrirse como lote/subasta porque el backend no arma ni vincula la subasta (`subastaAsignada` siempre `null` — TAREA 9 pendiente). El ciclo de consignación, aunque tiene todas las pantallas, no cierra de punta a punta.
 - **Chat sin entrega** — si gana un ítem y va al chat, puede escribir mensajes pero no puede confirmar cómo quiere recibirlo.
 
 ### Lo puede encontrar si mira el código
@@ -94,4 +94,4 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 ### El happy path funciona
 
-El recorrido básico (registrarse → ver subastas → pujar → chatear) funciona sin problemas. Los problemas aparecen en cuanto se intenta ir más allá: cerrar el ciclo de consignación, manejar una multa, o ver estadísticas.
+El recorrido básico (registrarse → ver subastas → pujar → chatear, e incluso ver y pagar una multa) funciona sin problemas. Los problemas aparecen en cuanto se intenta ir más allá: cerrar el ciclo de consignación de punta a punta (queda bloqueado en el backend por TAREA 9), confirmar la entrega de una compra por chat, o ver estadísticas/historial de participaciones.
