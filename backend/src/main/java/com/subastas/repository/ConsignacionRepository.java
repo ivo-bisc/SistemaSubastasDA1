@@ -3,6 +3,8 @@ package com.subastas.repository;
 import com.subastas.model.entity.Consignacion;
 import com.subastas.model.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,6 +14,9 @@ import java.util.Optional;
 public interface ConsignacionRepository extends JpaRepository<Consignacion, Long> {
 
     List<Consignacion> findByUsuarioOrderByIdDesc(Usuario usuario);
+
+    @Query("SELECT DISTINCT c FROM Consignacion c LEFT JOIN FETCH c.fotos WHERE c.usuario = :usuario ORDER BY c.id DESC")
+    List<Consignacion> findByUsuarioWithFotosOrderByIdDesc(@Param("usuario") Usuario usuario);
 
     Optional<Consignacion> findByIdAndUsuario(Long id, Usuario usuario);
 }

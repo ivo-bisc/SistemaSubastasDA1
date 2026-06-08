@@ -16,4 +16,5 @@ public class MiPujaResponse {
     private EstadoPuja estado;
     private Long subastaId;
     private LocalDateTime timestamp;
+    private String itemImagenUrl;
 }

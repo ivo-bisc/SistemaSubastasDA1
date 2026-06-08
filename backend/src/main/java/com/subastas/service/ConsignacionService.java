@@ -46,8 +46,9 @@ public class ConsignacionService {
     @Value("${app.uploads.base-path:uploads}")
     private String uploadsBasePath;
 
+    @Transactional(readOnly = true)
     public List<ConsignacionResponse> listar(Usuario usuario) {
-        return consignacionRepository.findByUsuarioOrderByIdDesc(usuario).stream()
+        return consignacionRepository.findByUsuarioWithFotosOrderByIdDesc(usuario).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

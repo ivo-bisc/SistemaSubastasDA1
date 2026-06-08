@@ -17,6 +17,7 @@ import {
 import { MockBidItem } from '../../data/mockActivity';
 import { metricsService } from '../../services';
 import { formatRelativeDate } from '../../utils/format';
+import { resolveImageUrl } from '../../utils/media';
 
 const FILTER_OPTIONS: DropdownOption[] = [
   { value: 'all', label: 'Todas Mis Pujas' },
@@ -44,7 +45,7 @@ export default function MyBidsScreen() {
           id: String(p.pujaId),
           auctionId: String(p.subastaId),
           title: p.itemDescripcion,
-          imageUrl: '',
+          imageUrl: resolveImageUrl(p.itemImagenUrl),
           timeRemaining: formatRelativeDate(p.timestamp),
           currentPrice: `$${Number(p.monto).toLocaleString('es-AR')}`,
           myBid: `$${Number(p.monto).toLocaleString('es-AR')}`,

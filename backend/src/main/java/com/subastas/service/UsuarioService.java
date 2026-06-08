@@ -230,17 +230,25 @@ public class UsuarioService {
         return respuestas;
     }
 
+    @Transactional(readOnly = true)
     public List<MiPujaResponse> obtenerMisPujas(String email) {
         Usuario usuario = obtenerPorEmail(email);
         return pujaRepository.findByUsuarioOrderByTimestampDesc(usuario).stream()
-                .map(p -> MiPujaResponse.builder()
-                        .pujaId(p.getId())
-                        .itemDescripcion(p.getItem().getDescripcion())
-                        .monto(p.getMonto())
-                        .estado(p.getEstado())
-                        .subastaId(p.getSubasta().getId())
-                        .timestamp(p.getTimestamp())
-                        .build())
+                .map(p -> {
+                    String imagenUrl = null;
+                    if (p.getItem().getImagenes() != null && !p.getItem().getImagenes().isEmpty()) {
+                        imagenUrl = p.getItem().getImagenes().get(0).getUrl();
+                    }
+                    return MiPujaResponse.builder()
+                            .pujaId(p.getId())
+                            .itemDescripcion(p.getItem().getDescripcion())
+                            .monto(p.getMonto())
+                            .estado(p.getEstado())
+                            .subastaId(p.getSubasta().getId())
+                            .timestamp(p.getTimestamp())
+                            .itemImagenUrl(imagenUrl)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
