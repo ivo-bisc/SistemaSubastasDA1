@@ -140,6 +140,10 @@ public class AuthService {
     }
 
     private String guardarArchivoDni(MultipartFile archivo) {
+        log.info("Archivo recibido: nombre={}, size={}, isEmpty={}",
+                archivo != null ? archivo.getOriginalFilename() : "NULL",
+                archivo != null ? archivo.getSize() : -1,
+                archivo == null || archivo.isEmpty());
         if (archivo == null || archivo.isEmpty()) {
             throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
                     "Las fotos del DNI son obligatorias para completar el registro",
@@ -152,7 +156,10 @@ public class AuthService {
                         "Solo se permiten imágenes para el DNI");
             }
             String nombreArchivo = uploadsBasePath + "/dni/" + FileUtil.uuidFilename(archivo);
-            Path destino = Paths.get(nombreArchivo);
+            // Ruta absoluta: si es relativa, Tomcat la resuelve contra su directorio
+            // temporal de multipart (no contra el cwd de la app) y transferTo falla
+            // con FileNotFoundException porque ahí no existe la carpeta "uploads/dni".
+            Path destino = Paths.get(nombreArchivo).toAbsolutePath();
             Files.createDirectories(destino.getParent());
             archivo.transferTo(destino.toFile());
             return nombreArchivo;
