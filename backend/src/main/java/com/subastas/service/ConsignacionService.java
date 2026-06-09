@@ -136,6 +136,8 @@ public class ConsignacionService {
         consignacion.setEstado(EstadoConsignacion.EN_SUBASTA);
         consignacion = consignacionRepository.save(consignacion);
 
+        mockRevisionConsignacionService.asignarSubasta(consignacion.getId());
+
         ConsignacionResponse response = mapToResponse(consignacion);
         response.setMensaje("Condiciones aceptadas. El bien será incluido en la subasta.");
         if (consignacion.getSubastaAsignada() != null) {

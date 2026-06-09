@@ -32,7 +32,7 @@ export const consignService = {
         nombre: params.name,
         categoria: params.category,
         condicion: params.condition,
-        moneda: params.currency,
+        moneda: params.currency?.toUpperCase(),
       })
     );
 
