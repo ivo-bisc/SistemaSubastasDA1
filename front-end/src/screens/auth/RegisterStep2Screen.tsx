@@ -7,6 +7,7 @@ import {
   Pressable,
   FlatList,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -30,11 +31,14 @@ type Nav = StackNavigationProp<AuthStackParamList, 'RegisterStep2'>;
 // (no hay servidor de emails configurado en el proyecto)
 const EMAIL_VERIFY_BYPASS = 'dev-bypass';
 
+// En web, expo-image-picker entrega además el File nativo del browser (asset.file);
+// en iOS/Android no existe y subimos la data URI armada en pickImage.
+type PickedPhoto = { uri: string; file?: File };
+
 export default function RegisterStep2Screen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
   const params = route.params as { nombre: string; apellido: string; email: string; password: string };
-  const login = useAuthStore((s) => s.login);
 
   const [tipoDoc, setTipoDoc] = useState('');
   const [numeroDoc, setNumeroDoc] = useState('');
@@ -49,17 +53,31 @@ export default function RegisterStep2Screen() {
     direccion: false,
     codigoPostal: false,
   });
-  const [fotoDniFrente, setFotoDniFrente] = useState<string | null>(null);
-  const [fotoDniDorso, setFotoDniDorso] = useState<string | null>(null);
+  const [fotoDniFrente, setFotoDniFrente] = useState<PickedPhoto | null>(null);
+  const [fotoDniDorso, setFotoDniDorso] = useState<PickedPhoto | null>(null);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const [showTipoModal, setShowTipoModal] = useState(false);
   const [showPaisModal, setShowPaisModal] = useState(false);
 
-  const pickImage = async (setter: (uri: string) => void) => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] });
-    if (!result.canceled) setter(result.assets[0].uri);
+  const pickImage = async (setter: (photo: PickedPhoto) => void) => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], base64: true });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    // Data URI: evita pasarle a FormData una URI content://(Android)/ph://(iOS)
+    // que el bridge nativo no resuelve a bytes reales. `file` solo existe en web.
+    const uri = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+    setter({ uri, file: asset.file });
+  };
+
+  // Web necesita un Blob/File real en FormData; nativo usa la convención {uri, name, type}.
+  const appendPhoto = (form: FormData, field: string, photo: PickedPhoto, filename: string) => {
+    if (Platform.OS === 'web' && photo.file) {
+      form.append(field, photo.file, filename);
+    } else {
+      form.append(field, { uri: photo.uri, name: filename, type: 'image/jpeg' } as any);
+    }
   };
 
   return (
@@ -161,8 +179,8 @@ export default function RegisterStep2Screen() {
             form.append('numeroDni', numeroDoc);
             form.append('domicilioLegal', direccion);
             form.append('paisOrigen', pais);
-            form.append('foto_dni_frente', { uri: fotoDniFrente, name: 'frente.jpg', type: 'image/jpeg' } as any);
-            form.append('foto_dni_dorso', { uri: fotoDniDorso, name: 'dorso.jpg', type: 'image/jpeg' } as any);
+            appendPhoto(form, 'foto_dni_frente', fotoDniFrente!, 'frente.jpg');
+            appendPhoto(form, 'foto_dni_dorso', fotoDniDorso!, 'dorso.jpg');
 
             await authService.registerStep1(form);
 
@@ -173,19 +191,15 @@ export default function RegisterStep2Screen() {
             });
 
             const { tokenAcceso, usuarioId } = paso2Res.data;
-            login(
-              {
-                id: String(usuarioId),
-                email: params.email,
-                firstName: params.nombre,
-                lastName: params.apellido,
-                dni: numeroDoc,
-                status: 'pending',
-              },
-              tokenAcceso
-            );
 
-            navigation.navigate('RegisterStep3');
+            navigation.navigate('RegisterStep3', {
+              tokenAcceso,
+              usuarioId,
+              nombre: params.nombre,
+              apellido: params.apellido,
+              email: params.email,
+              dni: numeroDoc,
+            });
           } catch {
             setApiError('No se pudo completar el registro. Intentá de nuevo.');
           } finally {

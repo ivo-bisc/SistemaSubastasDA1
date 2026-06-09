@@ -178,7 +178,14 @@ export type AuthStackParamList = {
     email: string;
     password: string;
   };
-  RegisterStep3: undefined;
+  RegisterStep3: {
+    tokenAcceso: string;
+    usuarioId: number;
+    nombre: string;
+    apellido: string;
+    email: string;
+    dni: string;
+  };
   PendingApproval: undefined;
 };
 

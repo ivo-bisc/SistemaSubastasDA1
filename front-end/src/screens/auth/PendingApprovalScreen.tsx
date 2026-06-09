@@ -9,16 +9,17 @@ export default function PendingApprovalScreen() {
   const navigation = useNavigation<any>();
 
   const setGuest = useAuthStore((s) => s.setGuest);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    // Mark as guest so the RootNavigator will render the Main stack,
-    // then navigate into Main -> Home.
+    // Si el registro ya autenticó al usuario (login() en RegisterStep2),
+    // no pisar esa sesión con un estado de invitado.
     const id = setTimeout(() => {
-      setGuest();
+      if (!isAuthenticated) setGuest();
       navigation.navigate('Main' as any, { screen: 'Home' as any });
     }, 5000);
     return () => clearTimeout(id);
-  }, [navigation, setGuest]);
+  }, [navigation, setGuest, isAuthenticated]);
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
