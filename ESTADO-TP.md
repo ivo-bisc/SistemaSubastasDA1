@@ -1,6 +1,17 @@
 # Estado del TP — Evaluación para DA1
-**Fecha:** 2026-06-06 (actualizado 2026-06-07 tras completar TAREA 2, 3, 6 y 7 de PLAN-ENTREGA-FINAL.md)  
+**Fecha:** 2026-06-06 (actualizado 2026-06-07 tras completar TAREA 2, 3, 6 y 7 de PLAN-ENTREGA-FINAL.md; actualizado 2026-06-10 tras fixes de QA adicionales — ver §0)  
 **Fuente:** AUDIT-V2.md, AUDIT-V3.md, AUDIT-GAPS.md, PLAN-INTEGRACION.md, context.md, endpoints.md, auditoria-backend.md, SIMPLIFICACIONES.md, PLAN-ENTREGA-FINAL.md
+
+---
+
+## 0. Actualización 2026-06-10 — TAREA 9 completada y fixes de QA adicionales
+
+- **TAREA 9 completada — el ciclo de consignación cierra end-to-end:** al aceptar las condiciones de una consignación, un mock asíncrono (`MockRevisionConsignacionService.asignarSubasta`, delay 3s) crea la `Subasta`/`Item` correspondiente y los vincula vía `subastaAsignada`. `MyAuctionsScreen` navega con el `subastaId` correcto y `HomeScreen` recarga al volver a foco para mostrar la subasta recién creada.
+- **Bug crítico de arranque resuelto:** con una base de datos vacía, la app no arrancaba (`ConstraintViolationException` por un `Rematador` duplicado, debido a un conflicto de orden entre `DataLoader` y `CatalogSeedService`). Habría sido el primer obstáculo para cualquier corrector que clonara el repo y levantara el proyecto desde cero. Corregido con `@Order(0)` en `DataLoader.java`.
+- **Comisión de consignación corregida:** `UploadItemScreen` mostraba 8% cuando el backend calcula 10%.
+- **Chat con datos reales:** el header de `ChatDetailScreen` ya no muestra "Marvin McKinney" / "Reloj vintage" hardcodeados — usa la descripción real del ítem (vía navegación desde `ChatListScreen`) y un fallback de vendedor.
+
+Detalle completo en "Fixes adicionales encontrados en QA (2026-06-10)" en `PLAN-ENTREGA-FINAL.md`.
 
 ---
 
@@ -18,7 +29,7 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 - **Medios de pago** — agregar (RegisterStep3 + AddCardScreen) y eliminar (PaymentMethodsScreen), todo conectado a la API real
 - **Consignar un ítem** — UploadItemScreen → POST /consignaciones → aparece en MyAuctionsScreen
 - **Ver mis consignaciones** — MyAuctionsScreen → GET /consignaciones con estados mapeados
-- **Aceptar/rechazar condiciones de consignación** — MyAuctionsScreen abre un modal con valorBase/comisiones/fecha de subasta cuando el ítem queda `approved_pending_lot`; "Aceptar"/"Rechazar" llaman a `consignService.acceptConditions/rejectConditions` (ver nota sobre TAREA 9 en §2: el siguiente paso del ciclo, abrir el lote ya publicado, está bloqueado porque el backend nunca asigna `subastaAsignada`)
+- **Aceptar/rechazar condiciones de consignación → publicación del lote** — MyAuctionsScreen abre un modal con valorBase/comisiones/fecha de subasta cuando el ítem queda `approved_pending_lot`; "Aceptar"/"Rechazar" llaman a `consignService.acceptConditions/rejectConditions`. Al aceptar, un mock asíncrono (`MockRevisionConsignacionService.asignarSubasta`, delay 3s — TAREA 9) crea la `Subasta`/`Item` y los vincula (`subastaAsignada`); `MyAuctionsScreen` navega con `subasta.subastaId` y `HomeScreen` recarga al volver a foco (`useFocusEffect`) para mostrar la subasta nueva
 - **Ver mis pujas** — MyBidsScreen → GET /usuarios/mis-pujas con estados ganada/perdida
 - **Multas: listar y pagar** — FinesScreen lista las multas (monto, motivo, estado, fecha límite) vía `GET /usuarios/multas`; el botón "Pagar" abre un selector de medio de pago y llama `POST /usuarios/multas/{id}/pagar`; accesible desde Perfil → "Multas pendientes"
 - **Chat** — ChatListScreen (compras) → ChatDetailScreen (GET/POST mensajes) — ambos extremos conectados
@@ -26,8 +37,6 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 ---
 
 ## 2. Flujos parcialmente implementados (backend y frontend, pero con gaps)
-
-- **Consignación post-aceptación → publicación del lote** — el modal de aceptar/rechazar condiciones ya funciona (ver §1), pero el paso siguiente del ciclo está roto del lado del backend: `aceptarCondiciones()` solo cambia el estado a `EN_SUBASTA` y nunca llama `consignacion.setSubastaAsignada(...)`. Por lo tanto `subastaId` llega `null` para siempre y un ítem consignado jamás puede abrirse como "publicado" desde `MyAuctionsScreen` (el front ya fue corregido para no navegar con un id incorrecto, pero no tiene a dónde navegar). Documentado como **TAREA 9** en `PLAN-ENTREGA-FINAL.md` — falta decidir e implementar el armado del lote/subasta en el backend.
 
 - **Chat de entrega** — los mensajes van y vienen. Pero `PATCH /compras/{id}/entrega` (confirmar si el ganador quiere envío a domicilio o retiro personal) no tiene pantalla ni servicio conectado. El endpoint está definido en `endpoints.ts` como constante muerta.
 
@@ -39,7 +48,7 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 | Flujo | Backend | Frontend |
 |---|---|---|
-| Aceptar condiciones de consignación | ✅ existe | ✅ existe (modal en MyAuctionsScreen) — bloqueado end-to-end por TAREA 9 (`subastaId` siempre `null`) |
+| Aceptar condiciones de consignación | ✅ existe | ✅ existe (modal en MyAuctionsScreen) — end-to-end con TAREA 9 (mock asíncrono asigna `subastaAsignada` a los 3s) |
 | Rechazar condiciones de consignación | ✅ existe | ✅ existe (mismo modal, con confirmación) |
 | Ver ubicación del bien consignado | ❌ eliminado (SIMPLIFICACIONES §6) | ❌ no hay pantalla |
 | Ver póliza de seguro del bien | ❌ eliminado (SIMPLIFICACIONES §6) | ❌ no hay pantalla |
@@ -57,7 +66,7 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 ### Crítico para el flujo de negocio
 
-1. ~~**Pantalla de condiciones de consignación**~~ — ✅ Resuelto en frontend (modal en `MyAuctionsScreen` para aceptar/rechazar, ver §1). Lo que queda pendiente es de backend, no de pantalla: **TAREA 9** — `aceptarCondiciones()` nunca asigna `subastaAsignada`, así que `subastaId` llega `null` y el ítem aceptado nunca se puede abrir como lote publicado. Sin esto, el ciclo de consignación sigue sin cerrar end-to-end aunque la pantalla ya exista.
+1. ~~**Pantalla de condiciones de consignación**~~ — ✅ Resuelto: modal en `MyAuctionsScreen` para aceptar/rechazar (ver §1) + **TAREA 9** resuelta en backend — al aceptar, `asignarSubasta()` crea la `Subasta`/`Item` y asigna `subastaAsignada` (mock asíncrono, 3s), por lo que `subastaId` deja de ser `null` y el ítem aceptado se puede abrir como lote publicado. El ciclo de consignación cierra end-to-end.
 
 2. ~~**Pantalla de multas**~~ — ✅ Resuelto: `FinesScreen` lista las multas y permite pagarlas con un medio de pago existente; accesible desde Perfil. Probado end-to-end con un usuario de prueba (`carlos@test.com`).
 
@@ -80,7 +89,6 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 ### Lo encuentra seguro
 
-- **Consignación que nunca llega a "publicada"** — sube un ítem, lo acepta desde el modal de condiciones (que ya funciona), pero el ítem nunca puede abrirse como lote/subasta porque el backend no arma ni vincula la subasta (`subastaAsignada` siempre `null` — TAREA 9 pendiente). El ciclo de consignación, aunque tiene todas las pantallas, no cierra de punta a punta.
 - **Chat sin entrega** — si gana un ítem y va al chat, puede escribir mensajes pero no puede confirmar cómo quiere recibirlo.
 
 ### Lo puede encontrar si mira el código
@@ -94,4 +102,4 @@ Estos funcionan de punta a punta, backend y frontend conectados:
 
 ### El happy path funciona
 
-El recorrido básico (registrarse → ver subastas → pujar → chatear, e incluso ver y pagar una multa) funciona sin problemas. Los problemas aparecen en cuanto se intenta ir más allá: cerrar el ciclo de consignación de punta a punta (queda bloqueado en el backend por TAREA 9), confirmar la entrega de una compra por chat, o ver estadísticas/historial de participaciones.
+El recorrido básico (registrarse → ver subastas → pujar → chatear, ver y pagar una multa, y consignar un ítem hasta verlo publicado como subasta) funciona sin problemas. Los problemas aparecen en cuanto se intenta ir más allá: confirmar la entrega de una compra por chat, o ver estadísticas/historial de participaciones.
