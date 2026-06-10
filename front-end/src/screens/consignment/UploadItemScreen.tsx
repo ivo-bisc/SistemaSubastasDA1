@@ -47,7 +47,7 @@ const CURRENCY_OPTIONS = [
   { value: 'usd', label: 'Dólares' },
 ];
 
-const COMMISSION_PERCENT = 8;
+const COMMISSION_PERCENT = 10;
 
 export default function UploadItemScreen() {
   const navigation = useNavigation<Nav>();

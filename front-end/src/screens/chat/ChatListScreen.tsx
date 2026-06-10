@@ -31,7 +31,7 @@ function ChatItem({ item }: { item: CompraItem }) {
 
   return (
     <Pressable
-      onPress={() => navigation.navigate('ChatDetail', { purchaseId: String(item.compraId) })}
+      onPress={() => navigation.navigate('ChatDetail', { purchaseId: String(item.compraId), itemDescripcion: item.item.descripcion })}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       style={[styles.chatItem, pressed && styles.chatItemActive]}

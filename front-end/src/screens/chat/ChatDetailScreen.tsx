@@ -22,6 +22,8 @@ export default function ChatDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const purchaseId: string | undefined = route.params?.purchaseId ?? route.params?.conversationId;
+  const itemDescripcion: string = route.params?.itemDescripcion ?? 'Artículo';
+  const vendedorNombre: string = route.params?.vendedorNombre ?? 'Carlos Martini';
 
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
@@ -82,10 +84,10 @@ export default function ChatDetailScreen() {
           <Ionicons name="chevron-back" size={24} color={Colors.white} />
         </Pressable>
         <View style={styles.headerInfo}>
-          <View style={styles.headerAvatar}><Text style={styles.headerAvatarInitial}>M</Text></View>
+          <View style={styles.headerAvatar}><Text style={styles.headerAvatarInitial}>{vendedorNombre.charAt(0).toUpperCase()}</Text></View>
           <View>
-            <Text style={styles.headerTitle}>Marvin McKinney</Text>
-            <Text style={styles.headerSubtitle}>De: Reloj vintage</Text>
+            <Text style={styles.headerTitle}>{vendedorNombre}</Text>
+            <Text style={styles.headerSubtitle}>De: {itemDescripcion}</Text>
           </View>
         </View>
       </View>
