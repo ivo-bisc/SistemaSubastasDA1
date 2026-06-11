@@ -42,30 +42,27 @@ El paso siguiente del ciclo (que el ítem aceptado se abra como lote "publicado"
 ---
 
 ## TAREA 4 — Confirmar modalidad de entrega en chat
-**Complejidad: Media | UI nueva dentro de ChatDetailScreen**
+**Estado: ✅ COMPLETADA**
 
-**Estado actual:**
-- Backend: `PATCH /compras/{id}/entrega` espera `{ modalidadEntrega: 'ENVIO_DOMICILIO' | 'RETIRO_PERSONAL', direccionEnvio?: string }` ✅
-- `PURCHASES.DELIVERY(id)` está en `endpoints.ts` ✅
-- `CompraResponse` incluye `modalidadEntrega` (null si no se confirmó aún) ✅
-- `chatService` no tiene `confirmDelivery()`
-- `ChatDetailScreen` no tiene UI ni estado para entrega
+Implementado tal como lo definía el plan:
 
-**Qué hacer:**
-1. `chatService.ts`: agregar `confirmDelivery(purchaseId, modalidadEntrega)` → `apiClient.patch(Endpoints.PURCHASES.DELIVERY(purchaseId), { modalidadEntrega })`
-2. `ChatListScreen.tsx`: al navegar a `ChatDetail`, pasar `modalidadEntrega` de la compra como param adicional
-3. `ChatDetailScreen.tsx`:
-   - Leer `modalidadEntrega` de `route.params`
-   - Estado local `deliveryMode` inicializado desde el param
-   - Si `deliveryMode === null`: mostrar card fija arriba del chat con "Confirmá cómo querés recibir tu compra" + dos botones: "Envío a domicilio" / "Retiro personal"
-   - Al seleccionar: llamar `chatService.confirmDelivery()`, actualizar `deliveryMode` local, ocultar card
-   - Si `deliveryMode !== null`: mostrar chip informativo ("Entrega: Envío a domicilio") sin botones
+- `chatService.ts`: `confirmDelivery(purchaseId, modalidadEntrega)` → `apiClient.patch(Endpoints.PURCHASES.DELIVERY(purchaseId), { modalidadEntrega })`
+- `types/index.ts`: nuevo tipo `ModalidadEntrega = 'ENVIO_DOMICILIO' | 'RETIRO_PERSONAL'`; `ChatDetail` (en `HomeStackParamList`) actualizado con `purchaseId`, `itemDescripcion`, `vendedorNombre`, `modalidadEntrega` (reemplaza el campo `conversationId` que nunca se usaba como param real)
+- `ChatListScreen.tsx`: `CompraItem` incluye `modalidadEntrega`; se pasa por navegación junto con `purchaseId`/`itemDescripcion`
+- `ChatDetailScreen.tsx`: estado `deliveryMode` (inicializado desde `route.params.modalidadEntrega`) y `confirmingDelivery`. Si `deliveryMode === null`, se muestra una card fija arriba de los mensajes ("Confirmá cómo querés recibir tu compra" + botones "Envío a domicilio" / "Retiro personal"); al elegir uno se llama `confirmDelivery()`, se actualiza `deliveryMode` y la card se reemplaza por un chip ("Entrega: ..."). Si ya venía confirmada, se muestra el chip directamente.
+
+**Fix encontrado en QA:** la consigna decía usar un helper `notify()` "ya existente" en `utils/confirm.ts`, pero ese archivo solo tenía `confirmAction()` — `notify()` estaba duplicado de forma local solo en `FinesScreen.tsx`. Se agregó `notify()` como export de `utils/confirm.ts` (mismo patrón: `window.alert` en web / `Alert.alert` en nativo) para reutilizarlo en `ChatDetailScreen` ante errores del PATCH.
+
+**Cleanup:** se eliminó el fallback muerto `route.params?.conversationId` en `ChatDetailScreen` — la única navegación a `ChatDetail` (`ChatListScreen`) nunca pasó ese param.
+
+**Datos de prueba:** `juan@test.com` / `password123` tiene compraId=1 ("Mercado de Abasto", `modalidadEntrega=null`, 1 mensaje "Felicitaciones...") para probar la card de selección, y compraId=2 ("Escritorio inglés victoriano", `modalidadEntrega=ENVIO_DOMICILIO`) para ver el chip directo.
 
 **Archivos:**
 - `front-end/src/services/chatService.ts`
 - `front-end/src/screens/chat/ChatListScreen.tsx`
 - `front-end/src/screens/chat/ChatDetailScreen.tsx`
-- `front-end/src/types/index.ts` (agregar `modalidadEntrega` a params de ChatDetail si no está)
+- `front-end/src/types/index.ts`
+- `front-end/src/utils/confirm.ts`
 
 ---
 
@@ -139,7 +136,7 @@ El backend define `foto_dni_frente` y `foto_dni_dorso` como `required = false` e
 ✅ TAREA 2  — Multas (completada, habilitó TAREA 7)
 ✅ TAREA 7  — Error multa (completada)
 ✅ TAREA 9  — Asignación de lote/subasta (backend) — completada (mock asíncrono, ver sección dedicada)
-   TAREA 4  — Entrega en chat
+✅ TAREA 4  — Entrega en chat — completada
 ```
 
 TAREA 3, 5 y 8: no hay nada que hacer.
@@ -153,7 +150,7 @@ TAREA 3, 5 y 8: no hay nada que hacer.
 | 1 ✅ | Levantar backend sin env vars → falla al arrancar ✅ |
 | 2 ✅ | Perfil → fila "Multas pendientes" → pantalla lista multas → botón Pagar abre modal de tarjetas → pago se procesa y la multa pasa a PAGADA ✅ (probado con `carlos@test.com`) |
 | 3 ✅ | Consignar ítem → esperar mock 3s → MyAuctions muestra ACEPTADA → tap abre modal con valorBase/comisiones → Aceptar actualiza estado ✅ |
-| 4 | Ganar un ítem → ir a chat → card de entrega visible → seleccionar opción → card desaparece, queda chip informativo |
+| 4 ✅ | Ganar un ítem → ir a chat → card de entrega visible → seleccionar opción → card desaparece, queda chip informativo ✅ (probado con `juan@test.com`, compraId=1) |
 | 6 ✅ | Abrir subasta activa → historial de pujas visible → pujar → nueva puja aparece al tope ✅ |
 | 7 ✅ | Tener multa pendiente → intentar pujar → modal "Multa pendiente" con botón "Ver multas" → navega a FinesScreen ✅ |
 | 9 ✅ | Aceptar condiciones de una consignación → esperar mock 3s → `subastaId` deja de ser `null` → MyAuctions/Home navegan a la subasta correcta (creada con título/moneda desde `datosAdicionales`, categoría COMUN, ítem con descripción/precioBase/imágenes) ✅ |

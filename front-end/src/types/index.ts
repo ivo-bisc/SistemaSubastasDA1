@@ -135,6 +135,8 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export type ModalidadEntrega = 'ENVIO_DOMICILIO' | 'RETIRO_PERSONAL';
+
 // ── Navigation ───────────────────────────────────────────
 export type RootStackParamList = {
   Auth: undefined;
@@ -148,7 +150,12 @@ export type HomeStackParamList = {
   UploadItem: { returnTo?: 'home' | 'myAuctions' } | undefined;
   ItemUploaded: { returnTo?: 'home' | 'myAuctions' } | undefined;
   ChatList: undefined;
-  ChatDetail: { conversationId: string };
+  ChatDetail: {
+    purchaseId: string;
+    itemDescripcion?: string;
+    vendedorNombre?: string;
+    modalidadEntrega: ModalidadEntrega | null;
+  };
   LoginWall: undefined;
   LotDetail: { lotId: string };
 };
