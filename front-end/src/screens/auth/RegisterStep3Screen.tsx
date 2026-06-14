@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { paymentService } from '../../services';
-import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '../../stores';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import {
   AuthLink,
@@ -25,6 +26,16 @@ type Nav = StackNavigationProp<AuthStackParamList, 'RegisterStep3'>;
 
 export default function RegisterStep3Screen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<any>();
+  const { tokenAcceso, usuarioId, nombre, apellido, email, dni } = route.params as {
+    tokenAcceso: string; usuarioId: number; nombre: string; apellido: string; email: string; dni: string;
+  };
+  const login = useAuthStore((s) => s.login);
+
+  const doLogin = () => login(
+    { id: String(usuarioId), email, firstName: nombre, lastName: apellido, dni, status: 'pending' },
+    tokenAcceso
+  );
   const [cardNumber, setCardNumber] = useState('');
   const [securityCode, setSecurityCode] = useState('');
   const [expiration, setExpiration] = useState('');
@@ -61,7 +72,7 @@ export default function RegisterStep3Screen() {
         onBlur={handleBlur}
       />
 
-      <AuthLink bold onPress={() => navigation.navigate('PendingApproval')}>
+      <AuthLink bold onPress={() => { doLogin(); navigation.navigate('PendingApproval'); }}>
         Más tarde
       </AuthLink>
 
@@ -79,6 +90,7 @@ export default function RegisterStep3Screen() {
             await paymentService.addPaymentMethod(
               buildCardMedioPagoRequest(cardNumber, holderName, expiration)
             );
+            doLogin();
             navigation.navigate('PendingApproval');
           } catch {
             setApiError('No se pudo registrar la tarjeta. Intentá de nuevo.');

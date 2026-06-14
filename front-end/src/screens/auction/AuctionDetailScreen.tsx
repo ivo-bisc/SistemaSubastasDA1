@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -33,7 +34,7 @@ const IMAGE_HEIGHT = 280;
 const DESCRIPTION_MAX_HEIGHT = 400;
 
 export default function AuctionDetailScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const auctionId: string | undefined = route.params?.auctionId;
 
@@ -110,6 +111,7 @@ export default function AuctionDetailScreen() {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [pendingAmount, setPendingAmount] = useState(0);
   const [bidError, setBidError] = useState<string | null>(null);
+  const [fineModalVisible, setFineModalVisible] = useState(false);
   const [livePujaMinima, setLivePujaMinima] = useState<number | null>(null);
   const [leadingAmount, setLeadingAmount] = useState<number | null>(null);
 
@@ -129,8 +131,19 @@ export default function AuctionDetailScreen() {
 
   useEffect(() => {
     if (!rejection) return;
+
+    if (rejection.motivo === 'MULTA_PENDIENTE') {
+      setFineModalVisible(true);
+      return;
+    }
+
     setBidError(rejection.mensaje);
   }, [rejection]);
+
+  const goToFines = () => {
+    setFineModalVisible(false);
+    navigation.navigate('Profile', { screen: 'Fines' });
+  };
 
   useEffect(() => {
     if (!confirmation || !auctionId || !auction?.itemId) return;
@@ -362,6 +375,31 @@ export default function AuctionDetailScreen() {
         onConfirm={handleConfirmBid}
         onCancel={() => setConfirmVisible(false)}
       />
+
+      <Modal visible={fineModalVisible} transparent animationType="fade">
+        <View style={fineModalStyles.overlay}>
+          <View style={fineModalStyles.sheet}>
+            <Text style={fineModalStyles.title}>Multa pendiente</Text>
+            <Text style={fineModalStyles.message}>
+              Tenés multas pendientes. Debés pagarlas antes de pujar.
+            </Text>
+            <View style={fineModalStyles.actions}>
+              <Pressable
+                onPress={() => setFineModalVisible(false)}
+                style={fineModalStyles.btn}
+              >
+                <Text style={fineModalStyles.cancelText}>Cerrar</Text>
+              </Pressable>
+              <Pressable
+                onPress={goToFines}
+                style={[fineModalStyles.btn, fineModalStyles.primaryBtn]}
+              >
+                <Text style={fineModalStyles.primaryText}>Ver multas</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -425,10 +463,6 @@ const styles = StyleSheet.create({
   },
   descriptionWrapper: {
     overflow: 'hidden', // Clips content during animation
-  },
-  chevronRow: {
-    alignItems: 'center',
-    marginTop: 12,
   },
   chevronPill: {
     flexDirection: 'row',
@@ -529,5 +563,58 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 10,
+  },
+});
+
+const fineModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  sheet: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 12,
+  },
+  title: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.lg,
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  message: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.base,
+    color: Colors.textSecondary,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  btn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  primaryBtn: {
+    backgroundColor: Colors.accent,
+  },
+  cancelText: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.base,
+    color: Colors.textSecondary,
+  },
+  primaryText: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.base,
+    color: Colors.white,
   },
 });

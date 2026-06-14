@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -41,20 +41,22 @@ export default function HomeScreen() {
 
   const showPrice = isAuthenticated;
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setAuctions([]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) {
+        setAuctions([]);
+        setError(null);
+        return;
+      }
+      setLoading(true);
       setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    auctionService
-      .getAuctions()
-      .then((res) => setAuctions(res.data ?? []))
-      .catch(() => setError('No se pudieron cargar las subastas.'))
-      .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+      auctionService
+        .getAuctions()
+        .then((res) => setAuctions(res.data ?? []))
+        .catch(() => setError('No se pudieron cargar las subastas.'))
+        .finally(() => setLoading(false));
+    }, [isAuthenticated])
+  );
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60000);

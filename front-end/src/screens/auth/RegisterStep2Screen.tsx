@@ -22,7 +22,6 @@ import {
   StepLabel,
 } from '../../components/auth';
 import { authService } from '../../services';
-import { useAuthStore } from '../../stores';
 import type { AuthStackParamList } from '../../types';
 
 type Nav = StackNavigationProp<AuthStackParamList, 'RegisterStep2'>;
@@ -39,7 +38,6 @@ export default function RegisterStep2Screen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<any>();
   const params = route.params as { nombre: string; apellido: string; email: string; password: string };
-  const login = useAuthStore((s) => s.login);
 
   const [tipoDoc, setTipoDoc] = useState('');
   const [numeroDoc, setNumeroDoc] = useState('');
@@ -192,19 +190,15 @@ export default function RegisterStep2Screen() {
             });
 
             const { tokenAcceso, usuarioId } = paso2Res.data;
-            login(
-              {
-                id: String(usuarioId),
-                email: params.email,
-                firstName: params.nombre,
-                lastName: params.apellido,
-                dni: numeroDoc,
-                status: 'pending',
-              },
-              tokenAcceso
-            );
 
-            navigation.navigate('RegisterStep3');
+            navigation.navigate('RegisterStep3', {
+              tokenAcceso,
+              usuarioId,
+              nombre: params.nombre,
+              apellido: params.apellido,
+              email: params.email,
+              dni: numeroDoc,
+            });
           } catch {
             setApiError('No se pudo completar el registro. Intentá de nuevo.');
           } finally {

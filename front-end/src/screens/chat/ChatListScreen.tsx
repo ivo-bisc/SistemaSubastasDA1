@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, Fonts } from '../../constants';
 import { chatService } from '../../services/chatService';
+import { ModalidadEntrega } from '../../types';
 
 type CompraItem = {
   compraId: number;
@@ -17,6 +18,7 @@ type CompraItem = {
   estadoPago: string;
   total: number;
   moneda: string;
+  modalidadEntrega: ModalidadEntrega | null;
 };
 
 function ChatItem({ item }: { item: CompraItem }) {
@@ -31,7 +33,11 @@ function ChatItem({ item }: { item: CompraItem }) {
 
   return (
     <Pressable
-      onPress={() => navigation.navigate('ChatDetail', { purchaseId: String(item.compraId) })}
+      onPress={() => navigation.navigate('ChatDetail', {
+        purchaseId: String(item.compraId),
+        itemDescripcion: item.item.descripcion,
+        modalidadEntrega: item.modalidadEntrega,
+      })}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       style={[styles.chatItem, pressed && styles.chatItemActive]}

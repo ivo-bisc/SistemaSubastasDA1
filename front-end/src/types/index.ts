@@ -71,15 +71,6 @@ export interface BidRejectedMessage {
   mensaje: string;
 }
 
-// ── Bid ──────────────────────────────────────────────────
-export interface Bid {
-  id: string;
-  auctionId: string;
-  userId: string;
-  amount: number;
-  createdAt: string;
-}
-
 // ── Address ──────────────────────────────────────────────
 export interface Address {
   id: string;
@@ -135,12 +126,13 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export type ModalidadEntrega = 'ENVIO_DOMICILIO' | 'RETIRO_PERSONAL';
+
 // ── Navigation ───────────────────────────────────────────
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   AuctionDetail: { auctionId: string };
-  ConfirmBid: { auctionId: string; amount: number };
 };
 
 export type HomeStackParamList = {
@@ -148,7 +140,12 @@ export type HomeStackParamList = {
   UploadItem: { returnTo?: 'home' | 'myAuctions' } | undefined;
   ItemUploaded: { returnTo?: 'home' | 'myAuctions' } | undefined;
   ChatList: undefined;
-  ChatDetail: { conversationId: string };
+  ChatDetail: {
+    purchaseId: string;
+    itemDescripcion?: string;
+    vendedorNombre?: string;
+    modalidadEntrega: ModalidadEntrega | null;
+  };
   LoginWall: undefined;
   LotDetail: { lotId: string };
 };
@@ -162,6 +159,7 @@ export type ProfileStackParamList = {
   PaymentMethods: undefined;
   AddCard: undefined;
   AddCheck: undefined;
+  Fines: undefined;
 };
 
 export type AuthStackParamList = {
@@ -177,7 +175,14 @@ export type AuthStackParamList = {
     email: string;
     password: string;
   };
-  RegisterStep3: undefined;
+  RegisterStep3: {
+    tokenAcceso: string;
+    usuarioId: number;
+    nombre: string;
+    apellido: string;
+    email: string;
+    dni: string;
+  };
   PendingApproval: undefined;
 };
 

@@ -6,3 +6,4 @@ export { default as AddAddressScreen } from './AddAddressScreen';
 export { default as PaymentMethodsScreen } from './PaymentMethodsScreen';
 export { default as AddCardScreen } from './AddCardScreen';
 export { default as AddCheckScreen } from './AddCheckScreen';
+export { default as FinesScreen } from './FinesScreen';

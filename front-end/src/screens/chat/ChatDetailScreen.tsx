@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Colors, FontSize, Fonts } from '../../constants';
+import { Colors, FontSize, Fonts, Layout } from '../../constants';
 import { chatService } from '../../services/chatService';
+import { notify } from '../../utils/confirm';
+import { ModalidadEntrega } from '../../types';
 
 const formatTime = (ts: string) => {
   const d = new Date(ts);
@@ -21,13 +23,18 @@ const formatTime = (ts: string) => {
 export default function ChatDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const purchaseId: string | undefined = route.params?.purchaseId ?? route.params?.conversationId;
+  const purchaseId: string | undefined = route.params?.purchaseId;
+  const itemDescripcion: string = route.params?.itemDescripcion ?? 'Artículo';
+  const vendedorNombre: string = route.params?.vendedorNombre ?? 'Carlos Martini';
+  const initialDeliveryMode: ModalidadEntrega | null = route.params?.modalidadEntrega ?? null;
 
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<ModalidadEntrega | null>(initialDeliveryMode);
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
 
   const scrollRef = useRef<any>(null);
 
@@ -59,6 +66,16 @@ export default function ChatDetailScreen() {
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
+  const handleSelectDelivery = (modalidad: ModalidadEntrega) => {
+    if (!purchaseId || confirmingDelivery) return;
+    setConfirmingDelivery(true);
+    chatService
+      .confirmDelivery(purchaseId, modalidad)
+      .then(() => setDeliveryMode(modalidad))
+      .catch(() => notify('Error', 'No se pudo confirmar la modalidad de entrega. Intentá de nuevo.'))
+      .finally(() => setConfirmingDelivery(false));
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -82,13 +99,41 @@ export default function ChatDetailScreen() {
           <Ionicons name="chevron-back" size={24} color={Colors.white} />
         </Pressable>
         <View style={styles.headerInfo}>
-          <View style={styles.headerAvatar}><Text style={styles.headerAvatarInitial}>M</Text></View>
+          <View style={styles.headerAvatar}><Text style={styles.headerAvatarInitial}>{vendedorNombre.charAt(0).toUpperCase()}</Text></View>
           <View>
-            <Text style={styles.headerTitle}>Marvin McKinney</Text>
-            <Text style={styles.headerSubtitle}>De: Reloj vintage</Text>
+            <Text style={styles.headerTitle}>{vendedorNombre}</Text>
+            <Text style={styles.headerSubtitle}>De: {itemDescripcion}</Text>
           </View>
         </View>
       </View>
+
+      {deliveryMode === null ? (
+        <View style={styles.deliveryCard}>
+          <Text style={styles.deliveryTitle}>Confirmá cómo querés recibir tu compra</Text>
+          <View style={styles.deliveryButtonsRow}>
+            <Pressable
+              style={({ pressed }) => [styles.deliveryBtn, pressed && styles.deliveryBtnPressed]}
+              onPress={() => handleSelectDelivery('ENVIO_DOMICILIO')}
+              disabled={confirmingDelivery}
+            >
+              <Text style={styles.deliveryBtnText}>Envío a domicilio</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.deliveryBtn, pressed && styles.deliveryBtnPressed]}
+              onPress={() => handleSelectDelivery('RETIRO_PERSONAL')}
+              disabled={confirmingDelivery}
+            >
+              <Text style={styles.deliveryBtnText}>Retiro personal</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.deliveryChip}>
+          <Text style={styles.deliveryChipText}>
+            Entrega: {deliveryMode === 'ENVIO_DOMICILIO' ? 'Envío a domicilio' : 'Retiro personal'}
+          </Text>
+        </View>
+      )}
 
       <ScrollView
         ref={scrollRef}
@@ -196,6 +241,56 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: '#E6E6F0',
     fontSize: FontSize.sm,
+  },
+  deliveryCard: {
+    backgroundColor: Colors.white,
+    borderRadius: Layout.profileRowRadius,
+    marginHorizontal: 12,
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  deliveryTitle: {
+    fontFamily: Fonts.soraBold,
+    fontSize: FontSize.base,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  deliveryButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  deliveryBtn: {
+    flex: 1,
+    height: Layout.buttonHeight,
+    borderRadius: Layout.buttonBorderRadius,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  deliveryBtnPressed: {
+    opacity: 0.85,
+  },
+  deliveryBtnText: {
+    fontFamily: Fonts.soraBold,
+    fontSize: FontSize.sm,
+    color: Colors.white,
+    textAlign: 'center',
+  },
+  deliveryChip: {
+    alignSelf: 'center',
+    backgroundColor: Layout.inputBackground,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginTop: 12,
+  },
+  deliveryChipText: {
+    fontFamily: Fonts.soraBold,
+    fontSize: FontSize.sm,
+    color: Colors.textPrimary,
   },
   messages: {
     flex: 1,

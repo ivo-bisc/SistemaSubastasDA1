@@ -12,3 +12,11 @@ export function confirmAction(title: string, message: string): Promise<boolean> 
     ]);
   });
 }
+
+export function notify(title: string, message: string): void {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+    return;
+  }
+  Alert.alert(title, message);
+}

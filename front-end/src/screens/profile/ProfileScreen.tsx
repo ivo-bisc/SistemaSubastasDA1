@@ -5,7 +5,6 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { PrimaryButton } from '../../components/auth';
 import {
-  ProfileHeaderBar,
   ProfileMenuRow,
   ProfileScreenShell,
 } from '../../components/profile';
@@ -95,6 +94,10 @@ export default function ProfileScreen() {
       <ProfileMenuRow
         label="Medios de pago"
         onPress={() => navigation.navigate('PaymentMethods')}
+      />
+      <ProfileMenuRow
+        label="Multas pendientes"
+        onPress={() => navigation.navigate('Fines')}
       />
       <ProfileMenuRow
         label="Categoría"

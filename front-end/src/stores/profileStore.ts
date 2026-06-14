@@ -31,7 +31,6 @@ interface ProfileStore {
   setUsername: (username: string) => void;
   setPassword: (password: string) => void;
   updateAddress: (domicilioLegal: string) => Promise<void>;
-  addCard: (card: Omit<MockCard, 'id'>) => void;
   addCardViaApi: (data: MedioPagoRequest) => Promise<void>;
   addCheck: (check: Omit<MockCheck, 'id'>) => void;
   removeCard: (id: string) => void;
@@ -130,11 +129,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     await userService.updateProfile({ domicilioLegal });
     set({ address: domicilioLegal });
   },
-
-  addCard: (card) =>
-    set((s) => ({
-      cards: [...s.cards, { ...card, id: nextId('card') }],
-    })),
 
   addCardViaApi: async (data) => {
     const response = await paymentService.addPaymentMethod(data);
