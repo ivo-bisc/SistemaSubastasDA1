@@ -18,8 +18,6 @@ public interface ParticipacionRepository extends JpaRepository<Participacion, Lo
 
     Optional<Participacion> findByUsuarioAndSubasta(Usuario usuario, Subasta subasta);
 
-    Optional<Participacion> findByUsuarioAndConectadoTrue(Usuario usuario);
-
     List<Participacion> findByUsuarioOrderByFechaConexionDesc(Usuario usuario);
 
     boolean existsByUsuarioAndConectadoTrue(Usuario usuario);

@@ -25,9 +25,6 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
 
     long countByUsuario(Usuario usuario);
 
-    @Query("SELECT COALESCE(SUM(c.total), 0) FROM Compra c WHERE c.usuario = :usuario")
-    BigDecimal sumTotalByUsuario(@Param("usuario") Usuario usuario);
-
     @Query("SELECT COALESCE(SUM(c.total), 0) FROM Compra c WHERE c.usuario = :usuario AND c.medioPago = :medioPago AND c.estadoPago = :estadoPago")
     BigDecimal sumTotalByUsuarioAndMedioPagoAndEstadoPago(@Param("usuario") Usuario usuario,
                                                           @Param("medioPago") MedioPago medioPago,

@@ -8,7 +8,6 @@ type Props = {
   sellerName: string;
   sellerAvatarColor: string;
   status: string;
-  categories?: string[];
   lotNumber?: string;
   titleSize?: number;
 };
@@ -18,7 +17,6 @@ export default function AuctionProductInfo({
   sellerName,
   sellerAvatarColor,
   status,
-  categories,
   lotNumber = '#029',
   titleSize = FontSize.xxxl,
 }: Props) {

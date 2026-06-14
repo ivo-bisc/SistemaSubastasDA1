@@ -71,15 +71,6 @@ export interface BidRejectedMessage {
   mensaje: string;
 }
 
-// ── Bid ──────────────────────────────────────────────────
-export interface Bid {
-  id: string;
-  auctionId: string;
-  userId: string;
-  amount: number;
-  createdAt: string;
-}
-
 // ── Address ──────────────────────────────────────────────
 export interface Address {
   id: string;
@@ -142,7 +133,6 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   AuctionDetail: { auctionId: string };
-  ConfirmBid: { auctionId: string; amount: number };
 };
 
 export type HomeStackParamList = {

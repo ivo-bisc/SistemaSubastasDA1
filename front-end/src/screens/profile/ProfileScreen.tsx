@@ -5,7 +5,6 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { PrimaryButton } from '../../components/auth';
 import {
-  ProfileHeaderBar,
   ProfileMenuRow,
   ProfileScreenShell,
 } from '../../components/profile';

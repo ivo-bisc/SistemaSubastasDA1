@@ -3,8 +3,6 @@
  * Replace with API / store when backend is ready.
  */
 
-export const USE_MOCKS = process.env.EXPO_PUBLIC_USE_MOCKS === 'true';
-
 export type MockCard = {
   id: string;
   alias: string;

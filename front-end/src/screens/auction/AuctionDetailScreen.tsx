@@ -464,10 +464,6 @@ const styles = StyleSheet.create({
   descriptionWrapper: {
     overflow: 'hidden', // Clips content during animation
   },
-  chevronRow: {
-    alignItems: 'center',
-    marginTop: 12,
-  },
   chevronPill: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -23,6 +23,5 @@ public class Rematador {
     @Column(unique = true, nullable = false)
     private String email;
 
-    private String telefono;
     private String matricula;
 }

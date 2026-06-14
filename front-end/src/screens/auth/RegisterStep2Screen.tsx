@@ -22,7 +22,6 @@ import {
   StepLabel,
 } from '../../components/auth';
 import { authService } from '../../services';
-import { useAuthStore } from '../../stores';
 import type { AuthStackParamList } from '../../types';
 
 type Nav = StackNavigationProp<AuthStackParamList, 'RegisterStep2'>;

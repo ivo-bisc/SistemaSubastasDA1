@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores';
 
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
-import { AuctionDetailScreen, ConfirmBidScreen } from '../screens/auction';
+import { AuctionDetailScreen } from '../screens/auction';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -23,11 +23,6 @@ export default function RootNavigator() {
             name="AuctionDetail"
             component={AuctionDetailScreen}
             options={{ presentation: 'card' }}
-          />
-          <Stack.Screen
-            name="ConfirmBid"
-            component={ConfirmBidScreen}
-            options={{ presentation: 'modal' }}
           />
         </>
       )}

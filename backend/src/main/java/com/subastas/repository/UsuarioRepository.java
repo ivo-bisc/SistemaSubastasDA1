@@ -1,7 +1,6 @@
 package com.subastas.repository;
 
 import com.subastas.model.entity.Usuario;
-import com.subastas.model.enums.EstadoUsuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,10 +17,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByEmail(String email);
 
     boolean existsByNumeroDni(String numeroDni);
-
-    Optional<Usuario> findByTokenEmail(String tokenEmail);
-
-    long countByEstado(EstadoUsuario estado);
 
     @Modifying
     @Query("UPDATE Usuario u SET u.multasPendientes = " +
