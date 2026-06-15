@@ -8,7 +8,6 @@ import com.subastas.model.entity.Item;
 import com.subastas.model.entity.Rematador;
 import com.subastas.model.entity.Subasta;
 import com.subastas.model.entity.Usuario;
-import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoConsignacion;
 import com.subastas.model.enums.EstadoItem;
 import com.subastas.model.enums.Moneda;
@@ -22,67 +21,28 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Simula la revisión de consignaciones por la empresa.
- * Se ejecuta de forma asíncrona con un delay de 3 segundos para imitar
- * el proceso de evaluación, igual que el mock de verificación de identidad.
- * Resultado siempre: ACEPTADA, con valorBase = precioSugerido (o 1000 por defecto)
- * y comisiones = valorBase × 10%.
+ * Simula el armado del lote tras la aceptación de condiciones por el usuario.
+ * Se ejecuta de forma asíncrona con un delay de 3 segundos para imitar el proceso
+ * de preparación de la subasta, igual que el mock de verificación de identidad.
+ * Crea el Item y la Subasta a partir de valorBase, categoriaPropuesta y
+ * fechaSubastaPropuesta definidos por el admin, y deja la consignación en
+ * INCLUIDO_EN_SUBASTA.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MockRevisionConsignacionService {
 
-    private static final BigDecimal COMISION_PORCENTAJE = new BigDecimal("0.10");
-    private static final BigDecimal VALOR_BASE_DEFAULT  = new BigDecimal("1000.00");
-
     private final ConsignacionRepository consignacionRepository;
     private final ItemRepository itemRepository;
     private final SubastaRepository subastaRepository;
     private final RematadorRepository rematadorRepository;
-
-    @Async
-    public void revisarYAceptar(Long consignacionId) {
-        try {
-            log.debug("Iniciando revisión mock para consignación {}", consignacionId);
-            Thread.sleep(3000);
-
-            Consignacion consignacion = consignacionRepository.findById(consignacionId).orElse(null);
-            if (consignacion == null) {
-                log.warn("Consignación {} no encontrada tras revisión mock", consignacionId);
-                return;
-            }
-
-            BigDecimal valorBase = consignacion.getPrecioSugerido() != null
-                    ? consignacion.getPrecioSugerido()
-                    : VALOR_BASE_DEFAULT;
-
-            BigDecimal comisiones = valorBase.multiply(COMISION_PORCENTAJE)
-                    .setScale(2, RoundingMode.HALF_UP);
-
-            consignacion.setValorBase(valorBase);
-            consignacion.setComisiones(comisiones);
-            consignacion.setEstado(EstadoConsignacion.ACEPTADA);
-            consignacionRepository.save(consignacion);
-
-            log.debug("Revisión mock completada para consignación {}. Estado: ACEPTADA, valorBase: {}, comisiones: {}",
-                    consignacionId, valorBase, comisiones);
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("Revisión mock interrumpida para consignación {}", consignacionId);
-        } catch (Exception e) {
-            log.error("Error en revisión mock de consignación {}: {}", consignacionId, e.getMessage());
-        }
-    }
 
     @Async
     @Transactional
@@ -94,6 +54,11 @@ public class MockRevisionConsignacionService {
             if (consignacion == null) {
                 log.warn("Consignación {} no encontrada al asignar subasta", consignacionId);
                 return;
+            }
+
+            if (consignacion.getCategoriaPropuesta() == null) {
+                throw new IllegalStateException(
+                        "La consignación " + consignacionId + " no tiene categoriaPropuesta asignada");
             }
 
             // Parsear datosAdicionales para extraer título y moneda
@@ -135,15 +100,16 @@ public class MockRevisionConsignacionService {
 
             // Construir y guardar Subasta primero (el Item necesita su ID para la FK)
             Rematador rematador = rematadorRepository.findAll().stream().findFirst().orElse(null);
+            LocalDateTime fechaInicio = consignacion.getFechaSubastaPropuesta();
             Subasta subasta = Subasta.builder()
                     .titulo(titulo)
                     .descripcion(consignacion.getDescripcion())
                     .moneda(moneda)
-                    .categoria(Categoria.COMUN)
+                    .categoria(consignacion.getCategoriaPropuesta())
                     .rematador(rematador)
                     .ubicacion("Depósito Central")
-                    .fechaInicio(LocalDateTime.now().plusDays(3))
-                    .fechaFin(LocalDateTime.now().plusDays(10))
+                    .fechaInicio(fechaInicio)
+                    .fechaFin(fechaInicio.plusDays(7))
                     .build();
             subasta = subastaRepository.save(subasta);
 
@@ -154,6 +120,7 @@ public class MockRevisionConsignacionService {
 
             // Vincular consignación a la subasta creada
             consignacion.setSubastaAsignada(subasta);
+            consignacion.setEstado(EstadoConsignacion.INCLUIDO_EN_SUBASTA);
             consignacionRepository.save(consignacion);
 
             log.debug("Subasta {} creada y asignada a consignación {}", subasta.getId(), consignacionId);

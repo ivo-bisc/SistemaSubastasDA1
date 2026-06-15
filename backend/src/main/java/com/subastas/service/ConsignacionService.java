@@ -88,7 +88,7 @@ public class ConsignacionService {
                 .descripcion(descripcion)
                 .datosAdicionales(datosAdicionales)
                 .aceptaPertenencia(aceptaPertenencia)
-                .estado(EstadoConsignacion.PENDIENTE_REVISION)
+                .estado(EstadoConsignacion.PENDIENTE_INSPECCION)
                 .precioSugerido(precioSugerido)
                 .cuentaDestino(cuentaDestino)
                 .usuario(usuario)
@@ -122,9 +122,6 @@ public class ConsignacionService {
         consignacion.setFotos(fotosEntidad);
         consignacion = consignacionRepository.save(consignacion);
 
-        // Disparar revisión mock asíncrona (3 seg → ACEPTADA), igual que el mock de registro
-        mockRevisionConsignacionService.revisarYAceptar(consignacion.getId());
-
         ConsignacionResponse response = mapToResponse(consignacion);
         response.setMensaje("Consignación creada. La empresa revisará tu solicitud en breve.");
         return response;
@@ -134,17 +131,14 @@ public class ConsignacionService {
     public ConsignacionResponse aceptarCondiciones(Long consignacionId, Usuario usuario) {
         Consignacion consignacion = obtenerConsignacionParaDecision(consignacionId, usuario);
 
-        consignacion.setEstado(EstadoConsignacion.EN_SUBASTA);
+        consignacion.setEstado(EstadoConsignacion.ACEPTADO_POR_USUARIO);
         consignacion = consignacionRepository.save(consignacion);
 
         mockRevisionConsignacionService.asignarSubasta(consignacion.getId());
 
         ConsignacionResponse response = mapToResponse(consignacion);
         response.setMensaje("Condiciones aceptadas. El bien será incluido en la subasta.");
-        if (consignacion.getSubastaAsignada() != null) {
-            response.setSubastaId(consignacion.getSubastaAsignada().getId());
-            response.setFechaSubasta(consignacion.getSubastaAsignada().getFechaInicio());
-        }
+        response.setFechaSubasta(consignacion.getFechaSubastaPropuesta());
         return response;
     }
 
@@ -152,7 +146,7 @@ public class ConsignacionService {
     public ConsignacionResponse rechazarCondiciones(Long consignacionId, Usuario usuario) {
         Consignacion consignacion = obtenerConsignacionParaDecision(consignacionId, usuario);
 
-        consignacion.setEstado(EstadoConsignacion.DEVUELTA);
+        consignacion.setEstado(EstadoConsignacion.RECHAZADO_POR_USUARIO);
         consignacion = consignacionRepository.save(consignacion);
 
         ConsignacionResponse response = mapToResponse(consignacion);
@@ -200,7 +194,7 @@ public class ConsignacionService {
     private Consignacion obtenerConsignacionParaDecision(Long consignacionId, Usuario usuario) {
         Consignacion consignacion = consignacionRepository.findByIdAndUsuario(consignacionId, usuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Consignación", consignacionId));
-        if (consignacion.getEstado() != EstadoConsignacion.ACEPTADA) {
+        if (consignacion.getEstado() != EstadoConsignacion.PROPUESTA_ENVIADA) {
             throw new BusinessException(ErrorCodes.ESTADO_INVALIDO,
                     "La consignación no está en estado de aceptación de condiciones");
         }

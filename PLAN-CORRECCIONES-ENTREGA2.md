@@ -1,6 +1,6 @@
 # Plan: Correcciones Entrega 2 (BidUp - Sistema de Subastas DA1)
 
-> Este archivo sirve como checklist de seguimiento durante la implementación de `CorreccionesEntrega2.md`. Marcar cada item con `[x]` a medida que se completa.
+> Este archivo sirve como checklist de seguimiento durante la implementación de `CorreccionesEntrega2.md`. Marcar cada item con `✅ Resuelto` a medida que se completa.
 
 ## Contexto
 
@@ -77,12 +77,12 @@ Seguridad: en `SecurityConfig.java`, agregar `.requestMatchers("/api/v1/admin/**
 
 ## 1. Flujo Login/Registro
 
-### [ ] 1.1 — `registroPaso1()`: no asignar categoría fija
+### ✅ Resuelto — 1.1 — `registroPaso1()`: no asignar categoría fija
 - Quitar `.categoria(Categoria.COMUN)` del builder de `Usuario`. La categoría queda `null` hasta que el admin la asigne. Requiere 0.1.
 - `RegistroResponse`: manejar `categoria == null` sin NPE.
 - **Complejidad: Media.**
 
-### [ ] 1.2 — `registroPaso2()`: ya no auto-aprueba
+### ✅ Resuelto — 1.2 — `registroPaso2()`: ya no auto-aprueba
 - Eliminar `usuario.setEstado(EstadoUsuario.APROBADO)`. El usuario queda en `PENDIENTE_VERIFICACION` (ahora significa "registro completo, esperando aprobación de admin"). Se sigue generando y devolviendo el JWT.
 - **Complejidad: Baja.** Depende de 1.1.
 
@@ -90,7 +90,7 @@ Seguridad: en `SecurityConfig.java`, agregar `.requestMatchers("/api/v1/admin/**
 - Se mantiene tal cual (mock de "envío de email con token" para el paso 2). Ajustar Javadoc si hace falta aclarar que es solo para el email.
 - **Complejidad: Baja (sin cambios funcionales).**
 
-### [ ] 1.4 — `login()`: ajustar mensaje para `PENDIENTE_VERIFICACION`
+### ✅ Resuelto — 1.4 — `login()`: ajustar mensaje para `PENDIENTE_VERIFICACION`
 - Cambiar el mensaje de `BusinessException(ErrorCodes.REGISTRO_INCOMPLETO, ...)` a algo genérico como "Tu cuenta está pendiente de aprobación. Intentá más tarde.", manteniendo el mismo código.
 - **Complejidad: Baja.** Depende de 1.2.
 
@@ -134,11 +134,11 @@ private Categoria categoriaPropuesta;
 ```
 - **Complejidad: Baja.**
 
-### [ ] 2.3 — `ConsignacionService.crear()`: ya no dispara auto-aceptación
+### ✅ Resuelto — 2.3 — `ConsignacionService.crear()`: ya no dispara auto-aceptación
 - `.estado(PENDIENTE_INSPECCION)`. Eliminar la llamada a `mockRevisionConsignacionService.revisarYAceptar(...)`.
 - **Complejidad: Baja.** Depende de 2.1.
 
-### [ ] 2.4 — Eliminar `MockRevisionConsignacionService.revisarYAceptar()`
+### ✅ Resuelto — 2.4 — Eliminar `MockRevisionConsignacionService.revisarYAceptar()`
 - Eliminar el método completo. `asignarSubasta()` se mantiene en este archivo, reescrito en 4.2. No renombrar la clase. Ajustar Javadoc.
 - **Complejidad: Media.** Depende de 2.1, 2.2.
 
@@ -166,13 +166,13 @@ private Categoria categoriaPropuesta;
 
 ## 4. Vendedor — aceptar/rechazar condiciones reales
 
-### [ ] 4.1 — `ConsignacionService`: nuevo gate en `PROPUESTA_ENVIADA`
+### ✅ Resuelto — 4.1 — `ConsignacionService`: nuevo gate en `PROPUESTA_ENVIADA`
 - `obtenerConsignacionParaDecision()`: `estado != ACEPTADA` → `estado != PROPUESTA_ENVIADA`.
 - `aceptarCondiciones()`: → `ACEPTADO_POR_USUARIO`; guardar; disparar `mockRevisionConsignacionService.asignarSubasta(...)`. `fechaSubasta` de la respuesta = `consignacion.getFechaSubastaPropuesta()`.
 - `rechazarCondiciones()`: → `RECHAZADO_POR_USUARIO`.
 - **Complejidad: Baja.** Depende de 2.1, 2.2.
 
-### [ ] 4.2 — Reescribir `MockRevisionConsignacionService.asignarSubasta()`
+### ✅ Resuelto — 4.2 — Reescribir `MockRevisionConsignacionService.asignarSubasta()`
 - Mantener `Thread.sleep(3000)` + `@Async @Transactional`.
 - `Item.precioBase = consignacion.getValorBase()`.
 - `Subasta.categoria = consignacion.getCategoriaPropuesta()` (fallar explícito si `null`, no default silencioso).

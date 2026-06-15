@@ -8,7 +8,6 @@ import com.subastas.model.dto.request.RegistroPaso2Request;
 import com.subastas.model.dto.response.LoginResponse;
 import com.subastas.model.dto.response.RegistroResponse;
 import com.subastas.model.entity.Usuario;
-import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoUsuario;
 import com.subastas.repository.UsuarioRepository;
 import com.subastas.util.JwtUtil;
@@ -39,7 +38,9 @@ import java.util.UUID;
  *   <li>Paso 1 – se crea el usuario en estado PENDIENTE_VERIFICACION y se dispara
  *       una verificación mock asíncrona que envía el token al email.</li>
  *   <li>Paso 2 – el usuario presenta el token recibido junto con su contraseña;
- *       la cuenta pasa a APROBADO y se devuelve un JWT listo para usar.</li>
+ *       la cuenta queda PENDIENTE_VERIFICACION a la espera de aprobación de un
+ *       admin (que además le asignará la categoría), y se devuelve un JWT
+ *       listo para usar.</li>
  * </ol>
  */
 @Slf4j
@@ -86,7 +87,6 @@ public class AuthService {
                 .fotoDniFrente(rutaFrente)
                 .fotoDniDorso(rutaDorso)
                 .estado(EstadoUsuario.PENDIENTE_VERIFICACION)
-                .categoria(Categoria.COMUN)
                 .tokenEmail(token)
                 .tokenExpiracion(LocalDateTime.now().plusHours(24))
                 .build();
@@ -124,7 +124,6 @@ public class AuthService {
         }
 
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuario.setEstado(EstadoUsuario.APROBADO);
         usuario.setTokenEmail(null);
         usuario.setTokenExpiracion(null);
         usuario = usuarioRepository.save(usuario);
@@ -134,7 +133,7 @@ public class AuthService {
         return RegistroResponse.builder()
                 .usuarioId(usuario.getId())
                 .email(usuario.getEmail())
-                .categoria(usuario.getCategoria().name())
+                .categoria(usuario.getCategoria() != null ? usuario.getCategoria().name() : null)
                 .tokenAcceso(jwt)
                 .build();
     }
@@ -187,7 +186,7 @@ public class AuthService {
 
         if (usuario.getEstado() == EstadoUsuario.PENDIENTE_VERIFICACION) {
             throw new BusinessException(ErrorCodes.REGISTRO_INCOMPLETO,
-                    "Debés completar el registro primero", HttpStatus.FORBIDDEN);
+                    "Tu cuenta está pendiente de aprobación. Intentá más tarde.", HttpStatus.FORBIDDEN);
         }
 
         String jwt = jwtUtil.generateToken(request.getEmail());
