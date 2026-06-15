@@ -1,10 +1,12 @@
 package com.subastas.model.entity;
 
+import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoConsignacion;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +30,7 @@ public class Consignacion {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private EstadoConsignacion estado = EstadoConsignacion.PENDIENTE_REVISION;
+    private EstadoConsignacion estado = EstadoConsignacion.PENDIENTE_INSPECCION;
 
     @Column(name = "acepta_pertenencia", nullable = false)
     private boolean aceptaPertenencia;
@@ -44,6 +46,13 @@ public class Consignacion {
 
     @Column(precision = 15, scale = 2)
     private BigDecimal comisiones;
+
+    @Column(name = "fecha_subasta_propuesta")
+    private LocalDateTime fechaSubastaPropuesta;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categoria_propuesta")
+    private Categoria categoriaPropuesta;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subasta_id")

@@ -2,6 +2,7 @@ package com.subastas.config;
 
 import com.subastas.security.JwtAuthFilter;
 import com.subastas.security.UserDetailsServiceImpl;
+import com.subastas.security.UserStatusFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +38,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final UserStatusFilter userStatusFilter;
 
     @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:4200}")
     private List<String> allowedOrigins;
@@ -64,6 +66,7 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(userStatusFilter, JwtAuthFilter.class)
             // Permitir frames para H2 console
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 

@@ -201,6 +201,7 @@ public class AuthService {
                         .email(usuario.getEmail())
                         .categoria(usuario.getCategoria())
                         .estado(usuario.getEstado())
+                        .rol(usuario.getRol())
                         .build())
                 .build();
     }

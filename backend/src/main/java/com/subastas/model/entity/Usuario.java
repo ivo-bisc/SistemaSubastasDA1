@@ -2,6 +2,7 @@ package com.subastas.model.entity;
 
 import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoUsuario;
+import com.subastas.model.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,12 +45,16 @@ public class Usuario {
     private String paisOrigen;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Categoria categoria;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoUsuario estado;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private RolUsuario rol = RolUsuario.POSTOR;
 
     @Column(name = "numero_dni", unique = true)
     private String numeroDni;

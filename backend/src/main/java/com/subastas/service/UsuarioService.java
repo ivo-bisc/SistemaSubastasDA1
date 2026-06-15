@@ -130,6 +130,7 @@ public class UsuarioService {
                 .email(u.getEmail())
                 .categoria(u.getCategoria())
                 .estado(u.getEstado())
+                .rol(u.getRol())
                 .domicilioLegal(u.getDomicilioLegal())
                 .paisOrigen(u.getPaisOrigen())
                 .fechaRegistro(u.getFechaRegistro())

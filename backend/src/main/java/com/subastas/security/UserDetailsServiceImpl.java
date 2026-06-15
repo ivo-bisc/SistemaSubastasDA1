@@ -2,6 +2,7 @@ package com.subastas.security;
 
 import com.subastas.model.entity.Usuario;
 import com.subastas.model.enums.EstadoUsuario;
+import com.subastas.model.enums.RolUsuario;
 import com.subastas.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,10 +32,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         boolean activo = usuario.getEstado() != EstadoUsuario.BLOQUEADO;
 
+        List<SimpleGrantedAuthority> authorities = usuario.getRol() == RolUsuario.ADMIN
+                ? List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER"))
+                : List.of(new SimpleGrantedAuthority("ROLE_USER"));
+
         return User.builder()
                 .username(usuario.getEmail())
                 .password(usuario.getPassword() != null ? usuario.getPassword() : "")
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
+                .authorities(authorities)
                 .disabled(!activo)
                 .accountLocked(!activo)
                 .build();

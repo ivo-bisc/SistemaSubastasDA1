@@ -3,6 +3,7 @@ package com.subastas.model.dto.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.subastas.model.enums.Categoria;
 import com.subastas.model.enums.EstadoUsuario;
+import com.subastas.model.enums.RolUsuario;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,6 +22,8 @@ public class UsuarioResponse {
     private Categoria categoria;
     @JsonProperty("status")
     private EstadoUsuario estado;
+    @JsonProperty("role")
+    private RolUsuario rol;
     @JsonProperty("address")
     private String domicilioLegal;
     @JsonProperty("country")
