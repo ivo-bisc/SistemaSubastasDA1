@@ -27,4 +27,7 @@ public class ConsignacionResponse {
     private LocalDateTime fechaSubasta;
     // Para rechazar condiciones
     private BigDecimal gastosEstimados;
+    // Para listados de admin
+    private String usuarioNombre;
+    private String usuarioEmail;
 }

@@ -2,6 +2,7 @@ package com.subastas.repository;
 
 import com.subastas.model.entity.Consignacion;
 import com.subastas.model.entity.Usuario;
+import com.subastas.model.enums.EstadoConsignacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +20,6 @@ public interface ConsignacionRepository extends JpaRepository<Consignacion, Long
     List<Consignacion> findByUsuarioWithFotosOrderByIdDesc(@Param("usuario") Usuario usuario);
 
     Optional<Consignacion> findByIdAndUsuario(Long id, Usuario usuario);
+
+    List<Consignacion> findByEstadoOrderByIdAsc(EstadoConsignacion estado);
 }

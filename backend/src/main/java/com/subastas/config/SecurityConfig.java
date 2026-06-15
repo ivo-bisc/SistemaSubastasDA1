@@ -61,6 +61,8 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                // Endpoints de administración: requieren rol ADMIN
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 // Todo lo demás requiere JWT
                 .anyRequest().authenticated()
             )

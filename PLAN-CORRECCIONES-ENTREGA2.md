@@ -39,7 +39,7 @@ El cambio de valores del enum `EstadoConsignacion` (con `@Enumerated(EnumType.ST
 - `AuthService.java`: en `login()`, al construir `LoginResponse.UsuarioInfo`, incluir `.rol(usuario.getRol())`.
 - **Complejidad: Baja.** Depende de 0.1.
 
-### [ ] 0.4 — `AdminController` + `AdminService` (núcleo de la nueva infraestructura)
+### ✅ Resuelto — 0.4 — `AdminController` + `AdminService` (núcleo de la nueva infraestructura)
 
 Nuevos archivos:
 - `controller/AdminController.java`
