@@ -265,7 +265,7 @@ public class DataLoader implements CommandLineRunner {
                 .build();
         subastaRepository.save(subasta2);
 
-        // Consignación de Juan: empresa ya aceptó y propuso condiciones (estado ACEPTADA)
+        // Consignación de Juan: empresa ya aceptó y propuso condiciones (estado PROPUESTA_ENVIADA)
         Consignacion consignacion1 = Consignacion.builder()
                 .descripcion("Guitarra eléctrica Fender Stratocaster 1965 - estado original")
                 .datosAdicionales("Incluye estuche original y certificado de autenticidad")

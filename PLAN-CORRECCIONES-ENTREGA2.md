@@ -199,9 +199,9 @@ private Categoria categoriaPropuesta;
 
 ## 5. Flujo comprador — verificación (sin cambios funcionales esperados)
 
-### [ ] 5.1 — Backend: confirmar que `SubastaService` ya aplica el control
+### ✅ Resuelto — 5.1 — Backend: confirmar que `SubastaService` ya aplica el control
 - `listar()`, `obtener()`, `conectar()` ya usan `Categoria.puedeAcceder()`. Con `categoria` nullable, el invariante "categoría no nula para quien llega acá" lo garantiza `UserStatusFilter` (3.1). No agregar null-check adicional.
-- **Acción**: verificación manual con usuarios `APROBADO` y categorías asignadas por el admin (no más `COMUN` hardcodeado).
+- **Verificado en Bloque G**: `Categoria.puedeAcceder()` aplica `this.ordinal() >= categoriaSubasta.ordinal()`. `UserStatusFilter` garantiza que solo usuarios `APROBADO` llegan a `SubastaService`, y los usuarios solo pasan a `APROBADO` cuando el admin asigna `categoria` en el mismo acto → sin riesgo de NPE. No se requirió ningún cambio de código.
 - **Complejidad: Baja.** Depende de 0.4, 1.1, 3.1.
 
 ### [ ] 5.2 — Frontend: mensaje específico para 403 `CATEGORIA_INSUFICIENTE` (opcional)
@@ -250,6 +250,9 @@ private Categoria categoriaPropuesta;
 
 **Bloque G:**
 23. 5.1 — verificación funcional end-to-end del flujo comprador con categorías asignadas por el admin
+
+**Bloque H — Tests de integración:**
+24. Adaptar tests al código actual: `ConsignacionControllerTest` idempotente (reset estado en `@BeforeEach`), nuevo `AdminControllerTest` (listados, aprobar/rechazar usuario), nuevos tests de `UserStatusFilter` en `SeguridadTest`, test de login pendiente en `AuthControllerTest`.
 
 ---
 

@@ -2,7 +2,10 @@ package com.subastas.consignacion;
 
 import com.subastas.BaseIntegrationTest;
 import com.subastas.model.dto.response.ConsignacionResponse;
+import com.subastas.model.enums.EstadoConsignacion;
+import com.subastas.repository.ConsignacionRepository;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
@@ -15,11 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ConsignacionControllerTest extends BaseIntegrationTest {
 
+    @Autowired
+    private ConsignacionRepository consignacionRepository;
+
     private String jwtJuan;
 
     @BeforeEach
     void setUp() {
         jwtJuan = loginAndGetToken("juan@test.com", "password123");
+        // Garantizar que consignación 1 esté en PROPUESTA_ENVIADA antes de cada test
+        // (evita fallos en la 2.ª ejecución si @Order(4) la dejó en ACEPTADO_POR_USUARIO)
+        consignacionRepository.findById(1L).ifPresent(c -> {
+            c.setEstado(EstadoConsignacion.PROPUESTA_ENVIADA);
+            consignacionRepository.save(c);
+        });
     }
 
     @Test
@@ -79,8 +91,8 @@ class ConsignacionControllerTest extends BaseIntegrationTest {
 
     @Test
     @Order(4)
-    void aceptar_condiciones_consignacion_aceptada() {
-        // La consignación 1 (del DataLoader) está en estado ACEPTADA
+    void aceptar_condiciones_consignacion_en_propuesta_enviada() {
+        // La consignación 1 (del DataLoader) está en estado PROPUESTA_ENVIADA (garantizado por @BeforeEach)
         ResponseEntity<ConsignacionResponse> res = postWithAuth(
                 "/api/v1/consignaciones/1/aceptar-condiciones", jwtJuan, null, ConsignacionResponse.class);
 

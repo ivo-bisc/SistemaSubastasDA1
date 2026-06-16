@@ -56,6 +56,17 @@ class AuthControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void login_usuario_pendiente_de_aprobacion_devuelve_403() {
+        // PENDIENTE_VERIFICACION → AuthService lanza BusinessException con FORBIDDEN
+        ResponseEntity<Map<String, Object>> res = postNoAuthRaw(
+                "/api/v1/auth/login",
+                Map.of("email", "pendiente@test.com", "password", "password123"),
+                MAP_TYPE);
+
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void login_usuario_bloqueado_no_permite_acceso() {
         Usuario usuario = usuarioRepository.findByEmail("juan@test.com").orElseThrow();
         EstadoUsuario estadoOriginal = usuario.getEstado();
