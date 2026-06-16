@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, FontSize, Fonts } from '../../constants';
 import { chatService } from '../../services/chatService';
@@ -67,6 +68,7 @@ function ChatItem({ item }: { item: CompraItem }) {
 }
 
 export default function ChatListScreen() {
+  const navigation = useNavigation<any>();
   const [compras, setCompras] = useState<CompraItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +83,9 @@ export default function ChatListScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color={Colors.white} />
+        </Pressable>
         <Text style={styles.headerTitle}>Chats</Text>
       </View>
 
@@ -113,10 +118,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   headerRow: {
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     paddingTop: 18,
     paddingBottom: 12,
     backgroundColor: Colors.auctionViolet,
+  },
+  backBtn: {
+    marginRight: 4,
+    padding: 4,
   },
   headerTitle: {
     color: Colors.white,

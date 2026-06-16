@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -18,6 +20,9 @@ import { Colors, Fonts, FontSize } from '../../constants';
 type Nav = StackNavigationProp<AdminStackParamList, 'AdminProposeConditions'>;
 type Route = RouteProp<AdminStackParamList, 'AdminProposeConditions'>;
 
+const CATEGORIAS = ['COMUN', 'ESPECIAL', 'PLATA', 'ORO', 'PLATINO'] as const;
+type Categoria = typeof CATEGORIAS[number];
+
 export default function AdminProposeConditionsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
@@ -26,7 +31,7 @@ export default function AdminProposeConditionsScreen() {
   const [valorBase, setValorBase] = useState('');
   const [comisiones, setComisiones] = useState('');
   const [fechaSubasta, setFechaSubasta] = useState('');
-  const [categoria, setCategoria] = useState('');
+  const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +39,10 @@ export default function AdminProposeConditionsScreen() {
     valorBase.trim() !== '' &&
     comisiones.trim() !== '' &&
     fechaSubasta.trim() !== '' &&
-    categoria.trim() !== '';
+    categoria !== null;
 
   const handleSubmit = async () => {
-    if (!isValid) return;
+    if (!isValid || !categoria) return;
     setLoading(true);
     setError(null);
     try {
@@ -45,7 +50,7 @@ export default function AdminProposeConditionsScreen() {
         valorBase: Number(valorBase),
         comisiones: Number(comisiones),
         fechaSubasta: fechaSubasta.trim(),
-        categoria: categoria.trim().toUpperCase(),
+        categoria,
       });
       navigation.goBack();
     } catch {
@@ -61,8 +66,15 @@ export default function AdminProposeConditionsScreen() {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Proponer condiciones</Text>
-      <Text style={styles.subtitle}>Consignación #{consignacionId}</Text>
+      <View style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+        </Pressable>
+        <View>
+          <Text style={styles.title}>Proponer condiciones</Text>
+          <Text style={styles.subtitle}>Consignación #{consignacionId}</Text>
+        </View>
+      </View>
 
       <Text style={styles.label}>Valor base</Text>
       <TextInput
@@ -95,14 +107,19 @@ export default function AdminProposeConditionsScreen() {
       />
 
       <Text style={styles.label}>Categoría</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="COMUN | ORO | PLATINO | DIAMANTE"
-        placeholderTextColor={Colors.textSecondary}
-        value={categoria}
-        onChangeText={setCategoria}
-        autoCapitalize="characters"
-      />
+      <View style={styles.categoriaRow}>
+        {CATEGORIAS.map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            style={[styles.catBtn, categoria === cat && styles.catBtnSelected]}
+            onPress={() => setCategoria(cat)}
+          >
+            <Text style={[styles.catBtnText, categoria === cat && styles.catBtnTextSelected]}>
+              {cat}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -131,6 +148,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  backBtn: {
+    marginRight: 4,
+    padding: 4,
+  },
   title: {
     fontFamily: Fonts.soraBold,
     fontSize: FontSize.xxl,
@@ -141,7 +167,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.body,
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
-    marginBottom: 28,
   },
   label: {
     fontFamily: Fonts.bodyBold,
@@ -160,6 +185,33 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     backgroundColor: Colors.surface,
     marginBottom: 20,
+  },
+  categoriaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 24,
+  },
+  catBtn: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: Colors.surface,
+  },
+  catBtnSelected: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accent,
+  },
+  catBtnText: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.sm,
+    color: Colors.textPrimary,
+  },
+  catBtnTextSelected: {
+    color: Colors.white,
+    fontFamily: Fonts.bodyBold,
   },
   errorText: {
     fontFamily: Fonts.body,

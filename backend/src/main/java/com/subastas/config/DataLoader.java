@@ -424,27 +424,7 @@ public class DataLoader implements CommandLineRunner {
                 .leido(true)
                 .build());
 
-        mensajeChatRepository.save(MensajeChat.builder()
-                .contenido("Hola, prefiero envío a domicilio. Mi dirección es Av. Corrientes 1234, CABA.")
-                .remitente(RemitenteMensaje.USUARIO)
-                .timestamp(LocalDateTime.now().minusDays(5))
-                .compra(compra1)
-                .usuario(postor1)
-                .leido(true)
-                .build());
-
-        mensajeChatRepository.save(MensajeChat.builder()
-                .contenido("Perfecto, coordinaremos el envío una vez confirmado el pago. " +
-                           "Tenés hasta " + LocalDateTime.now().plusDays(3).toLocalDate() + " para abonar. " +
-                           "¿Necesitás información sobre los medios de pago aceptados?")
-                .remitente(RemitenteMensaje.EMPRESA)
-                .timestamp(LocalDateTime.now().minusDays(5).plusHours(2))
-                .compra(compra1)
-                .usuario(postor1)
-                .leido(false)
-                .build());
-
-        log.info("Datos de prueba cargados: 4 usuarios, 3 medios de pago, 3 subastas, 3 ítems, 3 pujas, 5 consignaciones, 1 compra, 3 mensajes de chat");
+        log.info("Datos de prueba cargados: 4 usuarios, 3 medios de pago, 3 subastas, 3 ítems, 3 pujas, 5 consignaciones, 1 compra, 1 mensaje de chat");
         log.debug("Login admin:     admin@subastas.com / admin123 (ADMIN, PLATINO)");
         log.debug("Login postor1:   juan@test.com / password123 (PLATA)");
         log.debug("Login postor2:   maria@test.com / password123 (ORO)");

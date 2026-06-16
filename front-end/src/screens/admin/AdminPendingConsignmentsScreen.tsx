@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { adminService } from '../../services';
@@ -79,7 +81,12 @@ export default function AdminPendingConsignmentsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Consignaciones pendientes</Text>
+      <View style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.title}>Consignaciones pendientes</Text>
+      </View>
       {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
       <FlatList
         data={items}
@@ -157,11 +164,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.background,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backBtn: {
+    marginRight: 4,
+    padding: 4,
+  },
   title: {
     fontFamily: Fonts.soraBold,
     fontSize: FontSize.xl,
     color: Colors.textPrimary,
-    marginBottom: 16,
   },
   card: {
     backgroundColor: Colors.surface,

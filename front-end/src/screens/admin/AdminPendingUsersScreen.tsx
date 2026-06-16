@@ -2,14 +2,19 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { adminService } from '../../services';
 import { Colors, Fonts, FontSize } from '../../constants';
+
+const CATEGORIAS = ['COMUN', 'ESPECIAL', 'PLATA', 'ORO', 'PLATINO'] as const;
+type Categoria = typeof CATEGORIAS[number];
 
 interface PendingUser {
   id: number;
@@ -19,11 +24,12 @@ interface PendingUser {
 }
 
 export default function AdminPendingUsersScreen() {
+  const navigation = useNavigation<any>();
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<number | null>(null);
-  const [categoriaInput, setCategoriaInput] = useState('');
+  const [categoriaSelected, setCategoriaSelected] = useState<Categoria | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -52,15 +58,15 @@ export default function AdminPendingUsersScreen() {
   };
 
   const handleApproveConfirm = async (id: number) => {
-    if (!categoriaInput.trim()) return;
+    if (!categoriaSelected) return;
     setActionError(null);
     try {
-      await adminService.approveUser(String(id), categoriaInput.trim().toUpperCase());
+      await adminService.approveUser(String(id), categoriaSelected);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       setApprovingId(null);
-      setCategoriaInput('');
+      setCategoriaSelected(null);
     } catch {
-      setActionError('Error al aprobar el usuario. Verificá la categoría.');
+      setActionError('Error al aprobar el usuario.');
     }
   };
 
@@ -82,7 +88,12 @@ export default function AdminPendingUsersScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Usuarios pendientes</Text>
+      <View style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.title}>Usuarios pendientes</Text>
+      </View>
       {actionError ? <Text style={styles.errorText}>{actionError}</Text> : null}
       <FlatList
         data={users}
@@ -99,7 +110,7 @@ export default function AdminPendingUsersScreen() {
                 style={[styles.btn, styles.btnApprove]}
                 onPress={() => {
                   setApprovingId(item.id);
-                  setCategoriaInput('');
+                  setCategoriaSelected(null);
                   setActionError(null);
                 }}
               >
@@ -114,20 +125,37 @@ export default function AdminPendingUsersScreen() {
             </View>
             {approvingId === item.id && (
               <View style={styles.inlineForm}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="COMUN | ORO | PLATINO | DIAMANTE"
-                  placeholderTextColor={Colors.textSecondary}
-                  value={categoriaInput}
-                  onChangeText={setCategoriaInput}
-                  autoCapitalize="characters"
-                />
-                <TouchableOpacity
-                  style={[styles.btn, styles.btnConfirm]}
-                  onPress={() => handleApproveConfirm(item.id)}
-                >
-                  <Text style={styles.btnText}>Confirmar</Text>
-                </TouchableOpacity>
+                <Text style={styles.categoriaLabel}>Categoría:</Text>
+                <View style={styles.categoriaRow}>
+                  {CATEGORIAS.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.catBtn,
+                        categoriaSelected === cat && styles.catBtnSelected,
+                      ]}
+                      onPress={() => setCategoriaSelected(cat)}
+                    >
+                      <Text
+                        style={[
+                          styles.catBtnText,
+                          categoriaSelected === cat && styles.catBtnTextSelected,
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={styles.confirmWrapper}>
+                  <TouchableOpacity
+                    style={[styles.btnConfirm, !categoriaSelected && styles.btnDisabled]}
+                    onPress={() => handleApproveConfirm(item.id)}
+                    disabled={!categoriaSelected}
+                  >
+                    <Text style={styles.btnText}>Confirmar</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
@@ -144,6 +172,15 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 16,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backBtn: {
+    marginRight: 4,
+    padding: 4,
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -154,7 +191,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.soraBold,
     fontSize: FontSize.xl,
     color: Colors.textPrimary,
-    marginBottom: 16,
   },
   card: {
     backgroundColor: Colors.surface,
@@ -192,11 +228,19 @@ const styles = StyleSheet.create({
   btnReject: {
     backgroundColor: Colors.error,
   },
+  confirmWrapper: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
   btnConfirm: {
     backgroundColor: Colors.accent,
-    marginTop: 8,
-    flex: 0,
-    paddingHorizontal: 24,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+  },
+  btnDisabled: {
+    opacity: 0.4,
   },
   btnText: {
     fontFamily: Fonts.bodyBold,
@@ -205,21 +249,38 @@ const styles = StyleSheet.create({
   },
   inlineForm: {
     marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
-  input: {
-    flex: 1,
+  categoriaLabel: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginBottom: 6,
+  },
+  categoriaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  catBtn: {
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontFamily: Fonts.body,
-    fontSize: FontSize.sm,
-    color: Colors.textPrimary,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: Colors.white,
+  },
+  catBtnSelected: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accent,
+  },
+  catBtnText: {
+    fontFamily: Fonts.body,
+    fontSize: FontSize.xs,
+    color: Colors.textPrimary,
+  },
+  catBtnTextSelected: {
+    color: Colors.white,
+    fontFamily: Fonts.bodyBold,
   },
   errorText: {
     fontFamily: Fonts.body,
