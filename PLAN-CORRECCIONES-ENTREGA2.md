@@ -61,7 +61,7 @@ Seguridad: en `SecurityConfig.java`, agregar `.requestMatchers("/api/v1/admin/**
 
 - **Complejidad: Alta.** Depende de 0.1, 0.2, 2.1, 2.2.
 
-### [ ] 0.5 — Frontend: sección "Admin"
+### ✅ Resuelto — 0.5 — Frontend: sección "Admin"
 
 - `types/index.ts`: `User` gana `role: 'POSTOR' | 'ADMIN'` y `category?: string`; `MainTabParamList` gana `Admin: undefined`; nuevo `AdminStackParamList` (`AdminHome`, `AdminPendingUsers`, `AdminPendingConsignments`, `AdminProposeConditions: { consignacionId: string }`); `RootStackParamList` gana `PendingApproval: undefined` (se mueve desde `AuthStackParamList`).
 - `stores/authStore.ts`: agregar `updateUserRole(role)` análogo a `updateUserStatus`.

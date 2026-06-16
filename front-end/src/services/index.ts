@@ -6,3 +6,4 @@ export { auctionService } from './auctionService';
 export { paymentService } from './paymentService';
 export { consignService } from './consignService';
 export { metricsService } from './metricsService';
+export { adminService } from './adminService';

@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList } from '../types';
 import { Colors, Fonts, FontSize } from '../constants';
+import { useAuthStore } from '../stores';
 
 import HomeStack from './HomeStack';
 import ProfileStack from './ProfileStack';
 import MyAuctionsStack from './MyAuctionsStack';
+import AdminStack from './AdminStack';
 import { MyBidsScreen } from '../screens/activity';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -28,6 +30,7 @@ const TAB_BAR_BASE_HEIGHT = Platform.OS === 'ios' ? 56 : 60;
 export default function MainNavigator() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 8 : 0);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <Tab.Navigator
@@ -76,6 +79,13 @@ export default function MainNavigator() {
         component={ProfileStack}
         options={{ tabBarLabel: 'Perfil' }}
       />
+      {user?.role === 'ADMIN' && (
+        <Tab.Screen
+          name="Admin"
+          component={AdminStack}
+          options={{ tabBarLabel: 'Admin' }}
+        />
+      )}
     </Tab.Navigator>
   );
 }
