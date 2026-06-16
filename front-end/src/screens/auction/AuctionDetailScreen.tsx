@@ -49,7 +49,13 @@ export default function AuctionDetailScreen() {
     auctionService
       .getAuctionDetail(auctionId)
       .then((data) => setAuction(data))
-      .catch(() => setFetchError('No se pudo cargar la subasta.'))
+      .catch((err: any) => {
+        if (err?.response?.data?.codigo === 'CATEGORIA_INSUFICIENTE') {
+          setFetchError('No tenés acceso a esta subasta por tu categoría.');
+        } else {
+          setFetchError('No se pudo cargar la subasta.');
+        }
+      })
       .finally(() => setLoading(false));
   }, [auctionId]);
 
@@ -95,8 +101,10 @@ export default function AuctionDetailScreen() {
     auctionService
       .connectToAuction(auctionId, parseInt(medioPago.id, 10))
       .catch((err: any) => {
-        // 409 = ya conectado a esta subasta, ignorar
-        if (err?.response?.status !== 409) {
+        if (err?.response?.data?.codigo === 'CATEGORIA_INSUFICIENTE') {
+          setFetchError('No tenés acceso a esta subasta por tu categoría.');
+        } else if (err?.response?.status !== 409) {
+          // 409 = ya conectado a esta subasta, ignorar
           console.warn('[AuctionDetail] connect error:', err?.response?.data);
         }
       });

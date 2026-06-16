@@ -204,8 +204,8 @@ private Categoria categoriaPropuesta;
 - **Verificado en Bloque G**: `Categoria.puedeAcceder()` aplica `this.ordinal() >= categoriaSubasta.ordinal()`. `UserStatusFilter` garantiza que solo usuarios `APROBADO` llegan a `SubastaService`, y los usuarios solo pasan a `APROBADO` cuando el admin asigna `categoria` en el mismo acto → sin riesgo de NPE. No se requirió ningún cambio de código.
 - **Complejidad: Baja.** Depende de 0.4, 1.1, 3.1.
 
-### [ ] 5.2 — Frontend: mensaje específico para 403 `CATEGORIA_INSUFICIENTE` (opcional)
-- En `AuctionDetailScreen.tsx`, si `err?.response?.data?.codigo === 'CATEGORIA_INSUFICIENTE'`, mostrar "No tenés acceso a esta subasta por tu categoría."
+### ✅ Resuelto — 5.2 — Frontend: mensaje específico para 403 `CATEGORIA_INSUFICIENTE`
+- En `AuctionDetailScreen.tsx`, si `err?.response?.data?.codigo === 'CATEGORIA_INSUFICIENTE'`, mostrar "No tenés acceso a esta subasta por tu categoría." vía `fetchError` (pantalla de error con botón de volver). Aplicado en ambos catch: `getAuctionDetail` y `connectToAuction`.
 - **Complejidad: Baja.**
 
 ---
