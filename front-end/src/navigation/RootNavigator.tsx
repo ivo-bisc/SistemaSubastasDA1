@@ -6,16 +6,19 @@ import { useAuthStore } from '../stores';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import { AuctionDetailScreen } from '../screens/auction';
+import { PendingApprovalScreen } from '../screens/auth';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const { isAuthenticated, isGuest } = useAuthStore();
+  const { isAuthenticated, isGuest, user } = useAuthStore();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isAuthenticated && !isGuest ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : isAuthenticated && user?.status !== 'approved' ? (
+        <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
       ) : (
         <>
           <Stack.Screen name="Main" component={MainNavigator} />

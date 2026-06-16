@@ -186,7 +186,6 @@ export type AuthStackParamList = {
     email: string;
     dni: string;
   };
-  PendingApproval: undefined;
 };
 
 export type MainTabParamList = {

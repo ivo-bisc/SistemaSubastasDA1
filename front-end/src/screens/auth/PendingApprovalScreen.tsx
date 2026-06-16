@@ -1,25 +1,47 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, FontSize } from '../../constants';
-import { useNavigation } from '@react-navigation/native';
-import { useAuthStore } from '../../stores';
+import { useAuthStore } from '../../stores/authStore';
+import { useProfileStore } from '../../stores/profileStore';
 
 export default function PendingApprovalScreen() {
-  const navigation = useNavigation<any>();
-
-  const setGuest = useAuthStore((s) => s.setGuest);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const [isRejected, setIsRejected] = useState(false);
 
   useEffect(() => {
-    // Si el registro ya autenticó al usuario (login() en RegisterStep2),
-    // no pisar esa sesión con un estado de invitado.
-    const id = setTimeout(() => {
-      if (!isAuthenticated) setGuest();
-      navigation.navigate('Main' as any, { screen: 'Home' as any });
+    if (user?.status === 'rejected') {
+      setIsRejected(true);
+      return;
+    }
+    if (user?.status === 'approved') {
+      // RootNavigator cambia de rama automáticamente
+      return;
+    }
+
+    const id = setInterval(() => {
+      useProfileStore.getState().loadProfile().catch(() => { /* ignorar errores de red */ });
     }, 5000);
-    return () => clearTimeout(id);
-  }, [navigation, setGuest, isAuthenticated]);
+    return () => clearInterval(id);
+  }, [user?.status]);
+
+  if (isRejected) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Cuenta rechazada</Text>
+          <Text style={styles.subtitle}>
+            Tu solicitud de registro no fue aprobada. Podés intentarlo de nuevo o contactar al soporte.
+          </Text>
+          <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -71,5 +93,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.black,
     marginBottom: 8,
     opacity: 0.2,
+  },
+  logoutBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+  },
+  logoutText: {
+    fontFamily: Fonts.bodyBold,
+    fontSize: FontSize.base,
+    color: Colors.white,
   },
 });

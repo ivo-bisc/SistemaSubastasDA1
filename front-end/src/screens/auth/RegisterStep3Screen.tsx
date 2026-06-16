@@ -72,7 +72,7 @@ export default function RegisterStep3Screen() {
         onBlur={handleBlur}
       />
 
-      <AuthLink bold onPress={() => { doLogin(); navigation.navigate('PendingApproval'); }}>
+      <AuthLink bold onPress={() => { doLogin(); }}>
         Más tarde
       </AuthLink>
 
@@ -91,7 +91,6 @@ export default function RegisterStep3Screen() {
               buildCardMedioPagoRequest(cardNumber, holderName, expiration)
             );
             doLogin();
-            navigation.navigate('PendingApproval');
           } catch {
             setApiError('No se pudo registrar la tarjeta. Intentá de nuevo.');
           } finally {

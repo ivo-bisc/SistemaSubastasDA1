@@ -11,7 +11,6 @@ import {
   RegisterStep1Screen,
   RegisterStep2Screen,
   RegisterStep3Screen,
-  PendingApprovalScreen,
 } from '../screens/auth';
 
 const Stack = createStackNavigator<AuthStackParamList>();
@@ -33,7 +32,6 @@ export default function AuthNavigator() {
       <Stack.Screen name="RegisterStep1" component={RegisterStep1Screen} />
       <Stack.Screen name="RegisterStep2" component={RegisterStep2Screen} />
       <Stack.Screen name="RegisterStep3" component={RegisterStep3Screen} />
-      <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
     </Stack.Navigator>
   );
 }

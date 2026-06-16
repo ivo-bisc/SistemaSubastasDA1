@@ -94,7 +94,7 @@ Seguridad: en `SecurityConfig.java`, agregar `.requestMatchers("/api/v1/admin/**
 - Cambiar el mensaje de `BusinessException(ErrorCodes.REGISTRO_INCOMPLETO, ...)` a algo genérico como "Tu cuenta está pendiente de aprobación. Intentá más tarde.", manteniendo el mismo código.
 - **Complejidad: Baja.** Depende de 1.2.
 
-### [ ] 1.5 — Frontend: `PendingApprovalScreen` con polling real
+### ✅ Resuelto — 1.5 — Frontend: `PendingApprovalScreen` con polling real
 - Eliminar `setTimeout(5000)` + `setGuest()`.
 - Poll cada ~5s con `useProfileStore.getState().loadProfile()`. Reaccionar a `user?.status`: `'approved'` → nada (RootNavigator cambia de rama), `'rejected'` → mostrar mensaje de rechazo + volver a Access/Login, `'pending'` → seguir polleando. Cleanup del interval.
 - **Complejidad: Media.** Depende de 0.5, 3.1, 3.2.
@@ -157,7 +157,7 @@ private Categoria categoriaPropuesta;
 - `SecurityConfig.java`: inyectar `UserStatusFilter`, `.addFilterAfter(userStatusFilter, JwtAuthFilter.class)`.
 - **Complejidad: Media.** Depende de 0.1, 2.5.
 
-### [ ] 3.2 — Frontend: `RootNavigator` reacciona al `status`
+### ✅ Resuelto — 3.2 — Frontend: `RootNavigator` reacciona al `status`
 - 3 ramas: `!isAuthenticated && !isGuest` → `Auth`; `isAuthenticated && user?.status !== 'approved'` → `PendingApproval`; resto → `Main` + `AuctionDetail`.
 - Mover `PendingApproval` de `AuthStackParamList`/`AuthNavigator` a `RootStackParamList`/`RootNavigator`.
 - `RegisterStep3Screen.tsx`: quitar las llamadas a `navigation.navigate('PendingApproval', ...)` (innecesarias, RootNavigator reacciona solo).
@@ -181,7 +181,7 @@ private Categoria categoriaPropuesta;
 - Al final: `consignacion.setSubastaAsignada(subasta)`, `consignacion.setEstado(INCLUIDO_EN_SUBASTA)`, guardar.
 - **Complejidad: Media.** Depende de 2.1, 2.2, 4.1, 0.4 #5.
 
-### [ ] 4.3 — Frontend: `MyAuctionsScreen` con el nuevo `estadoMap`
+### ✅ Resuelto — 4.3 — Frontend: `MyAuctionsScreen` con el nuevo `estadoMap`
 
 | `EstadoConsignacion` | `moderationStatus` | `status` |
 |---|---|---|

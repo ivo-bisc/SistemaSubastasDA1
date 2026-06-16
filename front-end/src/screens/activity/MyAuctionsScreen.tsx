@@ -59,6 +59,7 @@ interface ConsignmentItem extends MockAuctionItem {
   comisiones?: number;
   subastaId?: string;
   fechaSubasta?: string;
+  rawEstado?: string;
 }
 
 function formatAmount(value?: number): string {
@@ -95,12 +96,12 @@ export default function MyAuctionsScreen() {
       .getConsignaciones()
       .then((res) => {
         const estadoMap: Record<string, { mod: MockAuctionItem['moderationStatus']; status: MockAuctionItem['status'] }> = {
-          PENDIENTE_REVISION: { mod: 'pending',              status: 'soon'     },
-          ACEPTADA:           { mod: 'approved_pending_lot', status: 'soon'     },
-          EN_SUBASTA:         { mod: 'published',            status: 'soon'     },
-          RECHAZADA:          { mod: 'rejected',             status: 'canceled' },
-          VENDIDA:            { mod: 'published',            status: 'finished' },
-          DEVUELTA:           { mod: 'rejected',             status: 'canceled' },
+          PENDIENTE_INSPECCION:  { mod: 'pending',              status: 'soon'     },
+          RECHAZADO:             { mod: 'rejected',             status: 'canceled' },
+          PROPUESTA_ENVIADA:     { mod: 'approved_pending_lot', status: 'soon'     },
+          ACEPTADO_POR_USUARIO:  { mod: 'approved_pending_lot', status: 'soon'     },
+          RECHAZADO_POR_USUARIO: { mod: 'rejected',             status: 'canceled' },
+          INCLUIDO_EN_SUBASTA:   { mod: 'published',            status: 'soon'     },
         };
         const mapped: ConsignmentItem[] = (res.data ?? []).map((c: any) => {
           const e = estadoMap[c.estado] ?? { mod: 'pending', status: 'soon' };
@@ -117,7 +118,8 @@ export default function MyAuctionsScreen() {
             valorBase: c.valorBase,
             comisiones: c.comisiones,
             subastaId: c.subastaId !== undefined && c.subastaId !== null ? String(c.subastaId) : undefined,
-            fechaSubasta: c.fechaSubasta,
+            fechaSubasta: c.fechaSubastaPropuesta ?? c.fechaSubasta,
+            rawEstado: c.estado,
           };
         });
         setAuctions(mapped);
@@ -158,17 +160,16 @@ export default function MyAuctionsScreen() {
   };
 
   const handleItemPress = (auction: ConsignmentItem) => {
-    if (auction.moderationStatus === 'approved_pending_lot') {
+    if (auction.rawEstado === 'PROPUESTA_ENVIADA') {
       setSelectedItem(auction);
       setShowModal(true);
       return;
     }
-    if (auction.moderationStatus !== 'published' || !auction.subastaId) {
-      return;
+    if (auction.rawEstado === 'INCLUIDO_EN_SUBASTA' && auction.subastaId) {
+      navigation.getParent()?.getParent()?.navigate('AuctionDetail', {
+        auctionId: auction.subastaId,
+      });
     }
-    navigation.getParent()?.getParent()?.navigate('AuctionDetail', {
-      auctionId: auction.subastaId,
-    });
   };
 
   const closeModal = () => {
@@ -228,9 +229,11 @@ export default function MyAuctionsScreen() {
       statusNote={
         item.moderationStatus === 'rejected' && item.rejectionReason
           ? `Motivo: ${item.rejectionReason}`
-          : item.moderationStatus === 'approved_pending_lot'
-            ? 'Pendiente de subir a un lote'
-            : undefined
+          : item.rawEstado === 'PROPUESTA_ENVIADA'
+            ? 'Propuesta recibida — revisá las condiciones'
+            : item.rawEstado === 'ACEPTADO_POR_USUARIO'
+              ? 'Condiciones aceptadas — pendiente de subasta'
+              : undefined
       }
       onPress={() => handleItemPress(item)}
     />

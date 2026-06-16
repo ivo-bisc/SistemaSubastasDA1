@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ImageStyle, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Image, ImageStyle, StyleProp, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants';
 import { hasImageUrl, resolveImageUrl } from '../../utils/media';
@@ -7,7 +7,7 @@ import { hasImageUrl, resolveImageUrl } from '../../utils/media';
 type Props = {
   uri?: string | null;
   style?: StyleProp<ImageStyle>;
-  containerStyle?: StyleProp<ViewStyle>;
+  containerStyle?: StyleProp<ImageStyle>;
   iconSize?: number;
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'repeat' | 'center';
 };
@@ -23,7 +23,7 @@ export default function RemoteImage({
 
   if (!hasImageUrl(resolved)) {
     return (
-      <View style={[styles.placeholder, containerStyle, style as ViewStyle]}>
+      <View style={[styles.placeholder, containerStyle as object, style as object]}>
         <Ionicons name="image-outline" size={iconSize} color={Colors.cardTime} />
       </View>
     );
