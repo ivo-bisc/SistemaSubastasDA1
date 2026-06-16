@@ -46,6 +46,22 @@ public class DataLoader implements CommandLineRunner {
 
         log.info("Cargando datos de prueba...");
 
+        // Usuario administrador
+        Usuario admin = Usuario.builder()
+                .nombre("Admin")
+                .apellido("Sistema")
+                .email("admin@subastas.com")
+                .password(passwordEncoder.encode("admin123"))
+                .numeroDni("00000001")
+                .domicilioLegal("Sede Central, CABA")
+                .paisOrigen("Argentina")
+                .categoria(Categoria.PLATINO)
+                .estado(EstadoUsuario.APROBADO)
+                .rol(RolUsuario.ADMIN)
+                .telefono("+54 11 0000-0001")
+                .build();
+        usuarioRepository.save(admin);
+
         // Usuarios de prueba
         Usuario postor1 = Usuario.builder()
                 .nombre("Juan")
@@ -74,6 +90,23 @@ public class DataLoader implements CommandLineRunner {
                 .telefono("+54 11 8765-4321")
                 .build();
         postor2 = usuarioRepository.save(postor2);
+
+        // Usuario pendiente de aprobación (paso 2 completado, tokenEmail ya consumido)
+        Usuario pendiente = Usuario.builder()
+                .nombre("Carlos")
+                .apellido("López")
+                .email("pendiente@test.com")
+                .password(passwordEncoder.encode("password123"))
+                .numeroDni("11111111")
+                .domicilioLegal("Mendoza 890, Rosario")
+                .paisOrigen("Argentina")
+                .categoria(null)
+                .estado(EstadoUsuario.PENDIENTE_VERIFICACION)
+                .rol(RolUsuario.POSTOR)
+                .tokenEmail(null)
+                .telefono("+54 341 111-2222")
+                .build();
+        usuarioRepository.save(pendiente);
 
         // Medios de pago
         MedioPago mp1 = MedioPago.builder()
@@ -241,6 +274,7 @@ public class DataLoader implements CommandLineRunner {
                 .precioSugerido(new BigDecimal("450000.00"))
                 .valorBase(new BigDecimal("420000.00"))
                 .comisiones(new BigDecimal("21000.00"))
+                .categoriaPropuesta(Categoria.ESPECIAL)
                 .cuentaDestino(mp1)
                 .subastaAsignada(subasta2)
                 .usuario(postor1)
@@ -290,6 +324,47 @@ public class DataLoader implements CommandLineRunner {
                     .build());
         }
         consignacionRepository.save(consignacion2);
+
+        // Consignación de Juan: rechazada por el admin
+        Consignacion consignacion3 = Consignacion.builder()
+                .descripcion("Bicicleta vintage Bianchi 1970 — cuadro restaurado")
+                .aceptaPertenencia(true)
+                .estado(EstadoConsignacion.RECHAZADO)
+                .precioSugerido(new BigDecimal("85000.00"))
+                .motivoRechazo("El bien no cumple con los requisitos mínimos de valor estimado para esta categoría de subasta.")
+                .cuentaDestino(mp1)
+                .usuario(postor1)
+                .build();
+        consignacionRepository.save(consignacion3);
+
+        // Consignación de María: usuario aceptó la propuesta del admin
+        Consignacion consignacion4 = Consignacion.builder()
+                .descripcion("Piano Steinway & Sons — modelo B, circa 1945")
+                .aceptaPertenencia(true)
+                .estado(EstadoConsignacion.ACEPTADO_POR_USUARIO)
+                .precioSugerido(new BigDecimal("3500000.00"))
+                .valorBase(new BigDecimal("3200000.00"))
+                .comisiones(new BigDecimal("320000.00"))
+                .categoriaPropuesta(Categoria.ORO)
+                .cuentaDestino(mp2)
+                .usuario(postor2)
+                .build();
+        consignacionRepository.save(consignacion4);
+
+        // Consignación de Juan: incluida en subasta (flujo completo aprobado)
+        Consignacion consignacion5 = Consignacion.builder()
+                .descripcion("Colección de 12 grabados originales — Xul Solar")
+                .aceptaPertenencia(true)
+                .estado(EstadoConsignacion.INCLUIDO_EN_SUBASTA)
+                .precioSugerido(new BigDecimal("900000.00"))
+                .valorBase(new BigDecimal("850000.00"))
+                .comisiones(new BigDecimal("85000.00"))
+                .categoriaPropuesta(Categoria.ESPECIAL)
+                .subastaAsignada(subasta2)
+                .cuentaDestino(mp1)
+                .usuario(postor1)
+                .build();
+        consignacionRepository.save(consignacion5);
 
         // Subasta cerrada — para datos de compra y chat
         Subasta subasta3 = Subasta.builder()
@@ -369,9 +444,11 @@ public class DataLoader implements CommandLineRunner {
                 .leido(false)
                 .build());
 
-        log.info("Datos de prueba cargados: 2 usuarios, 2 medios de pago, 3 subastas, 3 ítems, 3 pujas, 2 consignaciones, 1 compra, 3 mensajes de chat");
-        log.debug("Login de prueba: juan@test.com / password123 (PLATA)");
-        log.debug("Login de prueba: maria@test.com / password123 (ORO)");
+        log.info("Datos de prueba cargados: 4 usuarios, 3 medios de pago, 3 subastas, 3 ítems, 3 pujas, 5 consignaciones, 1 compra, 3 mensajes de chat");
+        log.debug("Login admin:     admin@subastas.com / admin123 (ADMIN, PLATINO)");
+        log.debug("Login postor1:   juan@test.com / password123 (PLATA)");
+        log.debug("Login postor2:   maria@test.com / password123 (ORO)");
+        log.debug("Login pendiente: pendiente@test.com / password123 (PENDIENTE_VERIFICACION)");
         log.debug("Compra de prueba: juan@test.com ganó item3 (P-003) — compraId = 1");
     }
 }

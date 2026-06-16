@@ -99,10 +99,11 @@ Seguridad: en `SecurityConfig.java`, agregar `.requestMatchers("/api/v1/admin/**
 - Poll cada ~5s con `useProfileStore.getState().loadProfile()`. Reaccionar a `user?.status`: `'approved'` → nada (RootNavigator cambia de rama), `'rejected'` → mostrar mensaje de rechazo + volver a Access/Login, `'pending'` → seguir polleando. Cleanup del interval.
 - **Complejidad: Media.** Depende de 0.5, 3.1, 3.2.
 
-### [ ] 1.6 — `DataLoader`: usuario admin + usuario pendiente
-- Agregar usuario `ADMIN` seedeado (`admin@subastas.com`/`admin123`, `rol=ADMIN`, `estado=APROBADO`, `categoria=PLATINO`).
-- Agregar usuario en `estado=PENDIENTE_VERIFICACION`, `categoria=null`, `tokenEmail=null` (paso2 completo, espera aprobación).
-- Actualizar `log.info` final con las nuevas credenciales.
+### ✅ Resuelto — 1.6 — `DataLoader`: usuario admin + usuario pendiente + consignaciones
+- Usuario `ADMIN` seedeado: `admin@subastas.com`/`admin123`, `rol=ADMIN`, `estado=APROBADO`, `categoria=PLATINO`.
+- Usuario pendiente: `pendiente@test.com`/`password123`, `rol=POSTOR`, `estado=PENDIENTE_VERIFICACION`, `categoria=null`, `tokenEmail=null` (paso2 completo, espera aprobación).
+- Consignaciones cubriendo 5 de los 6 estados nuevos: `PROPUESTA_ENVIADA` (+ fix `categoriaPropuesta` para no romper `asignarSubasta()`), `PENDIENTE_INSPECCION`, `RECHAZADO`, `ACEPTADO_POR_USUARIO`, `INCLUIDO_EN_SUBASTA`. `RECHAZADO_POR_USUARIO` queda para prueba manual.
+- `log.info` final actualizado con 4 usuarios / 5 consignaciones y las 4 credenciales de prueba.
 - **Complejidad: Baja.** Depende de 0.1, 1.1. Se ejecuta en Bloque E.
 
 ---
