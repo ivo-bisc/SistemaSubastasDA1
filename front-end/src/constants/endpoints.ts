@@ -61,4 +61,14 @@ export const Endpoints = {
     PAY_FINE: (id: string) => `/usuarios/multas/${id}/pagar`,
     MY_BIDS: '/usuarios/mis-pujas',
   },
+
+  // ── Admin ──────────────────────────────────────────────
+  ADMIN: {
+    PENDING_USERS: '/admin/usuarios/pendientes',
+    APPROVE_USER: (id: string) => `/admin/usuarios/${id}/aprobar`,
+    REJECT_USER: (id: string) => `/admin/usuarios/${id}/rechazar`,
+    PENDING_CONSIGNMENTS: '/admin/consignaciones/pendientes',
+    PROPOSE_CONDITIONS: (id: string) => `/admin/consignaciones/${id}/proponer`,
+    REJECT_CONSIGNMENT: (id: string) => `/admin/consignaciones/${id}/rechazar`,
+  },
 } as const;

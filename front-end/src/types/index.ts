@@ -12,6 +12,8 @@ export interface User {
   phone?: string;
   avatarUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
+  role: 'POSTOR' | 'ADMIN';
+  category?: string;
 }
 
 export interface AuthState {
@@ -133,6 +135,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   AuctionDetail: { auctionId: string };
+  PendingApproval: undefined;
 };
 
 export type HomeStackParamList = {
@@ -191,10 +194,18 @@ export type MainTabParamList = {
   MyBids: undefined;
   MyAuctions: undefined;
   Profile: undefined;
+  Admin: undefined;
 };
 
 export type MyAuctionsStackParamList = {
   MyAuctionsMain: undefined;
   UploadItem: { returnTo?: 'home' | 'myAuctions' } | undefined;
   ItemUploaded: { returnTo?: 'home' | 'myAuctions' } | undefined;
+};
+
+export type AdminStackParamList = {
+  AdminHome: undefined;
+  AdminPendingUsers: undefined;
+  AdminPendingConsignments: undefined;
+  AdminProposeConditions: { consignacionId: string };
 };

@@ -20,6 +20,7 @@ const TAB_ICONS: Record<keyof MainTabParamList, { active: TabIconName; inactive:
   MyBids: { active: 'hammer', inactive: 'hammer-outline' },
   MyAuctions: { active: 'albums', inactive: 'albums-outline' },
   Profile: { active: 'person', inactive: 'person-outline' },
+  Admin: { active: 'shield-checkmark', inactive: 'shield-checkmark-outline' },
 };
 
 const TAB_BAR_BASE_HEIGHT = Platform.OS === 'ios' ? 56 : 60;

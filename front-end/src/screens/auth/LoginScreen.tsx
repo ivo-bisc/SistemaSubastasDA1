@@ -63,6 +63,7 @@ export default function LoginScreen() {
           lastName: u.lastName,
           dni: '',
           status: statusMap[u.status] ?? 'pending',
+          role: u.role,
         },
         token
       );

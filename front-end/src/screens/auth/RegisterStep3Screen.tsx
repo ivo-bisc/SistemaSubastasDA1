@@ -33,7 +33,7 @@ export default function RegisterStep3Screen() {
   const login = useAuthStore((s) => s.login);
 
   const doLogin = () => login(
-    { id: String(usuarioId), email, firstName: nombre, lastName: apellido, dni, status: 'pending' },
+    { id: String(usuarioId), email, firstName: nombre, lastName: apellido, dni, status: 'pending', role: 'POSTOR' },
     tokenAcceso
   );
   const [cardNumber, setCardNumber] = useState('');

@@ -105,6 +105,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       };
       const translatedStatus = statusMap[u.status] ?? 'pending';
       useAuthStore.getState().updateUserStatus(translatedStatus);
+      useAuthStore.getState().updateUserRole(u.role);
 
       set({
         name: `${u.firstName} ${u.lastName}`,

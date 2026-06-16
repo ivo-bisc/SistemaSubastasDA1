@@ -11,6 +11,7 @@ interface AuthStore {
   logout: () => void;
   setGuest: () => void;
   updateUserStatus: (status: User['status']) => void;
+  updateUserRole: (role: 'POSTOR' | 'ADMIN') => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -45,4 +46,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   updateUserStatus: (status) =>
     set((s) => s.user ? { user: { ...s.user, status } } : {}),
+
+  updateUserRole: (role) =>
+    set((s) => s.user ? { user: { ...s.user, role } } : {}),
 }));
