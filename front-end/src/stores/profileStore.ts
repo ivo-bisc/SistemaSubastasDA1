@@ -32,15 +32,7 @@ interface ProfileStore {
   setPassword: (password: string) => void;
   updateAddress: (domicilioLegal: string) => Promise<void>;
   addCardViaApi: (data: MedioPagoRequest) => Promise<void>;
-  addCheck: (check: Omit<MockCheck, 'id'>) => void;
   removeCard: (id: string) => void;
-}
-
-let idCounter = 100;
-
-function nextId(prefix: string) {
-  idCounter += 1;
-  return `${prefix}_${idCounter}`;
 }
 
 export const useProfileStore = create<ProfileStore>((set, get) => ({
@@ -152,10 +144,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       ],
     }));
   },
-  addCheck: (check) =>
-    set((s) => ({
-      checks: [...s.checks, { ...check, id: nextId('chk') }],
-    })),
 
   removeCard: (id) =>
     set((s) => ({
