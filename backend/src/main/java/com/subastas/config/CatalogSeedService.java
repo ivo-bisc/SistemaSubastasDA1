@@ -63,6 +63,7 @@ public class CatalogSeedService implements CommandLineRunner {
 
     private static final String TITULO_RELOJES = "Subasta de Relojes y Joyas - Premium";
     private static final String TITULO_DEPORTIVOS = "Subasta Coleccionables Deportivos";
+    private static final String TITULO_ORO = "Subasta Exclusiva ORO - Arte Internacional";
 
     private final ItemRepository itemRepository;
     private final SubastaRepository subastaRepository;
@@ -174,6 +175,24 @@ public class CatalogSeedService implements CommandLineRunner {
             createItem("P-008", "Pelota firmada Copa América 2024 - con certificado", new BigDecimal("1800.00"),
                     subasta, false, null);
             log.info("Subasta seed creada: {}", TITULO_DEPORTIVOS);
+        }
+
+        if (subastaRepository.findByTitulo(TITULO_ORO).isEmpty()) {
+            Subasta subasta = subastaRepository.save(Subasta.builder()
+                    .titulo(TITULO_ORO)
+                    .descripcion("Obras maestras de colecciones privadas, acceso restringido a categoría ORO")
+                    .fechaInicio(LocalDateTime.now().minusHours(1))
+                    .fechaFin(LocalDateTime.now().plusDays(5))
+                    .categoria(Categoria.ORO)
+                    .moneda(Moneda.USD)
+                    .estado(EstadoSubasta.ABIERTA)
+                    .ubicacion("Galería Internacional, Puerto Madero, CABA")
+                    .rematador(rematador)
+                    .build());
+
+            createItem("P-009", "Óleo sobre tela - Retrato cubista atribuido a taller europeo", new BigDecimal("15000.00"),
+                    subasta, true, "Anónimo (escuela europea)");
+            log.info("Subasta seed creada: {}", TITULO_ORO);
         }
     }
 
